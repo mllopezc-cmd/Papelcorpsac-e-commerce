@@ -81,15 +81,15 @@ No utilizar actualizaciones forzadas sin justificación.
 Responsable: COPILOT
 Dependencia: T01
 
-- [ ] Instalar y configurar Tailwind CSS compatible con Vite.
-- [ ] Incorporar la identidad visual de Papelcorpsac.
-- [ ] Configurar colores, tipografías y estilos globales mínimos.
-- [ ] Aplicar diseño mobile-first.
-- [ ] Configurar React Router.
-- [ ] Implementar navegación pública.
-- [ ] Reservar la ruta /admin para protección posterior.
-- [ ] Preparar componentes reutilizables necesarios.
-- [ ] Comprobar la visualización en modos claro y oscuro.
+- [x] Instalar y configurar Tailwind CSS compatible con Vite.
+- [x] Incorporar la identidad visual de Papelcorpsac.
+- [x] Configurar colores, tipografías y estilos globales mínimos.
+- [x] Aplicar diseño mobile-first.
+- [x] Configurar React Router.
+- [x] Implementar navegación pública.
+- [x] Reservar la ruta /admin para protección posterior.
+- [x] Preparar componentes reutilizables necesarios.
+- [x] Comprobar la visualización en modos claro y oscuro.
 
 Aceptación:
 
@@ -376,7 +376,9 @@ T00 — Documentación inicial: COMPLETADA.
 
 T01 — Inicializar React, TypeScript y Vite: COMPLETADA.
 
-Próxima tarea: T02 — Tailwind CSS, componentes y navegación.
+T02 — Tailwind CSS, componentes y navegación: COMPLETADA.
+
+Próxima tarea: T03 — Configurar Firebase.
 
 Bloqueos: Ninguno registrado.
 
@@ -386,5 +388,6 @@ Registro de avances:
 | ---------- | ----- | -------------------------------------------------------------------------------- | ---------- | --------- |
 | 2026-11-05 | T00   | Documentos guardados; Reviewer y Skill reconocidos                               | Completada | Ninguno   |
 | 2026-11-05 | T01   | React y Vite funcionando; lint y build correctos; npm audit sin vulnerabilidades | Completada | Ninguno   |
+| 2026-11-05 | T02   | Tailwind CSS 4 con Vite; React Router y navegación pública; identidad PAPEL CORP y diseño responsive; modos claro/oscuro con persistencia; accesibilidad y contraste revisados; `npm run lint` y `npm run build` satisfactorios; `npm audit`: cero vulnerabilidades; Reviewer: APROBADO | Completada | Ninguno |
 
 No registrar pruebas o configuraciones inexistentes.
