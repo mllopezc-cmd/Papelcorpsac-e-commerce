@@ -108,14 +108,14 @@ No crear componentes o estilos innecesarios.
 Responsable: MANUAL
 Dependencia: T01
 
-- [ ] Crear un nuevo proyecto Firebase.
-- [ ] Habilitar Authentication.
-- [ ] Configurar correo/contraseña y Google.
-- [ ] Crear Firestore.
-- [ ] Preparar reglas restrictivas iniciales.
-- [ ] Configurar variables de entorno locales.
-- [ ] Preparar .env.example.
-- [ ] Verificar .gitignore.
+- [x] Crear un nuevo proyecto Firebase.
+- [x] Habilitar Authentication.
+- [x] Configurar correo/contraseña y Google.
+- [x] Crear Firestore.
+- [x] Preparar reglas restrictivas iniciales.
+- [x] Configurar variables de entorno locales.
+- [x] Preparar .env.example.
+- [x] Verificar .gitignore.
 
 Aceptación:
 
@@ -378,7 +378,9 @@ T01 — Inicializar React, TypeScript y Vite: COMPLETADA.
 
 T02 — Tailwind CSS, componentes y navegación: COMPLETADA.
 
-Próxima tarea: T03 — Configurar Firebase.
+T03 — Configurar Firebase: COMPLETADA.
+
+Próxima tarea: T04 — Implementar autenticación y roles.
 
 Bloqueos: Ninguno registrado.
 
@@ -389,5 +391,6 @@ Registro de avances:
 | 2026-11-05 | T00   | Documentos guardados; Reviewer y Skill reconocidos                               | Completada | Ninguno   |
 | 2026-11-05 | T01   | React y Vite funcionando; lint y build correctos; npm audit sin vulnerabilidades | Completada | Ninguno   |
 | 2026-11-05 | T02   | Tailwind CSS 4 con Vite; React Router y navegación pública; identidad PAPEL CORP y diseño responsive; modos claro/oscuro con persistencia; accesibilidad y contraste revisados; `npm run lint` y `npm run build` satisfactorios; `npm audit`: cero vulnerabilidades; Reviewer: APROBADO | Completada | Ninguno |
+| 2026-11-05 | T03   | Proyecto Firebase `papelcorpsac`; Firestore `(default)` en `us-east1`, modo producción y reglas iniciales de denegación; Authentication con correo/contraseña y Google; app web Papelcorpsac-web registrada; `.env` con seis variables verificadas sin mostrar valores; `.env.example` con seis nombres vacíos; `.gitignore` ignora `.env` y permite `.env.example`; `git status --short`: únicamente `?? .env.example` | Completada | Ninguno |
 
 No registrar pruebas o configuraciones inexistentes.
