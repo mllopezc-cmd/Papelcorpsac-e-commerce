@@ -1,16 +1,47 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Route, Routes } from "react-router";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PublicLayout } from "./layouts/PublicLayout";
-import { AdminReservedPage } from "./pages/AdminReservedPage";
-import { CatalogPage } from "./pages/CatalogPage";
 import { HomePage } from "./pages/HomePage";
-import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
-import { RegisterPage } from "./pages/RegisterPage";
 import { useAuth } from "./hooks/useAuth";
 
 type Theme = "light" | "dark";
+
+const CatalogPage = lazy(() =>
+  import("./pages/CatalogPage").then(({ CatalogPage }) => ({
+    default: CatalogPage,
+  })),
+);
+const LoginPage = lazy(() =>
+  import("./pages/LoginPage").then(({ LoginPage }) => ({
+    default: LoginPage,
+  })),
+);
+const RegisterPage = lazy(() =>
+  import("./pages/RegisterPage").then(({ RegisterPage }) => ({
+    default: RegisterPage,
+  })),
+);
+const AdminReservedPage = lazy(() =>
+  import("./pages/AdminReservedPage").then(({ AdminReservedPage }) => ({
+    default: AdminReservedPage,
+  })),
+);
+
+const pageLoadingFallback = (
+  <div
+    role="status"
+    aria-live="polite"
+    aria-busy="true"
+    className="flex min-h-[55vh] flex-col items-center justify-center gap-3 px-5 py-16 text-center"
+  >
+    <span className="font-display text-sm font-semibold tracking-[0.2em] text-gold-text">
+      PAPEL CORP
+    </span>
+    <span className="text-sm text-muted">Cargando página…</span>
+  </div>
+);
 
 function App() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -79,14 +110,37 @@ function App() {
           }
         >
           <Route index element={<HomePage />} />
-          <Route path="catalogo" element={<CatalogPage />} />
-          <Route path="login" element={<LoginPage />} />
-          <Route path="register" element={<RegisterPage />} />
+          <Route
+            path="catalogo"
+            element={
+              <Suspense fallback={pageLoadingFallback}>
+                <CatalogPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="login"
+            element={
+              <Suspense fallback={pageLoadingFallback}>
+                <LoginPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="register"
+            element={
+              <Suspense fallback={pageLoadingFallback}>
+                <RegisterPage />
+              </Suspense>
+            }
+          />
           <Route
             path="admin/*"
             element={
               <ProtectedRoute requireAdmin>
-                <AdminReservedPage />
+                <Suspense fallback={pageLoadingFallback}>
+                  <AdminReservedPage />
+                </Suspense>
               </ProtectedRoute>
             }
           />

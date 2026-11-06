@@ -1,6 +1,6 @@
 import { getApps, initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import type { Firestore } from 'firebase/firestore'
 
 const firebaseEnvironment = {
   VITE_FIREBASE_API_KEY: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -33,6 +33,28 @@ const app =
   })
 
 const auth = getAuth(app)
-const db = getFirestore(app)
 
-export { app, auth, db }
+type FirestoreServices = {
+  db: Firestore
+  firestore: typeof import('firebase/firestore')
+}
+
+let firestoreServicesPromise: Promise<FirestoreServices> | undefined
+
+function loadFirestore(): Promise<FirestoreServices> {
+  if (!firestoreServicesPromise) {
+    firestoreServicesPromise = import('firebase/firestore')
+      .then((firestore) => ({
+        db: firestore.getFirestore(app),
+        firestore,
+      }))
+      .catch((error: unknown) => {
+        firestoreServicesPromise = undefined
+        throw error
+      })
+  }
+
+  return firestoreServicesPromise
+}
+
+export { app, auth, loadFirestore }

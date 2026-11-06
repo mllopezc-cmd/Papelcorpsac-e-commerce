@@ -11,15 +11,9 @@ import {
   updateProfile,
   type User as FirebaseUser,
 } from 'firebase/auth'
-import {
-  doc,
-  getDoc,
-  runTransaction,
-  serverTimestamp,
-  Timestamp,
-} from 'firebase/firestore'
+import type { Timestamp } from 'firebase/firestore'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { auth, db } from '../lib/firebase'
+import { auth, loadFirestore } from '../lib/firebase'
 import {
   AuthContext,
   type AuthContextValue,
@@ -64,7 +58,11 @@ function getErrorMessage(error: unknown): string {
   return 'Ocurrió un error inesperado. Inténtalo nuevamente.'
 }
 
-function isUserProfile(value: unknown, uid: string): value is UserProfile {
+function isUserProfile(
+  value: unknown,
+  uid: string,
+  timestampConstructor: typeof Timestamp,
+): value is UserProfile {
   if (typeof value !== 'object' || value === null) {
     return false
   }
@@ -76,7 +74,7 @@ function isUserProfile(value: unknown, uid: string): value is UserProfile {
     typeof profile.email === 'string' &&
     typeof profile.displayName === 'string' &&
     (profile.role === 'customer' || profile.role === 'admin') &&
-    profile.createdAt instanceof Timestamp
+    profile.createdAt instanceof timestampConstructor
   )
 }
 
@@ -84,14 +82,15 @@ async function ensureUserProfile(
   user: FirebaseUser,
   preferredDisplayName?: string,
 ): Promise<UserProfile> {
-  const profileRef = doc(db, 'users', user.uid)
+  const { db, firestore } = await loadFirestore()
+  const profileRef = firestore.doc(db, 'users', user.uid)
   const displayName =
     preferredDisplayName?.trim() ||
     user.displayName?.trim() ||
     user.email?.split('@')[0] ||
     'Cliente'
 
-  await runTransaction(db, async (transaction) => {
+  await firestore.runTransaction(db, async (transaction) => {
     const existingProfile = await transaction.get(profileRef)
 
     if (!existingProfile.exists()) {
@@ -100,12 +99,12 @@ async function ensureUserProfile(
         email: user.email ?? '',
         displayName,
         role: 'customer',
-        createdAt: serverTimestamp(),
+        createdAt: firestore.serverTimestamp(),
       })
     }
   })
 
-  const profileSnapshot = await getDoc(profileRef)
+  const profileSnapshot = await firestore.getDoc(profileRef)
 
   if (!profileSnapshot.exists()) {
     throw new Error('No se pudo crear ni cargar el perfil de usuario.')
@@ -113,7 +112,7 @@ async function ensureUserProfile(
 
   const profile = profileSnapshot.data()
 
-  if (!isUserProfile(profile, user.uid)) {
+  if (!isUserProfile(profile, user.uid, firestore.Timestamp)) {
     throw new Error('El perfil de usuario tiene datos incompletos o inválidos.')
   }
 
