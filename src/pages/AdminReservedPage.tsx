@@ -14,8 +14,8 @@ export function AdminReservedPage() {
         Sección en preparación
       </h1>
       <p className="mx-auto mt-5 max-w-xl leading-7 text-muted">
-        Esta ruta queda reservada para la futura sección administrativa. La
-        autenticación y la protección de acceso todavía no están implementadas.
+        Tu sesión de administrador está verificada. Esta ruta queda reservada
+        para la futura sección administrativa.
       </p>
     </section>
   );

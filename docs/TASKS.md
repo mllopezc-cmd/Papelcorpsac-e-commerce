@@ -128,17 +128,17 @@ Dependencias: T02, T03
 
 COPILOT:
 
-- [ ] Implementar registro y login.
-- [ ] Implementar logout.
-- [ ] Mantener persistencia de sesión.
-- [ ] Implementar AuthContext y useAuth.
-- [ ] Proteger rutas autenticadas.
-- [ ] Restringir rutas administrativas.
-- [ ] Gestionar carga del rol y errores.
+- [x] Implementar registro y login.
+- [x] Implementar logout.
+- [x] Mantener persistencia de sesión.
+- [x] Implementar AuthContext y useAuth.
+- [x] Proteger rutas autenticadas.
+- [x] Restringir rutas administrativas.
+- [x] Gestionar carga del rol y errores.
 
 MANUAL:
 
-- [ ] Configurar el primer usuario administrador.
+- [x] Configurar el primer usuario administrador.
 
 Aceptación:
 
@@ -380,7 +380,9 @@ T02 — Tailwind CSS, componentes y navegación: COMPLETADA.
 
 T03 — Configurar Firebase: COMPLETADA.
 
-Próxima tarea: T04 — Implementar autenticación y roles.
+T04 — Implementar autenticación y roles: COMPLETADA.
+
+Próxima tarea: T05 — Implementar catálogo.
 
 Bloqueos: Ninguno registrado.
 
@@ -392,5 +394,6 @@ Registro de avances:
 | 2026-11-05 | T01   | React y Vite funcionando; lint y build correctos; npm audit sin vulnerabilidades | Completada | Ninguno   |
 | 2026-11-05 | T02   | Tailwind CSS 4 con Vite; React Router y navegación pública; identidad PAPEL CORP y diseño responsive; modos claro/oscuro con persistencia; accesibilidad y contraste revisados; `npm run lint` y `npm run build` satisfactorios; `npm audit`: cero vulnerabilidades; Reviewer: APROBADO | Completada | Ninguno |
 | 2026-11-05 | T03   | Proyecto Firebase `papelcorpsac`; Firestore `(default)` en `us-east1`, modo producción y reglas iniciales de denegación; Authentication con correo/contraseña y Google; app web Papelcorpsac-web registrada; `.env` con seis variables verificadas sin mostrar valores; `.env.example` con seis nombres vacíos; `.gitignore` ignora `.env` y permite `.env.example`; `git status --short`: únicamente `?? .env.example` | Completada | Ninguno |
+| 2026-11-06 | T04   | Registro e inicio de sesión con correo y contraseña; inicio con Google; perfiles creados automáticamente en Firestore con rol `customer`; primer admin configurado manualmente desde Firebase Console; persistencia comprobada; `/admin` denegado a customer y acceso autorizado para admin; reglas Firestore publicadas; `npm run lint`, `npm run build`, `npm audit` (cero vulnerabilidades) y `git diff --check` satisfactorios. Observación: bundle JavaScript de 840.06 kB; advertencia informativa, no es un error de compilación ni un bloqueo de T04 | Completada | Ninguno |
 
 No registrar pruebas o configuraciones inexistentes.
