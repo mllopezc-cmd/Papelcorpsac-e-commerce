@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Imagen demostrativa de PAPEL CORP</title>
+  <desc id="description">Ilustración neutra de una caja para productos demostrativos.</desc>
+  <rect width="512" height="512" fill="#f8f6f2"/>
+  <rect x="44" y="44" width="424" height="424" rx="8" fill="#ffffff" stroke="#e5e0d7" stroke-width="2"/>
+  <path d="m160 208 96-54 96 54v112l-96 54-96-54z" fill="#f8f6f2" stroke="#1e2229" stroke-linejoin="round" stroke-width="8"/>
+  <path d="m160 208 96 56 96-56M256 264v110M208 181l96 55" fill="none" stroke="#1e2229" stroke-linejoin="round" stroke-linecap="round" stroke-width="8"/>
+  <path d="m286 192 22-13" fill="none" stroke="#c5a059" stroke-linecap="round" stroke-width="10"/>
+  <text x="256" y="424" fill="#6b6862" font-family="Arial, sans-serif" font-size="17" font-weight="600" letter-spacing="3" text-anchor="middle">IMAGEN DEMOSTRATIVA</text>
+</svg>

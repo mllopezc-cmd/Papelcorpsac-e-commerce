@@ -1,4 +1,5 @@
 import { NavLink } from "react-router";
+import { useAuth } from "../hooks/useAuth";
 
 const navigationLinkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-sm px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-text ${
@@ -13,6 +14,8 @@ type HeaderProps = {
 };
 
 export function Header({ theme, onToggleTheme }: HeaderProps) {
+  const { user } = useAuth();
+
   return (
     <header className="border-b border-line bg-page">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-4 sm:flex-row sm:px-8">
@@ -38,6 +41,11 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
           <NavLink to="/catalogo" className={navigationLinkClass}>
             Catálogo
           </NavLink>
+          {user && (
+            <NavLink to="/favoritos" className={navigationLinkClass}>
+              Favoritos
+            </NavLink>
+          )}
           <button
             type="button"
             aria-label="Modo oscuro"

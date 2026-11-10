@@ -13,6 +13,16 @@ const CatalogPage = lazy(() =>
     default: CatalogPage,
   })),
 );
+const ProductDetailPage = lazy(() =>
+  import("./pages/ProductDetailPage").then(({ ProductDetailPage }) => ({
+    default: ProductDetailPage,
+  })),
+);
+const FavoritesPage = lazy(() =>
+  import("./pages/FavoritesPage").then(({ FavoritesPage }) => ({
+    default: FavoritesPage,
+  })),
+);
 const LoginPage = lazy(() =>
   import("./pages/LoginPage").then(({ LoginPage }) => ({
     default: LoginPage,
@@ -116,6 +126,24 @@ function App() {
               <Suspense fallback={pageLoadingFallback}>
                 <CatalogPage />
               </Suspense>
+            }
+          />
+          <Route
+            path="catalogo/:productId"
+            element={
+              <Suspense fallback={pageLoadingFallback}>
+                <ProductDetailPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="favoritos"
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={pageLoadingFallback}>
+                  <FavoritesPage />
+                </Suspense>
+              </ProtectedRoute>
             }
           />
           <Route

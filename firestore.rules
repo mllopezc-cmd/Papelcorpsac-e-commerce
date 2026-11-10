@@ -43,6 +43,41 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
 
       allow update, delete: if false;
+
+      match /favorites/{productId} {
+        function productIsPublished() {
+          let productPath =
+            /databases/$(database)/documents/products/$(productId);
+          return exists(productPath)
+            && get(productPath).data.published == true;
+        }
+
+        allow get, list: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && request.resource.data.keys().hasAll([
+            'productId',
+            'createdAt'
+          ])
+          && request.resource.data.keys().hasOnly([
+            'productId',
+            'createdAt'
+          ])
+          && request.resource.data.productId is string
+          && request.resource.data.productId == productId
+          && request.resource.data.createdAt == request.time
+          && productIsPublished();
+
+        allow update: if false;
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    match /products/{productId} {
+      allow get: if resource == null
+        || resource.data.published == true;
+      allow list: if resource.data.published == true;
+      allow create, update, delete: if false;
     }
 
     match /{document=**} {
