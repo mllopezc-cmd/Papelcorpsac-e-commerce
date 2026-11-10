@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Route, Routes } from "react-router";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { CartAddNotification } from "./components/CartAddNotification";
 import { PublicLayout } from "./layouts/PublicLayout";
 import { HomePage } from "./pages/HomePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -11,6 +12,11 @@ type Theme = "light" | "dark";
 const CatalogPage = lazy(() =>
   import("./pages/CatalogPage").then(({ CatalogPage }) => ({
     default: CatalogPage,
+  })),
+);
+const CartPage = lazy(() =>
+  import("./pages/CartPage").then(({ CartPage }) => ({
+    default: CartPage,
   })),
 );
 const ProductDetailPage = lazy(() =>
@@ -129,6 +135,14 @@ function App() {
             }
           />
           <Route
+            path="carrito"
+            element={
+              <Suspense fallback={pageLoadingFallback}>
+                <CartPage />
+              </Suspense>
+            }
+          />
+          <Route
             path="catalogo/:productId"
             element={
               <Suspense fallback={pageLoadingFallback}>
@@ -175,6 +189,7 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
+      <CartAddNotification />
     </>
   );
 }

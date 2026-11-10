@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../hooks/useAuth'
+import { useCart } from '../hooks/useCart'
 import { PRODUCT_CATEGORY_LABELS, type Product } from '../types/product'
 
 const priceFormatter = new Intl.NumberFormat('es-PE', {
@@ -51,8 +52,20 @@ export function ProductCard({
   onToggleFavorite,
 }: ProductCardProps) {
   const { user, loading } = useAuth()
+  const { items, addItem } = useCart()
   const location = useLocation()
   const navigate = useNavigate()
+  const cartQuantity =
+    items.find((item) => item.product.id === product.id)?.quantity ?? 0
+  const stock =
+    typeof product.stock === 'number' &&
+    Number.isSafeInteger(product.stock) &&
+    product.stock > 0
+      ? product.stock
+      : 0
+  const validStock = stock > 0
+  const availableToAdd = Math.max(0, stock - cartQuantity)
+  const canAddToCart = availableToAdd > 0
 
   const handleFavoriteClick = () => {
     if (loading) {
@@ -125,10 +138,32 @@ export function ProductCard({
         <p className="mt-3 text-lg font-semibold text-ink">
           {priceFormatter.format(product.price)}
         </p>
+        <p className="mt-2 text-sm text-muted">
+          Stock del producto:{' '}
+          {validStock ? `${stock} unidades` : 'no disponible'}
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          Disponibles para agregar: {availableToAdd}
+        </p>
+        <button
+          type="button"
+          onClick={() => void addItem(product)}
+          disabled={!canAddToCart}
+          aria-label={
+            !validStock
+              ? `${product.name} sin stock disponible`
+              : canAddToCart
+                ? `Agregar ${product.name} al carrito`
+                : `${product.name}: stock máximo en el carrito`
+          }
+          className="mt-5 inline-flex w-fit items-center rounded-sm border border-gold/60 px-4 py-2.5 text-sm font-semibold text-gold-text transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-text disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Agregar al carrito
+        </button>
         <Link
           to={`/catalogo/${encodeURIComponent(product.id)}`}
           aria-label={`Ver detalles de ${product.name}`}
-          className="mt-5 inline-flex w-fit items-center rounded-sm bg-deep-blue px-4 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-graphite focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-text"
+          className="mt-3 inline-flex w-fit items-center rounded-sm bg-deep-blue px-4 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-graphite focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-text"
         >
           Ver detalles
         </Link>

@@ -1,5 +1,6 @@
 import { NavLink } from "react-router";
 import { useAuth } from "../hooks/useAuth";
+import { useCart } from "../hooks/useCart";
 
 const navigationLinkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-sm px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-text ${
@@ -15,6 +16,7 @@ type HeaderProps = {
 
 export function Header({ theme, onToggleTheme }: HeaderProps) {
   const { user } = useAuth();
+  const { totalUnits } = useCart();
 
   return (
     <header className="border-b border-line bg-page">
@@ -34,12 +36,27 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
           </span>
         </NavLink>
 
-        <nav aria-label="Navegación principal" className="flex items-center gap-2">
+        <nav
+          aria-label="Navegación principal"
+          className="flex flex-wrap items-center justify-center gap-1 sm:gap-2"
+        >
           <NavLink to="/" end className={navigationLinkClass}>
             Inicio
           </NavLink>
           <NavLink to="/catalogo" className={navigationLinkClass}>
             Catálogo
+          </NavLink>
+          <NavLink
+            to="/carrito"
+            className={navigationLinkClass}
+            aria-label={`Carrito, ${totalUnits} ${
+              totalUnits === 1 ? 'unidad' : 'unidades'
+            }`}
+          >
+            Carrito
+            <span aria-hidden="true" className="ml-1 text-gold-text">
+              ({totalUnits})
+            </span>
           </NavLink>
           {user && (
             <NavLink to="/favoritos" className={navigationLinkClass}>

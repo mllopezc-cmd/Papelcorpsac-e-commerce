@@ -198,15 +198,15 @@ Asuntos pendientes:
 Responsable: COPILOT
 Dependencia: T05
 
-- [ ] Implementar CartContext.
-- [ ] Implementar cartReducer.
-- [ ] Implementar useCart.
-- [ ] Agregar y eliminar productos.
-- [ ] Actualizar cantidades.
-- [ ] Calcular totales.
-- [ ] Mantener el carrito durante la navegación.
-- [ ] Incorporar persistencia local aprobada.
-- [ ] Probar las acciones del reducer.
+- [x] Implementar CartContext.
+- [x] Implementar cartReducer.
+- [x] Implementar useCart.
+- [x] Agregar y eliminar productos.
+- [x] Actualizar cantidades.
+- [x] Calcular totales.
+- [x] Mantener el carrito durante la navegación.
+- [x] Incorporar persistencia local aprobada.
+- [x] Probar las acciones del reducer.
 
 Aceptación:
 
@@ -409,7 +409,9 @@ T04 — Implementar autenticación y roles: COMPLETADA.
 
 T05 — Implementar catálogo: COMPLETADA.
 
-Próxima tarea: T06 — Implementar carrito.
+T06 — Implementar carrito: COMPLETADA.
+
+Próxima tarea: T07 — Implementar checkout.
 
 Bloqueos: Ninguno registrado.
 
@@ -423,5 +425,6 @@ Registro de avances:
 | 2026-11-05 | T03   | Proyecto Firebase `papelcorpsac`; Firestore `(default)` en `us-east1`, modo producción y reglas iniciales de denegación; Authentication con correo/contraseña y Google; app web Papelcorpsac-web registrada; `.env` con seis variables verificadas sin mostrar valores; `.env.example` con seis nombres vacíos; `.gitignore` ignora `.env` y permite `.env.example`; `git status --short`: únicamente `?? .env.example` | Completada | Ninguno |
 | 2026-11-06 | T04   | Registro e inicio de sesión con correo y contraseña; inicio con Google; perfiles creados automáticamente en Firestore con rol `customer`; primer admin configurado manualmente desde Firebase Console; persistencia comprobada; `/admin` denegado a customer y acceso autorizado para admin; reglas Firestore publicadas; `npm run lint`, `npm run build`, `npm audit` (cero vulnerabilidades) y `git diff --check` satisfactorios. Observación: bundle JavaScript de 840.06 kB; advertencia informativa, no es un error de compilación ni un bloqueo de T04 | Completada | Ninguno |
 | 2026-11-10 | T05   | Catálogo de 60 productos en cuatro categorías; doce productos principales con imágenes reales y 48 demostrativos con SVG local; búsqueda, filtros, detalle, favoritos y paginación local responsive; comprobación manual de catálogo, filtros, búsqueda, favoritos y navegación; responsive en escritorio y móvil; `npm.cmd run lint`, `npm.cmd run build` y `git diff --cached --check` satisfactorios; commit `51244e6` publicado en `main`, sincronizada con `origin/main`. `npm audit`: cinco hallazgos moderados de desarrollo relacionados con `glob` y dependencias; producción, cero vulnerabilidades; resolución aplazada. Advertencia no bloqueante de Vite: chunk de aproximadamente 580,48 kB minificados; optimización aplazada | Completada | Evaluar solución compatible para hallazgos de `glob`; optimizar chunk Vite |
+| No indicada | T06   | Evidencia reportada por el desarrollador: carrito con Context API, `useReducer` y `useCart`; ruta pública `/carrito`; operaciones de agregar, actualizar, eliminar y vaciar; unidades y subtotales en PEN; persistencia local versionada comprobada como visitante, al recargar y con Atrás/Adelante; notificación tras adiciones aceptadas; selector `+`/`−` y disponibilidad dinámica sin modificar el stock de Firestore; 10 escenarios UX satisfactorios; Vitest 5.1.0; 42/42 pruebas del reducer; lint sin errores ni advertencias; build satisfactorio. Revisión de solo lectura de Reviewer: APROBADO CON OBSERVACIONES, sin defectos bloqueantes | Completada | Permanecen las cinco alertas moderadas de desarrollo y la advertencia no bloqueante de chunk Vite; auditoría de producción reportada con cero vulnerabilidades |
 
 No registrar pruebas o configuraciones inexistentes.
