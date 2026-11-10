@@ -44,7 +44,7 @@ export function CartAddNotification() {
               <p className="font-semibold text-ink">
                 Producto agregado al carrito
               </p>
-              <p className="mt-1 break-words text-sm text-muted">
+              <p className="mt-1 wrap-break-word text-sm text-muted">
                 {product.name}
               </p>
             </div>
