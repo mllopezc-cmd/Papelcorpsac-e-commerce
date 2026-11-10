@@ -10,5 +10,5 @@
     "noEmit": true,
     "strict": true
   },
-  "include": ["api/health.ts"]
+  "include": ["api/**/*.ts", "server/**/*.ts"]
 }

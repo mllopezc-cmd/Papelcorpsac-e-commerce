@@ -3,22 +3,25 @@
 ## 1. Descripción y objetivo
 
 **Nombre del proyecto:** Papelcorpsac
+
 **Identidad visual:** PAPEL CORP
+
 **Rubro:** Papelería, instrumentos de escritura y artículos de oficina.
+
 **Tipo:** Single Page Application (SPA) de comercio electrónico.
+
 **Ubicación de desarrollo:** D:/Papelcorpsac
+
 **Moneda:** Soles peruanos (PEN).
 
-Papelcorpsac es un proyecto académico que busca desarrollar, testear y desplegar una aplicación de comercio electrónico
-funcional, responsive y segura.
+Papelcorpsac es un proyecto académico que busca desarrollar, testear y desplegar una aplicación de comercio electrónico funcional, responsive y segura.
 
 La aplicación contará con dos roles:
 
 - **Customer:** podrá explorar productos, gestionar el carrito, simular compras y consultar sus órdenes.
 - **Admin:** podrá administrar productos, imágenes y órdenes mediante un panel protegido.
 
-El objetivo es cumplir los requisitos del Proyecto Integrador 5 con una solución sencilla, mantenible y fácil de explicar
-durante su presentación.
+El objetivo es cumplir los requisitos del Proyecto Integrador 5 con una solución sencilla, mantenible y fácil de explicar durante su presentación.
 
 ## 2. Fuentes de referencia
 
@@ -26,15 +29,12 @@ El desarrollo seguirá este orden de prioridad:
 
 1. **Consigna oficial del Proyecto Integrador 5:** establece los requisitos funcionales, técnicos y de evaluación.
 2. **Guía de desarrollo del Proyecto Integrador 5:** orienta las etapas, buenas prácticas y criterios de verificación.
-3. **Repositorio del docente:** proporciona ejemplos y explicaciones de los conceptos trabajados.
-   https://github.com/HX-ARomero/m5-front-demo
-4. **Documentación oficial de las tecnologías:** se utilizará para comprobar instalaciones, compatibilidad y prácticas
-   técnicas vigentes.
+3. **Repositorio del docente:** proporciona ejemplos y explicaciones de los conceptos trabajados. https://github.com/HX-ARomero/m5-front-demo
+4. **Documentación oficial de las tecnologías:** se utilizará para comprobar instalaciones, compatibilidad y prácticas técnicas vigentes.
 
 Los materiales del docente serán referencias de aprendizaje, no código que deba copiarse automáticamente.
 
-Las mejoras propias se incorporarán cuando aporten valor sin sustituir requisitos obligatorios ni generar complejidad
-innecesaria.
+Las mejoras propias se incorporarán cuando aporten valor sin sustituir requisitos obligatorios ni generar complejidad innecesaria.
 
 ## 3. Tecnologías y versiones
 
@@ -67,8 +67,7 @@ innecesaria.
 
 ### Política de versiones
 
-Por decisión del desarrollador, se utilizará React 19 y versiones estables actuales de las demás herramientas,
-siempre que sean compatibles entre sí.
+Por decisión del desarrollador, se utilizará React 19 y versiones estables actuales de las demás herramientas, siempre que sean compatibles entre sí.
 
 La consigna original menciona React 18. Esta diferencia deberá validarse con el docente antes de la entrega.
 
@@ -78,8 +77,7 @@ Las versiones exactas se definirán y comprobarán durante la instalación inici
 
 ## 4. Identidad visual y experiencia de usuario
 
-Papelcorpsac adoptará una identidad corporativa premium, inspirada en la referencia visual proporcionada por
-el desarrollador.
+Papelcorpsac adoptará una identidad corporativa premium, inspirada en la referencia visual proporcionada por el desarrollador.
 
 ### Estilo visual
 
@@ -133,11 +131,11 @@ Los productos, precios y existencias son demostrativos.
 
 ### Estado implementado del catálogo
 
-Posteriormente se aprobó ampliar el catálogo a 60 productos en soles peruanos (PEN): doce principales y 48
-demostrativos, distribuidos en las mismas cuatro categorías con 15 productos por categoría. Los doce productos
-principales conservan sus imágenes reales; los 48 adicionales utilizan una imagen demostrativa SVG local. El código
-local contiene los datos de seed. El seguimiento reporta que los 60 productos se publicaron en Firestore; ese estado
-remoto no se verifica mediante la lectura del repositorio.
+Posteriormente se aprobó ampliar el catálogo a 60 productos en soles peruanos (PEN): doce principales y 48 demostrativos, distribuidos en las mismas cuatro categorías con 15 productos por categoría.
+
+Los doce productos principales conservan sus imágenes reales; los 48 adicionales utilizan una imagen demostrativa SVG local. El código local contiene los datos de seed.
+
+El seguimiento reporta que los 60 productos se publicaron en Firestore; ese estado remoto no se verifica mediante la lectura del repositorio.
 
 ### Autenticación
 
@@ -207,8 +205,7 @@ Principios generales:
 - Hooks para lógica React reutilizable.
 - Servicios para interactuar con Firebase y AWS.
 
-La organización inicial seguirá preferentemente un enfoque por capas, como el explicado en
-el repositorio del docente.
+La organización inicial seguirá preferentemente un enfoque por capas, como el explicado en el repositorio del docente.
 
 La estructura concreta de carpetas se definirá después de instalar React y conforme aparezcan necesidades reales.
 
@@ -231,45 +228,90 @@ No se crearán componentes, abstracciones ni directorios innecesarios.
 ### Decisiones aprobadas para checkout (pendientes de implementación)
 
 - Utilizar Vercel Serverless Functions como backend de las operaciones de checkout.
-- Verificar en servidor los Firebase ID tokens mediante Firebase Admin SDK. Derivar el UID exclusivamente del token
-  verificado; no confiar en estados de React, localStorage ni identificadores enviados por el cliente.
-- No confiar en precios ni stock enviados por el navegador. Obtener productos, precios vigentes y disponibilidad
-  desde Firestore antes de procesar la compra.
+- Verificar en servidor los Firebase ID tokens mediante Firebase Admin SDK. Derivar el UID exclusivamente del token verificado; no confiar en estados de React, localStorage ni identificadores enviados por el cliente.
+- No confiar en precios ni stock enviados por el navegador. Obtener productos, precios vigentes y disponibilidad desde Firestore antes de procesar la compra.
 - Simular el pago, sin efectuar cobros reales.
-- Crear cada orden con estado inicial `pending`; conservar los estados `processing`, `completed` y `cancelled`
-  definidos en este documento.
+- Crear cada orden con estado inicial `pending`; conservar los estados `processing`, `completed` y `cancelled` definidos en este documento.
 - Crear la orden y descontar el stock dentro de una transacción atómica.
 - Aplicar idempotencia para evitar órdenes duplicadas por reintentos.
 - Vaciar el carrito únicamente después de confirmar la creación de la orden.
 
-Estas son decisiones de diseño aprobadas para T07; no describen funcionalidades implementadas.
+Estas son decisiones de diseño aprobadas para T07. La infraestructura y la verificación reutilizable de autenticación disponen de avances implementados y validados localmente, pero el checkout, la creación de órdenes y el descuento de stock continúan pendientes.
 
 ### Autenticación de servidor y entornos (T07.2)
 
-- Utilizar Firebase Authentication Emulator solo en desarrollo local, con el proyecto de demostración
-  `demo-papelcorpsac` y host `127.0.0.1:9099`.
-- Rechazar cualquier configuración del emulador en Vercel Preview y Production.
-- Para un endpoint de diagnóstico, verificar tokens con `verifyIdToken(token)`. Para futuras operaciones sensibles
-  de creación de órdenes, usar `verifyIdToken(token, true)` para comprobar revocación.
-- Mantener separadas las variables públicas `VITE_*` del frontend y los secretos de servidor.
-- La configuración de credenciales reales de servidor en Vercel queda pendiente de la etapa correspondiente; no
-  almacenar secretos en el repositorio ni exponerlos al cliente.
-- Reutilizar los módulos de servidor de verificación y autenticación en la implementación definitiva del checkout.
-- Actualmente `firebase-admin@14.5.0` figura en `devDependencies` y no está integrado en la API. Su ubicación como
-  dependencia de runtime, así como la gestión segura de credenciales, se evaluarán antes de implementar T07.2-B.
+**Estado de T07.2-A:** Firebase Authentication Emulator configurado y verificado localmente para el proyecto ficticio `demo-papelcorpsac`, en `127.0.0.1:9099`. Commit publicado: `1a1b71337bbf80ab1ad2d8e457a2c335fb5327b2`.
+
+**Estado de T07.2-B:** implementación y verificaciones locales realizadas; cierre y publicación pendientes por la evaluación de seguridad de dependencias y las comprobaciones finales.
+
+Archivos implementados para T07.2-B:
+
+- `server/firebaseAdmin.ts`: inicialización reutilizable de Firebase Admin y validación de configuración.
+- `server/auth.ts`: extracción de Bearer token, verificación mediante Firebase Admin y obtención del UID verificado.
+- `api/auth-check.ts`: endpoint de diagnóstico `GET /api/auth-check`.
+- Pruebas unitarias correspondientes en `server/` y `api/`.
+
+`firebase-admin@14.5.0` está declarado en `dependencies`, por ser necesario para las funciones de servidor, y se sincronizó `package-lock.json`.
+
+Decisiones y restricciones:
+
+- Utilizar Firebase Authentication Emulator únicamente para pruebas locales autorizadas, con el proyecto `demo-papelcorpsac` y host exacto `127.0.0.1:9099`.
+- Exigir `PAPELCORPSAC_USE_AUTH_EMULATOR=true`, `FIREBASE_PROJECT_ID=demo-papelcorpsac` y `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` para activar el emulador.
+- Rechazar el modo emulador cuando `NODE_ENV=production`, cuando `VERCEL_ENV` sea distinto de `development` o cuando existan marcadores Vercel sin identificar el entorno como `development`.
+- Las variables de entorno no demuestran por sí solas una ejecución físicamente local. La configuración de Preview y Production deberá excluir las variables del emulador.
+- Para el endpoint de diagnóstico, utilizar `verifyIdToken(token)`; para futuras operaciones sensibles de creación de órdenes, se prevé `verifyIdToken(token, true)` para comprobar revocación.
+- Admitir JWT sin firma únicamente cuando la configuración validada autorice el Authentication Emulator. Fuera de ese modo, exigir firma no vacía. En todos los casos, Firebase Admin conserva la responsabilidad de verificar el token y sus claims.
+- Mantener separadas las variables públicas `VITE_*` del frontend y la configuración privada del servidor.
+- No almacenar secretos en el repositorio ni exponerlos al cliente.
+- Mantener las credenciales reales del servidor y su configuración en Vercel como asuntos pendientes de la etapa correspondiente.
+- Reutilizar los módulos de autenticación de servidor en el futuro checkout, sin implementar todavía operaciones comerciales.
+
+Evidencia de T07.2-B reportada por el desarrollador:
+
+- `npm.cmd run typecheck:api`: satisfactorio.
+- `npm.cmd run test`: 89 de 89 pruebas aprobadas.
+- `npm.cmd run lint`: satisfactorio.
+- `npm.cmd run build`: satisfactorio, con advertencia no bloqueante de chunk JavaScript superior a 500 kB.
+- `GET /api/auth-check` sin token: HTTP 401.
+- Token válido de `demo-papelcorpsac`: HTTP 200, `{"authenticated":true}`.
+- JWT ficticio: HTTP 401.
+- Token emitido por un segundo emulador para `demo-other-project`, con audiencia y emisor previamente comprobados: HTTP 401.
+- `git diff --check`: sin errores reportados.
+
+Las pruebas se realizaron con emuladores y Vercel local. No equivalen a validación de un despliegue real en Vercel Preview o Production.
 
 ### Seguridad de dependencias
 
 Se utilizarán versiones estables y compatibles.
 
-Después de instalar o actualizar dependencias, se revisarán las vulnerabilidades conocidas,
-especialmente las moderadas, altas y críticas.
+Después de instalar o actualizar dependencias, se revisarán las vulnerabilidades conocidas, especialmente las moderadas, altas y críticas.
 
 Las correcciones deberán preservar la compatibilidad y superar las verificaciones del proyecto.
 
 No se utilizarán overrides ni actualizaciones forzadas sin identificar primero el problema que deben resolver.
 
 Los procedimientos y resultados de auditoría se registrarán durante las tareas correspondientes.
+
+**Hallazgo vigente de T07.2-B — 10 de noviembre de 2026:**
+
+- `npm audit` y `npm audit --omit=dev` reportaron cinco alertas moderadas, sin hallazgos altos ni críticos reportados.
+- La cadena está relacionada con `glob@10.5.0`, `rimraf@5.0.10`, `google-gax@5.0.8`, `gaxios@7.1.3` y `gcp-metadata@8.1.4`, dentro de dependencias transitivas opcionales de Firestore asociadas a Firebase Admin.
+- El aviso principal es `GHSA-3g3m-2fjr-6pw4`, sobre la cancelación de operaciones de recorrido de archivos.
+- El endpoint actual de autenticación importa `firebase-admin/app` y `firebase-admin/auth`, sin consultar Firestore. Esto limita la exposición funcional identificada, pero no demuestra que los paquetes vulnerables estén ausentes del artefacto de producción.
+- La cadena sigue presente en el árbol auditado y no se considera corregida.
+- No se aplicarán overrides de versiones mayores ni `npm audit fix --force` sin evidencia de compatibilidad y autorización expresa.
+
+**Decisión aprobada:** se acepta temporalmente el riesgo identificado **solo para continuar el desarrollo y las verificaciones locales de T07.2-B**, usando proyectos de demostración y emuladores, sin credenciales productivas ni operaciones de escritura comercial.
+
+Esta aceptación no es una corrección de seguridad, no elimina las alertas de npm y no autoriza despliegues.
+
+**Condiciones de reevaluación obligatoria:**
+
+- Antes de incorporar operaciones sensibles de Firestore para checkout y órdenes, evaluar nuevamente la cadena vulnerable y las alternativas compatibles.
+- Antes de cualquier despliegue Vercel, revisar el árbol y el artefacto efectivo de producción, decidir y verificar la mitigación o corrección correspondiente, así como la configuración segura de credenciales y entornos.
+- Ante nuevas versiones compatibles o cambios en los avisos de seguridad, repetir las auditorías y las pruebas pertinentes.
+
+La autorización de commit y push deberá evaluarse por separado, tras las verificaciones finales, el control de archivos y la confirmación de ausencia de secretos.
 
 ## 8. Testing y despliegue
 
@@ -297,6 +339,8 @@ Las pruebas se incorporarán progresivamente durante el desarrollo.
 - URL pública funcional.
 - Verificación de los recorridos customer y admin.
 - Comprobación del funcionamiento en dispositivos móviles.
+
+El despliegue de funciones de servidor permanece bloqueado mientras no se complete la evaluación y el tratamiento del riesgo de dependencias de producción. La integración local con emuladores no constituye evidencia de despliegue público.
 
 ## 9. Uso de IA y responsabilidades
 
@@ -328,21 +372,28 @@ No se inventarán evidencias ni reflexiones.
 - Autorizar cambios sensibles y despliegues.
 - Documentar el aprendizaje con IA.
 - Tomar las decisiones finales.
+- Ejecutar manualmente los comandos y comprobar los resultados en su equipo.
 
-**GitHub Copilot:**
+**Implementación asistida con IA:**
 
-- Desarrollar funcionalidades autorizadas.
-- Implementar componentes y servicios.
+- Desarrollar únicamente funcionalidades autorizadas.
+- Proponer componentes, servicios y código completo en el chat cuando se solicite modificar archivos.
 - Aplicar el diseño visual aprobado.
-- Crear y ejecutar pruebas pertinentes.
-- Proponer correcciones y mejoras justificadas.
+- Proponer pruebas pertinentes.
+- Explicar los cambios, riesgos y verificaciones necesarias.
+- No afirmar que se ejecutaron comandos o pruebas sin evidencia del desarrollador.
 
-**Reviewer:**
+GitHub Copilot se utilizó durante las etapas anteriores. A partir de T07.2-B, por agotamiento de los créditos del plan gratuito, el desarrollo continuará manualmente en VS Code con asistencia desde este chat, sin ZIP ni documentos descargables.
+
+**Revisión técnica:**
 
 - Revisar código y requisitos.
 - Detectar errores y riesgos.
 - Identificar sobreingeniería.
-- Informar resultados sin modificar archivos.
+- Informar resultados sin modificar archivos durante una revisión de solo lectura.
+- Distinguir la evidencia aportada por el desarrollador de las comprobaciones todavía pendientes.
+
+El desarrollador conserva la responsabilidad de autorizar los cambios y ejecutarlos.
 
 ## 10. Alcance y criterios de finalización
 
@@ -371,9 +422,8 @@ Papelcorpsac se considerará terminado cuando:
 - La interfaz sea responsive y accesible.
 - Las integraciones externas estén verificadas.
 - Las pruebas relevantes sean satisfactorias.
-- Las dependencias hayan sido revisadas.
+- Las dependencias hayan sido revisadas y sus riesgos tratados conforme a las decisiones de seguridad.
 - La aplicación esté desplegada y accesible.
 - El README contenga la documentación técnica y la bitácora de IA requerida.
 
-El desarrollo seguirá el principio de cumplir los requisitos con la menor complejidad razonable,
-sin sacrificar funcionalidad, calidad ni seguridad.
+El desarrollo seguirá el principio de cumplir los requisitos con la menor complejidad razonable, sin sacrificar funcionalidad, calidad ni seguridad.
