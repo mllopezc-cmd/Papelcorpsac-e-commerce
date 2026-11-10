@@ -120,22 +120,24 @@ La implementación visual priorizará la reutilización y evitará efectos decor
 
 ## 5. Catálogo y funcionalidades
 
-### Catálogo inicial
+### Catálogo previsto inicialmente
 
-Se utilizará un catálogo demostrativo de doce productos distribuidos en cuatro categorías:
+El alcance inicial contemplaba un catálogo demostrativo de doce productos distribuidos en cuatro categorías:
 
 - Instrumentos de escritura.
 - Papelería.
 - Artículos de oficina.
 - Accesorios de escritorio.
 
-Los productos, precios y existencias serán demostrativos. La selección definitiva se aprobará antes de cargar
-los datos en Firestore.
+Los productos, precios y existencias son demostrativos.
 
-Posteriormente se aprobó e implementó ampliar el catálogo demostrativo a 60 productos en soles peruanos (PEN):
-12 productos principales y 48 productos adicionales, distribuidos en las mismas cuatro categorías con 15 productos
-por categoría. Los doce productos principales conservan sus imágenes reales; los 48 adicionales utilizan una
-imagen demostrativa SVG local.
+### Estado implementado del catálogo
+
+Posteriormente se aprobó ampliar el catálogo a 60 productos en soles peruanos (PEN): doce principales y 48
+demostrativos, distribuidos en las mismas cuatro categorías con 15 productos por categoría. Los doce productos
+principales conservan sus imágenes reales; los 48 adicionales utilizan una imagen demostrativa SVG local. El código
+local contiene los datos de seed. El seguimiento reporta que los 60 productos se publicaron en Firestore; ese estado
+remoto no se verifica mediante la lectura del repositorio.
 
 ### Autenticación
 
@@ -225,6 +227,36 @@ No se crearán componentes, abstracciones ni directorios innecesarios.
 - Proteger las operaciones administrativas.
 - Verificar datos comerciales antes de crear órdenes.
 - Utilizar URLs prefirmadas para cargas autorizadas a S3.
+
+### Decisiones aprobadas para checkout (pendientes de implementación)
+
+- Utilizar Vercel Serverless Functions como backend de las operaciones de checkout.
+- Verificar en servidor los Firebase ID tokens mediante Firebase Admin SDK. Derivar el UID exclusivamente del token
+  verificado; no confiar en estados de React, localStorage ni identificadores enviados por el cliente.
+- No confiar en precios ni stock enviados por el navegador. Obtener productos, precios vigentes y disponibilidad
+  desde Firestore antes de procesar la compra.
+- Simular el pago, sin efectuar cobros reales.
+- Crear cada orden con estado inicial `pending`; conservar los estados `processing`, `completed` y `cancelled`
+  definidos en este documento.
+- Crear la orden y descontar el stock dentro de una transacción atómica.
+- Aplicar idempotencia para evitar órdenes duplicadas por reintentos.
+- Vaciar el carrito únicamente después de confirmar la creación de la orden.
+
+Estas son decisiones de diseño aprobadas para T07; no describen funcionalidades implementadas.
+
+### Autenticación de servidor y entornos (T07.2)
+
+- Utilizar Firebase Authentication Emulator solo en desarrollo local, con el proyecto de demostración
+  `demo-papelcorpsac` y host `127.0.0.1:9099`.
+- Rechazar cualquier configuración del emulador en Vercel Preview y Production.
+- Para un endpoint de diagnóstico, verificar tokens con `verifyIdToken(token)`. Para futuras operaciones sensibles
+  de creación de órdenes, usar `verifyIdToken(token, true)` para comprobar revocación.
+- Mantener separadas las variables públicas `VITE_*` del frontend y los secretos de servidor.
+- La configuración de credenciales reales de servidor en Vercel queda pendiente de la etapa correspondiente; no
+  almacenar secretos en el repositorio ni exponerlos al cliente.
+- Reutilizar los módulos de servidor de verificación y autenticación en la implementación definitiva del checkout.
+- Actualmente `firebase-admin@14.5.0` figura en `devDependencies` y no está integrado en la API. Su ubicación como
+  dependencia de runtime, así como la gestión segura de credenciales, se evaluarán antes de implementar T07.2-B.
 
 ### Seguridad de dependencias
 

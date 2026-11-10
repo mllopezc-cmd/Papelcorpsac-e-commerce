@@ -59,15 +59,15 @@ Responsable: MANUAL
 Dependencia: T00
 
 - [ ] Comprobar Node.js y npm.
-- [ ] Inicializar React + TypeScript con Vite.
-- [ ] Verificar React 19 y React DOM compatibles.
+- [x] Inicializar React + TypeScript con Vite.
+- [x] Verificar React 19 y React DOM compatibles.
 - [ ] Revisar versiones estables de las dependencias.
 - [ ] Instalar dependencias.
-- [ ] Conservar package-lock.json.
+- [x] Conservar package-lock.json.
 - [ ] Ejecutar npm run dev.
-- [ ] Ejecutar npm run build.
-- [ ] Ejecutar npm audit.
-- [ ] Revisar vulnerabilidades moderadas, altas y críticas.
+- [x] Ejecutar npm run build.
+- [x] Ejecutar npm audit.
+- [x] Revisar vulnerabilidades moderadas, altas y críticas.
 
 Aceptación:
 
@@ -75,6 +75,12 @@ La aplicación base funciona, las versiones son compatibles y los hallazgos de s
 
 No copiar overrides anteriores preventivamente.
 No utilizar actualizaciones forzadas sin justificación.
+
+Evidencia y seguimiento:
+
+- La inicialización, las versiones declaradas, el lockfile y el build se respaldan con los archivos del proyecto y el registro de avances.
+- El registro de T01 reporta una auditoría inicial sin vulnerabilidades. Auditorías posteriores reportaron cinco hallazgos moderados de desarrollo relacionados con `glob`; se pospuso la corrección y sigue pendiente evaluar una solución compatible.
+- No hay evidencia suficiente en el registro para marcar la comprobación inicial de Node/npm, la instalación de dependencias ni la ejecución de `npm run dev`.
 
 ### T02 — Tailwind CSS, componentes y navegación
 
@@ -170,7 +176,7 @@ La carga de datos demostrativos en Firestore requiere autorización del desarrol
 
 Ampliaciones aprobadas e implementadas en T05:
 
-- Catálogo con 60 productos publicados, distribuidos en cuatro categorías: 12 productos principales y 48 demostrativos, con 15 productos por categoría.
+- El alcance inicial de doce productos se amplió a 60: doce principales y 48 demostrativos, distribuidos en cuatro categorías con 15 productos por categoría. El seguimiento reporta los 60 publicados en Firestore; su contenido remoto no puede verificarse leyendo el repositorio.
 - Los doce productos principales conservan sus imágenes reales; los 48 demostrativos utilizan el SVG local.
 - Paginación local de doce productos por página, con controles compactos y accesibles para móviles.
 - Favoritos disponibles para usuarios autenticados.
@@ -319,7 +325,7 @@ Responsables:
 - [ ] Preparar renderWithProviders.
 - [ ] Probar useAuth mediante renderHook.
 - [ ] Probar useCart mediante renderHook.
-- [ ] Probar todas las acciones de cartReducer.
+- [x] Probar todas las acciones de cartReducer.
 - [ ] Probar componentes importantes.
 - [ ] Probar integración de carrito y checkout.
 - [ ] Mockear Firebase y AWS.
@@ -338,8 +344,8 @@ Los tests se crean progresivamente durante las tareas anteriores; esta fase corr
 
 Responsable: MIXTO
 
-- [ ] Crear repositorio del proyecto.
-- [ ] Revisar .gitignore.
+- [x] Crear repositorio del proyecto.
+- [x] Revisar .gitignore.
 - [ ] Verificar que no existan secretos versionados.
 - [ ] Configurar GitHub Actions.
 - [ ] Ejecutar npm ci en CI.
@@ -373,6 +379,8 @@ La URL pública funciona y ambos roles pueden completar sus recorridos.
 
 Podrá realizarse un despliegue inicial anterior si el desarrollador lo autoriza.
 
+Estado previo reportado: el proyecto Vercel `looney-ai-chat/papelcorpsac` fue creado y vinculado localmente durante T07.1. La aplicación Papelcorpsac no está desplegada en producción y no se activó integración automática con GitHub. El proyecto existente podrá reutilizarse durante este despliegue formal.
+
 ### T15 — README, bitácora y presentación
 
 Responsable: MANUAL
@@ -392,6 +400,8 @@ La documentación permite reproducir el proyecto, la bitácora contiene al menos
 con aprendizajes y decisiones, y la demostración de ambos roles está preparada.
 
 Registrar evidencias de IA durante el desarrollo, no solamente al finalizar.
+
+Observación: README.md continúa siendo la plantilla genérica de Vite; su documentación del proyecto, bitácora y presentación permanecen pendientes.
 
 ## 10. Seguimiento
 
@@ -415,9 +425,11 @@ T07 — Implementar checkout: EN DESARROLLO.
 
 T07.1 — Infraestructura mínima de Vercel: IMPLEMENTADA Y VALIDADA LOCALMENTE.
 
-Próxima intervención pendiente: T07.2 — Autenticación confiable en servidor.
+T07.2-A — Configuración de Firebase Authentication Emulator: IMPLEMENTADA Y VERIFICADA LOCALMENTE (sin commit reportado).
 
-Bloqueos: Ninguno registrado.
+Próxima intervención pendiente: T07.2-B — Verificación de tokens en servidor (pendiente de autorización).
+
+Bloqueos: Autorización para T07.2-B pendiente.
 
 Registro de avances:
 
@@ -428,8 +440,11 @@ Registro de avances:
 | 2026-11-05 | T02   | Tailwind CSS 4 con Vite; React Router y navegación pública; identidad PAPEL CORP y diseño responsive; modos claro/oscuro con persistencia; accesibilidad y contraste revisados; `npm run lint` y `npm run build` satisfactorios; `npm audit`: cero vulnerabilidades; Reviewer: APROBADO | Completada | Ninguno |
 | 2026-11-05 | T03   | Proyecto Firebase `papelcorpsac`; Firestore `(default)` en `us-east1`, modo producción y reglas iniciales de denegación; Authentication con correo/contraseña y Google; app web Papelcorpsac-web registrada; `.env` con seis variables verificadas sin mostrar valores; `.env.example` con seis nombres vacíos; `.gitignore` ignora `.env` y permite `.env.example`; `git status --short`: únicamente `?? .env.example` | Completada | Ninguno |
 | 2026-11-06 | T04   | Registro e inicio de sesión con correo y contraseña; inicio con Google; perfiles creados automáticamente en Firestore con rol `customer`; primer admin configurado manualmente desde Firebase Console; persistencia comprobada; `/admin` denegado a customer y acceso autorizado para admin; reglas Firestore publicadas; `npm run lint`, `npm run build`, `npm audit` (cero vulnerabilidades) y `git diff --check` satisfactorios. Observación: bundle JavaScript de 840.06 kB; advertencia informativa, no es un error de compilación ni un bloqueo de T04 | Completada | Ninguno |
-| 2026-11-10 | T05   | Catálogo de 60 productos en cuatro categorías; doce productos principales con imágenes reales y 48 demostrativos con SVG local; búsqueda, filtros, detalle, favoritos y paginación local responsive; comprobación manual de catálogo, filtros, búsqueda, favoritos y navegación; responsive en escritorio y móvil; `npm.cmd run lint`, `npm.cmd run build` y `git diff --cached --check` satisfactorios; commit `51244e6` publicado en `main`, sincronizada con `origin/main`. `npm audit`: cinco hallazgos moderados de desarrollo relacionados con `glob` y dependencias; producción, cero vulnerabilidades; resolución aplazada. Advertencia no bloqueante de Vite: chunk de aproximadamente 580,48 kB minificados; optimización aplazada | Completada | Evaluar solución compatible para hallazgos de `glob`; optimizar chunk Vite |
+| 2026-11-10 | T05   | Código local de catálogo, filtros, búsqueda, detalle y paginación; el seguimiento reporta 60 productos publicados en Firestore (doce principales y 48 demostrativos), estado remoto no verificable mediante el repositorio; comprobación manual de catálogo, filtros, búsqueda, favoritos y navegación; responsive en escritorio y móvil; `npm.cmd run lint`, `npm.cmd run build` y `git diff --cached --check` satisfactorios; commit `51244e6` publicado en `main`, sincronizada con `origin/main`. `npm audit`: cinco hallazgos moderados de desarrollo relacionados con `glob` y dependencias; producción, cero vulnerabilidades; resolución aplazada. Advertencia no bloqueante de Vite: chunk de aproximadamente 580,48 kB minificados; optimización aplazada | Completada | Evaluar solución compatible para hallazgos de `glob`; optimizar chunk Vite |
 | No indicada | T06   | Evidencia reportada por el desarrollador: carrito con Context API, `useReducer` y `useCart`; ruta pública `/carrito`; operaciones de agregar, actualizar, eliminar y vaciar; unidades y subtotales en PEN; persistencia local versionada comprobada como visitante, al recargar y con Atrás/Adelante; notificación tras adiciones aceptadas; selector `+`/`−` y disponibilidad dinámica sin modificar el stock de Firestore; 10 escenarios UX satisfactorios; Vitest 5.1.0; 42/42 pruebas del reducer; lint sin errores ni advertencias; build satisfactorio. Revisión de solo lectura de Reviewer: APROBADO CON OBSERVACIONES, sin defectos bloqueantes | Completada | Permanecen las cinco alertas moderadas de desarrollo y la advertencia no bloqueante de chunk Vite; auditoría de producción reportada con cero vulnerabilidades |
-| No indicada | T07.1 | Evidencias ejecutadas por el desarrollador y reportadas a Reviewer: Node.js v24.19.0; Vercel CLI 65.14.0 instalada globalmente; proyecto Vercel `looney-ai-chat/papelcorpsac` creado y vinculado localmente, sin integración de despliegues automáticos con GitHub; creado `api/health.ts`, configuración TypeScript aislada `tsconfig.api.json` y regla `.vercel` en `.gitignore`; TypeScript, ESLint y build satisfactorios; Vitest, 42/42 pruebas existentes aprobadas; `GET /api/health` HTTP 200 con JSON esperado, `POST /api/health` HTTP 405; rutas `/`, `/carrito` y `/catalogo` HTTP 200; T07.1 no utilizó Firebase Admin SDK, Firestore ni credenciales. Reviewer: APROBADO CON OBSERVACIONES, sin defectos bloqueantes | Avance parcial implementado y validado localmente; infraestructura no desplegada en producción | T07.2 — Autenticación confiable en servidor y el resto del checkout siguen pendientes. El HTTP 405 no incluye `Allow: GET` (observación no bloqueante). La configuración inicial del proyecto Vercel podrá reutilizarse en el despliegue formal, sin dar esa etapa por completada. Se conservan las cinco alertas moderadas de desarrollo relacionadas con `glob` y la advertencia no bloqueante del chunk Vite de aproximadamente 580,48 kB minificados |
+| No indicada | T07.1 | Evidencias ejecutadas por el desarrollador y reportadas a Reviewer: Node.js v24.19.0; Vercel CLI 65.14.0 instalada globalmente; proyecto Vercel `looney-ai-chat/papelcorpsac` creado y vinculado localmente, sin integración de despliegues automáticos con GitHub; creado `api/health.ts`, configuración TypeScript aislada `tsconfig.api.json` y regla `.vercel` en `.gitignore`; TypeScript, ESLint y build satisfactorios; Vitest, 42/42 pruebas existentes aprobadas; `GET /api/health` HTTP 200 con JSON esperado, `POST /api/health` HTTP 405; rutas `/`, `/carrito` y `/catalogo` HTTP 200; T07.1 no utilizó Firebase Admin SDK, Firestore ni credenciales. Commit `5c83725` publicado en GitHub, según confirmación del desarrollador. Reviewer: APROBADO CON OBSERVACIONES, sin defectos bloqueantes | Avance parcial implementado y validado localmente; commit publicado en GitHub; aplicación no desplegada en producción | T07.2 — Autenticación confiable en servidor y el resto del checkout siguen pendientes. El HTTP 405 no incluye `Allow: GET` (observación no bloqueante). La configuración inicial del proyecto Vercel podrá reutilizarse en el despliegue formal, sin dar esa etapa por completada. Se conservan las cinco alertas moderadas de desarrollo relacionadas con `glob` y la advertencia no bloqueante del chunk Vite de aproximadamente 580,48 kB minificados |
+| No indicada | T07.2-A | Evidencia manual ejecutada por el desarrollador y reportada a Reviewer: Firebase CLI confirmó `All emulators ready` para el proyecto aislado `demo-papelcorpsac`, con Authentication Emulator únicamente en `127.0.0.1:9099`; `curl.exe -i http://127.0.0.1:9099/` respondió HTTP 200 con JSON `authEmulator.ready: true`. Revisión de solo lectura de Copilot Reviewer: APROBADO CON OBSERVACIONES, sin bloqueantes. Sin commit reportado | Implementada y verificada localmente | T07.2-B — Verificación de tokens en servidor pendiente de autorización; T07 y T07.2 no están completadas |
+| No indicada | T13   | Repositorio GitHub creado; el desarrollador reporta commits publicados en la rama `main`, incluido `5c83725` de T07.1 | Avance parcial reportado | Configurar y validar GitHub Actions/CI, automatizar pruebas, lint, build y auditoría; verificar el historial de secretos |
+| No indicada | T14   | El desarrollador reporta que el proyecto Vercel `looney-ai-chat/papelcorpsac` fue creado y vinculado localmente durante T07.1; no se desplegó Papelcorpsac a producción ni se activó integración automática con GitHub | Avance de configuración externa reportado; T14 pendiente | Reutilizar el proyecto en el despliegue formal y completar configuración por entorno, publicación y verificaciones de producción |
 
 No registrar pruebas o configuraciones inexistentes.
