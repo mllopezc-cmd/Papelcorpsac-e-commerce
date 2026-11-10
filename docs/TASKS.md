@@ -395,7 +395,7 @@ Registrar evidencias de IA durante el desarrollo, no solamente al finalizar.
 
 ## 10. Seguimiento
 
-Tarea activa: Ninguna.
+Tarea activa: T07 — Implementar checkout (en desarrollo).
 
 T00 — Documentación inicial: COMPLETADA.
 
@@ -411,7 +411,11 @@ T05 — Implementar catálogo: COMPLETADA.
 
 T06 — Implementar carrito: COMPLETADA.
 
-Próxima tarea: T07 — Implementar checkout.
+T07 — Implementar checkout: EN DESARROLLO.
+
+T07.1 — Infraestructura mínima de Vercel: IMPLEMENTADA Y VALIDADA LOCALMENTE.
+
+Próxima intervención pendiente: T07.2 — Autenticación confiable en servidor.
 
 Bloqueos: Ninguno registrado.
 
@@ -426,5 +430,6 @@ Registro de avances:
 | 2026-11-06 | T04   | Registro e inicio de sesión con correo y contraseña; inicio con Google; perfiles creados automáticamente en Firestore con rol `customer`; primer admin configurado manualmente desde Firebase Console; persistencia comprobada; `/admin` denegado a customer y acceso autorizado para admin; reglas Firestore publicadas; `npm run lint`, `npm run build`, `npm audit` (cero vulnerabilidades) y `git diff --check` satisfactorios. Observación: bundle JavaScript de 840.06 kB; advertencia informativa, no es un error de compilación ni un bloqueo de T04 | Completada | Ninguno |
 | 2026-11-10 | T05   | Catálogo de 60 productos en cuatro categorías; doce productos principales con imágenes reales y 48 demostrativos con SVG local; búsqueda, filtros, detalle, favoritos y paginación local responsive; comprobación manual de catálogo, filtros, búsqueda, favoritos y navegación; responsive en escritorio y móvil; `npm.cmd run lint`, `npm.cmd run build` y `git diff --cached --check` satisfactorios; commit `51244e6` publicado en `main`, sincronizada con `origin/main`. `npm audit`: cinco hallazgos moderados de desarrollo relacionados con `glob` y dependencias; producción, cero vulnerabilidades; resolución aplazada. Advertencia no bloqueante de Vite: chunk de aproximadamente 580,48 kB minificados; optimización aplazada | Completada | Evaluar solución compatible para hallazgos de `glob`; optimizar chunk Vite |
 | No indicada | T06   | Evidencia reportada por el desarrollador: carrito con Context API, `useReducer` y `useCart`; ruta pública `/carrito`; operaciones de agregar, actualizar, eliminar y vaciar; unidades y subtotales en PEN; persistencia local versionada comprobada como visitante, al recargar y con Atrás/Adelante; notificación tras adiciones aceptadas; selector `+`/`−` y disponibilidad dinámica sin modificar el stock de Firestore; 10 escenarios UX satisfactorios; Vitest 5.1.0; 42/42 pruebas del reducer; lint sin errores ni advertencias; build satisfactorio. Revisión de solo lectura de Reviewer: APROBADO CON OBSERVACIONES, sin defectos bloqueantes | Completada | Permanecen las cinco alertas moderadas de desarrollo y la advertencia no bloqueante de chunk Vite; auditoría de producción reportada con cero vulnerabilidades |
+| No indicada | T07.1 | Evidencias ejecutadas por el desarrollador y reportadas a Reviewer: Node.js v24.19.0; Vercel CLI 65.14.0 instalada globalmente; proyecto Vercel `looney-ai-chat/papelcorpsac` creado y vinculado localmente, sin integración de despliegues automáticos con GitHub; creado `api/health.ts`, configuración TypeScript aislada `tsconfig.api.json` y regla `.vercel` en `.gitignore`; TypeScript, ESLint y build satisfactorios; Vitest, 42/42 pruebas existentes aprobadas; `GET /api/health` HTTP 200 con JSON esperado, `POST /api/health` HTTP 405; rutas `/`, `/carrito` y `/catalogo` HTTP 200; T07.1 no utilizó Firebase Admin SDK, Firestore ni credenciales. Reviewer: APROBADO CON OBSERVACIONES, sin defectos bloqueantes | Avance parcial implementado y validado localmente; infraestructura no desplegada en producción | T07.2 — Autenticación confiable en servidor y el resto del checkout siguen pendientes. El HTTP 405 no incluye `Allow: GET` (observación no bloqueante). La configuración inicial del proyecto Vercel podrá reutilizarse en el despliegue formal, sin dar esa etapa por completada. Se conservan las cinco alertas moderadas de desarrollo relacionadas con `glob` y la advertencia no bloqueante del chunk Vite de aproximadamente 580,48 kB minificados |
 
 No registrar pruebas o configuraciones inexistentes.
