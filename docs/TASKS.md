@@ -154,19 +154,44 @@ Las reglas de Firestore respaldan las restricciones.
 Responsable: COPILOT
 Dependencias: T02, T03
 
-- [ ] Consultar productos desde Firestore.
-- [ ] Mostrar listado y tarjetas reutilizables.
-- [ ] Filtrar por categoría.
-- [ ] Buscar por nombre con debounce.
-- [ ] Mostrar detalle de producto.
-- [ ] Gestionar estados de carga, vacío y error.
-- [ ] Verificar diseño responsive.
+- [x] Consultar productos desde Firestore.
+- [x] Mostrar listado y tarjetas reutilizables.
+- [x] Filtrar por categoría.
+- [x] Buscar por nombre con debounce.
+- [x] Mostrar detalle de producto.
+- [x] Gestionar estados de carga, vacío y error.
+- [x] Verificar diseño responsive.
 
 Aceptación:
 
 El catálogo funciona correctamente en móvil y escritorio y respeta la identidad visual de Papelcorpsac.
 
 La carga de datos demostrativos en Firestore requiere autorización del desarrollador.
+
+Ampliaciones aprobadas e implementadas en T05:
+
+- Catálogo con 60 productos publicados, distribuidos en cuatro categorías: 12 productos principales y 48 demostrativos, con 15 productos por categoría.
+- Los doce productos principales conservan sus imágenes reales; los 48 demostrativos utilizan el SVG local.
+- Paginación local de doce productos por página, con controles compactos y accesibles para móviles.
+- Favoritos disponibles para usuarios autenticados.
+- Reglas restrictivas de Firestore para el catálogo y los favoritos.
+- Seeder administrativo principal conservado y deshabilitado por defecto.
+- Se eliminaron los dos scripts administrativos temporales utilizados para cargar y publicar los 48 productos adicionales.
+
+Evidencia de T05:
+
+- Comprobación manual del catálogo, filtros, búsqueda, favoritos y navegación.
+- Verificaciones responsive en escritorio y móvil.
+- `npm.cmd run lint` satisfactorio.
+- `npm.cmd run build` satisfactorio.
+- `git diff --cached --check` sin errores reportados.
+- Commit `51244e6` publicado en GitHub; rama `main` sincronizada con `origin/main`.
+- No se registran pruebas automatizadas como ejecutadas.
+
+Asuntos pendientes:
+
+- `npm audit` reportó cinco hallazgos moderados en dependencias de desarrollo relacionados con `glob` y su árbol de dependencias. La auditoría de producción reportó cero vulnerabilidades. Por decisión del desarrollador, la corrección se pospone hasta evaluar una solución compatible.
+- Vite muestra una advertencia no bloqueante por un chunk JavaScript de aproximadamente 580,48 kB minificados. Su optimización se pospone.
 
 ### T06 — Implementar carrito
 
@@ -382,7 +407,9 @@ T03 — Configurar Firebase: COMPLETADA.
 
 T04 — Implementar autenticación y roles: COMPLETADA.
 
-Próxima tarea: T05 — Implementar catálogo.
+T05 — Implementar catálogo: COMPLETADA.
+
+Próxima tarea: T06 — Implementar carrito.
 
 Bloqueos: Ninguno registrado.
 
@@ -395,5 +422,6 @@ Registro de avances:
 | 2026-11-05 | T02   | Tailwind CSS 4 con Vite; React Router y navegación pública; identidad PAPEL CORP y diseño responsive; modos claro/oscuro con persistencia; accesibilidad y contraste revisados; `npm run lint` y `npm run build` satisfactorios; `npm audit`: cero vulnerabilidades; Reviewer: APROBADO | Completada | Ninguno |
 | 2026-11-05 | T03   | Proyecto Firebase `papelcorpsac`; Firestore `(default)` en `us-east1`, modo producción y reglas iniciales de denegación; Authentication con correo/contraseña y Google; app web Papelcorpsac-web registrada; `.env` con seis variables verificadas sin mostrar valores; `.env.example` con seis nombres vacíos; `.gitignore` ignora `.env` y permite `.env.example`; `git status --short`: únicamente `?? .env.example` | Completada | Ninguno |
 | 2026-11-06 | T04   | Registro e inicio de sesión con correo y contraseña; inicio con Google; perfiles creados automáticamente en Firestore con rol `customer`; primer admin configurado manualmente desde Firebase Console; persistencia comprobada; `/admin` denegado a customer y acceso autorizado para admin; reglas Firestore publicadas; `npm run lint`, `npm run build`, `npm audit` (cero vulnerabilidades) y `git diff --check` satisfactorios. Observación: bundle JavaScript de 840.06 kB; advertencia informativa, no es un error de compilación ni un bloqueo de T04 | Completada | Ninguno |
+| 2026-11-10 | T05   | Catálogo de 60 productos en cuatro categorías; doce productos principales con imágenes reales y 48 demostrativos con SVG local; búsqueda, filtros, detalle, favoritos y paginación local responsive; comprobación manual de catálogo, filtros, búsqueda, favoritos y navegación; responsive en escritorio y móvil; `npm.cmd run lint`, `npm.cmd run build` y `git diff --cached --check` satisfactorios; commit `51244e6` publicado en `main`, sincronizada con `origin/main`. `npm audit`: cinco hallazgos moderados de desarrollo relacionados con `glob` y dependencias; producción, cero vulnerabilidades; resolución aplazada. Advertencia no bloqueante de Vite: chunk de aproximadamente 580,48 kB minificados; optimización aplazada | Completada | Evaluar solución compatible para hallazgos de `glob`; optimizar chunk Vite |
 
 No registrar pruebas o configuraciones inexistentes.

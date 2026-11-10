@@ -132,6 +132,11 @@ Se utilizará un catálogo demostrativo de doce productos distribuidos en cuatro
 Los productos, precios y existencias serán demostrativos. La selección definitiva se aprobará antes de cargar
 los datos en Firestore.
 
+Posteriormente se aprobó e implementó ampliar el catálogo demostrativo a 60 productos en soles peruanos (PEN):
+12 productos principales y 48 productos adicionales, distribuidos en las mismas cuatro categorías con 15 productos
+por categoría. Los doce productos principales conservan sus imágenes reales; los 48 adicionales utilizan una
+imagen demostrativa SVG local.
+
 ### Autenticación
 
 - Registro con correo y contraseña o Google.
@@ -144,8 +149,11 @@ los datos en Firestore.
 
 - Listado de productos desde Firestore.
 - Filtro por categoría.
-- Búsqueda por nombre con debounce.
+- Búsqueda por nombre con debounce de 300 ms.
 - Detalle individual del producto.
+- Favoritos para usuarios autenticados.
+- Paginación local de doce productos por página, con navegación compacta en móviles.
+- Diseño responsive consistente con la identidad visual de PAPEL CORP.
 
 ### Carrito
 
