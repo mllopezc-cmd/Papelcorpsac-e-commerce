@@ -611,7 +611,7 @@ Verificación final reportada el 11 de noviembre de 2026:
 - `npm.cmd run test`: 284 pruebas aprobadas y 8 omitidas; 12 archivos aprobados y 1 omitido. Las ocho omitidas corresponden a integración de checkout; se habían ejecutado y aprobado separadamente durante T07.
 - `git diff --check`: sin errores; advertencia LF/CRLF no bloqueante para `src/App.tsx`.
 
-Estado: implementación y verificaciones funcionales completadas; reglas publicadas según confirmación del desarrollador. Cierre documental, revisión del diff y autorización de commit/push pendientes.
+Estado: T08 implementada y verificada; reglas de Firestore publicadas según confirmación del desarrollador; código publicado en GitHub en la rama `main` mediante el commit `b3107e1`. El cierre documental se registra en esta actualización.
 
 ## 8. Administración
 
@@ -789,7 +789,7 @@ README.md continúa siendo la plantilla genérica de Vite. Su documentación del
 
 **Última tarea funcional implementada y verificada:** T08 — Historial y detalle de órdenes.
 
-**Intervención actual:** cierre documental de T08; revisión del diff, autorización de commit y push pendientes.
+**Intervención actual:** publicación de la actualización documental final de T08; el código funcional ya está publicado en `main` mediante `b3107e1`.
 
 T00 — Documentación inicial: COMPLETADA.
 
@@ -829,6 +829,8 @@ T07.4-B — Pruebas del cliente y componente: COMPLETADA. Commits `fce557c` y `0
 
 T07.4-C — Protección del carrito e idempotencia: COMPLETADA. Commit `ee29994`.
 
+T08 — Historial y detalle de órdenes: COMPLETADA, VERIFICADA Y PUBLICADA EN GITHUB. Reglas de Firestore publicadas según confirmación del desarrollador. Commit de implementación: `b3107e1`. Cierre documental incluido en esta actualización.
+
 ### Registro de avances
 
 | Fecha | Tarea | Evidencia | Resultado | Pendiente |
@@ -852,23 +854,16 @@ T07.4-C — Protección del carrito e idempotencia: COMPLETADA. Commit `ee29994`
 | 2026-11-11 | T07.4-B | 36 pruebas de servicio y 18 de componente. Commits `fce557c` y `0aeddfb`. | Completada | Ninguno. |
 | 2026-11-11 | T07.4-C | Protección de carrito, persistencia de idempotencia y pruebas adicionales. Commit `ee29994`. | Completada | Ninguno funcional. |
 | 2026-11-11 | T07 integral | 264 pruebas aprobadas, ocho omitidas en la ejecución general; ocho de integración aprobadas por separado. Vercel local, Authentication Emulator y Firestore Emulator. | Verificada localmente | Despliegue público pendiente. |
-| 2026-11-11 | T08 | 20 pruebas específicas aprobadas (11 de servicio, 4 de historial y 5 de detalle); suite general posterior: 284 aprobadas y 8 omitidas; build y lint satisfactorios. Dos usuarios de prueba con órdenes independientes; historial propio, detalle, acceso cruzado, orden inexistente y escrituras directas comprobadas en Firebase Emulator. Reglas actualizadas publicadas en Firestore Console según confirmación del desarrollador. | Implementada y verificada localmente; reglas publicadas; cierre documental pendiente | Revisar los documentos actualizados, `git diff --check`, `git status`, confirmar alcance y ausencia de secretos; solicitar autorización expresa de commit y push. |
+| 2026-11-11 | T08 | 20 pruebas específicas aprobadas (11 de servicio, 4 de historial y 5 de detalle); suite general posterior: 284 aprobadas y 8 omitidas; build y lint satisfactorios. Dos usuarios de prueba con órdenes independientes; historial propio, detalle, acceso cruzado, orden inexistente y escrituras directas comprobadas en Firebase Emulator. Reglas actualizadas publicadas en Firestore Console según confirmación del desarrollador. | Completada y verificada localmente; reglas publicadas en Firestore Console; código publicado en GitHub mediante b3107e1; cierre documental incluido en esta actualización. | Ninguno. |
 
 ### Condiciones para continuar
 
-Antes del commit y push de T08:
-
-- Revisar el contenido completo de `docs/PROJECT.md` y `docs/TASKS.md` frente a la implementación y la evidencia aportada.
-- Ejecutar `git diff --check` y revisar `git diff`, `git status --short` y la lista de archivos.
-- Confirmar que los cambios corresponden a T08 y a su documentación, sin modificaciones ajenas.
-- Comprobar que no se incorporaron secretos ni archivos locales de entorno.
-- Obtener autorización expresa del desarrollador antes de commit y push.
-
 Antes de T09:
 
-- Cerrar documentalmente T08.
-- Completar la revisión de Git y publicar los cambios aprobados.
-- Solicitar autorización expresa para iniciar T09.
+- Confirmar que el cierre documental de T08 está versionado y publicado en `main`.
+- Verificar que el árbol de trabajo esté limpio.
+- Confirmar que `main` y `origin/main` estén sincronizadas.
+- Obtener autorización expresa para iniciar T09.
 - Mantener una sola tarea activa y respetar sus dependencias.
 
 Antes del despliegue público en Vercel:

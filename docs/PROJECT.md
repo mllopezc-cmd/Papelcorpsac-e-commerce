@@ -197,7 +197,7 @@ Estados de orden:
 
 **Estado de implementación de T07:** checkout funcional implementado y verificado localmente mediante pruebas automatizadas y recorrido HTTP integrado con Firebase Emulators.
 
-**Estado de implementación de T08:** historial y detalle de órdenes implementados, probados y verificados localmente con dos usuarios independientes mediante Firebase Emulators. Las reglas correspondientes fueron publicadas en Firestore Console según confirmación del desarrollador. El cierre documental y Git de T08 permanecen pendientes.
+**Estado de implementación de T08:** funcionalidad implementada y verificada localmente. El desarrollador confirmó la publicación de las reglas de Firestore en Firebase Console. El código está publicado en GitHub mediante el commit `b3107e1`. Esta actualización documental registra el cierre formal de T08.
 
 ### Panel administrativo
 
@@ -668,7 +668,7 @@ No equivalen a:
 
 ### 8.5 T08 — Historial y detalle de órdenes
 
-**Estado:** funcionalidad implementada y verificada localmente. El desarrollador confirmó la publicación de las reglas de Firestore en Firebase Console. El cierre documental y Git permanecen pendientes.
+**Estado de implementación de T08:** funcionalidad implementada y verificada localmente. El desarrollador confirmó la publicación de las reglas de Firestore en Firebase Console. El código está publicado en GitHub mediante el commit `b3107e1`. Esta actualización documental registra el cierre formal de T08.
 
 Archivos principales:
 
