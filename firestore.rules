@@ -73,6 +73,18 @@ service cloud.firestore {
       }
     }
 
+    match /orders/{orderId} {
+      allow get: if isSignedIn()
+        && (
+          resource == null
+          || isOwner(resource.data.userId)
+        );
+
+      allow list: if isOwner(resource.data.userId);
+
+      allow create, update, delete: if false;
+    }
+
     match /products/{productId} {
       allow get: if resource == null
         || resource.data.published == true;

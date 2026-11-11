@@ -184,7 +184,7 @@ El carrito utiliza un reducer para mantener las operaciones de forma predecible.
 - Descontar existencias de forma transaccional.
 - Aplicar idempotencia para evitar órdenes duplicadas.
 - Limpiar el carrito después de confirmar la orden.
-- Consultar historial y detalle de órdenes en una etapa posterior.
+- Consultar el historial y el detalle de las órdenes del cliente autenticado (T08).
 
 No se realizan cobros reales ni se solicitan datos bancarios.
 
@@ -197,7 +197,7 @@ Estados de orden:
 
 **Estado de implementación de T07:** checkout funcional implementado y verificado localmente mediante pruebas automatizadas y recorrido HTTP integrado con Firebase Emulators.
 
-El historial y detalle de órdenes corresponden a T08 y todavía no están implementados.
+**Estado de implementación de T08:** historial y detalle de órdenes implementados, probados y verificados localmente con dos usuarios independientes mediante Firebase Emulators. Las reglas correspondientes fueron publicadas en Firestore Console según confirmación del desarrollador. El cierre documental y Git de T08 permanecen pendientes.
 
 ### Panel administrativo
 
@@ -259,7 +259,18 @@ Backend:
 - `server/checkoutValidation.ts`: validación de solicitudes.
 - `server/checkoutService.ts`: lógica transaccional de órdenes.
 
-Pruebas:
+Historial y detalle de órdenes (T08):
+
+- `src/types/order.ts`: tipos de orden, artículos y estados permitidos.
+- `src/services/orderService.ts`: consulta del historial filtrado por UID, ordenamiento por fecha y consulta individual con validación del propietario y de los datos recibidos.
+- `src/pages/OrdersPage.tsx`: historial del cliente con carga, estado vacío, errores y reintentos.
+- `src/pages/OrderDetailPage.tsx`: detalle de una orden con artículos, importes, estado, carga, error, no encontrada y reintentos.
+- `src/pages/OrdersPage.test.tsx` y `src/pages/OrderDetailPage.test.tsx`: pruebas de las páginas.
+- `src/services/orderService.test.ts`: pruebas del servicio.
+- `src/App.tsx`: rutas protegidas `/mis-ordenes` y `/mis-ordenes/:orderId`.
+- `src/components/Header.tsx`: enlace «Mis órdenes» para usuarios autenticados.
+
+Pruebas de checkout y autenticación:
 
 - `api/auth-check.test.ts`.
 - `api/checkout.test.ts`.
@@ -458,19 +469,49 @@ No se realizan operaciones de limpieza incondicional después de cualquier respu
 
 ### 7.7 Reglas de Firestore
 
-Las reglas permanecen restrictivas.
+Las reglas de Firestore mantienen las órdenes protegidas por propietario y reservan las escrituras comerciales al backend.
 
-Las operaciones comerciales se realizan mediante Firebase Admin SDK en el servidor.
+La regla publicada para `orders` es:
 
-La lectura directa de órdenes mediante REST puede responder HTTP 403 por las reglas de seguridad.
+```javascript
+match /orders/{orderId} {
+  allow get: if isSignedIn()
+    && (
+      resource == null
+      || isOwner(resource.data.userId)
+    );
 
-Esto es esperado: los clientes no deben tener acceso indiscriminado a la colección de órdenes.
+  allow list: if isOwner(resource.data.userId);
 
-La consulta administrativa o del propietario deberá realizarse mediante los mecanismos autorizados de servidor y las reglas correspondientes.
+  allow create, update, delete: if false;
+}
+```
 
-No se habilitarán escrituras públicas para facilitar pruebas.
+Comportamiento:
 
-### 7.8 Auditoría de dependencias
+- `get`: requiere autenticación. Si el documento existe, solo su propietario puede leerlo. Si no existe, un usuario autenticado recibe el resultado de documento inexistente, sin datos de orden.
+- `list`: solo permite consultar documentos cuyo `userId` coincida con el UID autenticado. El cliente consulta el historial con `where('userId', '==', uid)`; las reglas no sustituyen ese filtro de consulta.
+- `create`, `update` y `delete`: permanecen denegados a clientes.
+- No se incorpora permiso administrativo para leer o modificar órdenes en esta etapa. La administración global de órdenes corresponde a T11 y deberá autorizarse expresamente.
+
+La condición `resource == null` permite distinguir una orden inexistente (HTTP 404 en la comprobación REST) de una orden existente que pertenece a otra cuenta (HTTP 403). Un usuario anónimo no puede consultar ni siquiera un identificador inexistente (HTTP 403). La existencia de un identificador puede inferirse por esa diferencia de respuesta; esta decisión se acepta para proporcionar el estado «orden no encontrada», mientras que el contenido de órdenes ajenas sigue protegido. Los identificadores de órdenes de producción se generan en el backend mediante un hash determinista del UID y la clave de idempotencia.
+
+Las operaciones de creación de órdenes y descuento de stock continúan ejecutándose mediante Firebase Admin SDK en el servidor T07; el SDK administrativo no está sujeto a las reglas de cliente. No se habilitan escrituras públicas para facilitar pruebas.
+
+**Estado de publicación:** el desarrollador confirmó la publicación de las reglas actualizadas en Firestore Console el 11 de noviembre de 2026. La validación de comportamiento se realizó previamente en Firestore Emulator con el proyecto ficticio `demo-papelcorpsac`.
+
+### 7.8 Configuración de emuladores en el frontend (T08)
+
+El cliente utiliza `VITE_USE_FIREBASE_EMULATORS` para conectar Firebase Authentication y Firestore Emulator únicamente durante desarrollo local.
+
+- `.env.example` mantiene `VITE_USE_FIREBASE_EMULATORS=false` por defecto.
+- La activación requiere `import.meta.env.DEV` y el proyecto ficticio `demo-papelcorpsac`.
+- Authentication Emulator utiliza `127.0.0.1:9099`.
+- Firestore Emulator utiliza `127.0.0.1:8080`.
+- `.env.development.local` está excluido de Git mediante `.gitignore` y se utiliza para las pruebas locales.
+- No se deben habilitar emuladores en Preview ni Production.
+
+### 7.9 Auditoría de dependencias
 
 Se utilizan versiones compatibles y estables.
 
@@ -495,7 +536,7 @@ Las auditorías deberán repetirse cuando se actualicen dependencias y antes del
 
 No se utilizarán overrides ni actualizaciones forzadas sin justificación y autorización.
 
-### 7.9 Advertencia de compilación
+### 7.10 Advertencia de compilación
 
 Vite continúa mostrando una advertencia no bloqueante relacionada con el tamaño de un chunk JavaScript superior a 500 kB minificados.
 
@@ -615,16 +656,58 @@ Todas estas operaciones se realizaron en emuladores locales. No se utilizaron se
 
 ### 8.4 Alcance de la verificación
 
-Las pruebas realizadas demuestran el comportamiento de las funciones de servidor y de los servicios mediante emuladores.
+Las pruebas realizadas demuestran el comportamiento de las funciones de servidor, los servicios y el historial/detalle de órdenes mediante emuladores.
 
 No equivalen a:
 
 - Despliegue de funciones en Vercel Production.
-- Prueba comercial con Firebase real.
+- Prueba comercial de checkout con Firebase real.
 - Integración con una pasarela de pagos.
-- Implementación del historial de órdenes.
-- Pruebas completas de navegación de todos los roles.
+- Implementación del panel de administración de órdenes (T11).
 - Revisión integral de calidad de T12.
+
+### 8.5 T08 — Historial y detalle de órdenes
+
+**Estado:** funcionalidad implementada y verificada localmente. El desarrollador confirmó la publicación de las reglas de Firestore en Firebase Console. El cierre documental y Git permanecen pendientes.
+
+Archivos principales:
+
+- `src/types/order.ts`.
+- `src/services/orderService.ts` y `src/services/orderService.test.ts`.
+- `src/pages/OrdersPage.tsx` y `src/pages/OrdersPage.test.tsx`.
+- `src/pages/OrderDetailPage.tsx` y `src/pages/OrderDetailPage.test.tsx`.
+- Integración de rutas protegidas en `src/App.tsx` y navegación en `src/components/Header.tsx`.
+- Reglas de propietario para `/orders/{orderId}` en `firestore.rules`.
+- Configuración del cliente y emuladores en `src/lib/firebase.ts` y `.env.example`.
+
+Cobertura automatizada específica de T08:
+
+- `orderService.test.ts`: 11 pruebas aprobadas.
+- `OrdersPage.test.tsx`: 4 pruebas aprobadas.
+- `OrderDetailPage.test.tsx`: 5 pruebas aprobadas.
+- Total: 20 pruebas específicas de T08 aprobadas.
+
+Verificación manual con Firebase Emulator Suite:
+
+- Se registraron dos usuarios de prueba independientes en `demo-papelcorpsac`, con perfiles `customer` asociados a sus UID.
+- Se crearon mediante Firebase Admin dos órdenes de demostración: `t08-demo-order-a` (S/ 25.00) y `t08-demo-order-b` (S/ 37.50), cada una asociada al UID correcto.
+- Cada usuario consultó una sola orden propia en el historial y pudo abrir su detalle.
+- Los intentos de consultar la orden del otro usuario fueron rechazados (HTTP 403).
+- Lectura de una orden propia: HTTP 200.
+- Consulta autenticada de una orden inexistente: HTTP 404.
+- Consulta anónima de una orden inexistente: HTTP 403.
+- Dos intentos de creación y dos de actualización directa de órdenes fueron rechazados (HTTP 403). Estas pruebas se ejecutaron antes del ajuste final de la condición `get`; las reglas `create`, `update` y `delete` no cambiaron en la versión final.
+- La prueba de eliminación directa de un documento temporal fue rechazada (HTTP 403); se verificó que el documento seguía existiendo y después se eliminó mediante Firebase Admin.
+- Las verificaciones se realizaron con Authentication Emulator (`127.0.0.1:9099`), Firestore Emulator (`127.0.0.1:8080`) y Vite (`127.0.0.1:5173`). Los datos de prueba pertenecen al proyecto ficticio y no al Firebase real.
+
+Verificación final reportada por el desarrollador el 11 de noviembre de 2026:
+
+- `npm.cmd run build`: satisfactorio; Vite transformó 144 módulos. Se mantuvo la advertencia no bloqueante de un chunk superior a 500 kB (archivo `index.esm` de aproximadamente 580,46 kB minificados).
+- `npm.cmd run lint`: satisfactorio.
+- `npm.cmd run test`: 12 archivos aprobados, 1 archivo omitido; 284 pruebas aprobadas y 8 omitidas (292 en total). El archivo omitido corresponde a las pruebas de integración de checkout que requieren Firestore Emulator; esas ocho pruebas habían sido aprobadas separadamente durante T07.
+- `git diff --check`: sin errores de whitespace. Git mostró una advertencia no bloqueante de conversión LF/CRLF para `src/App.tsx`.
+
+La publicación de reglas en Firestore Console fue confirmada por el desarrollador. No se desplegó la aplicación ni el backend en Vercel Production. T08 no sustituye la revisión integral pendiente de T12 ni habilita la administración de órdenes de T11.
 
 ## 9. Despliegue
 
@@ -720,17 +803,20 @@ No se inventarán evidencias ni reflexiones personales.
 - Explicar los cambios, riesgos y verificaciones necesarias.
 - No afirmar que se ejecutaron comandos o pruebas sin evidencia del desarrollador.
 
-GitHub Copilot se utilizó durante las etapas anteriores. A partir de T07.2-B, por agotamiento de los créditos gratuitos, el desarrollo continúa manualmente en VS Code con asistencia desde este chat.
+GitHub Copilot se utilizó durante las etapas anteriores. Por agotamiento de los créditos gratuitos, el desarrollo continúa manualmente en VS Code con asistencia desde este chat.
+
+**Regla de revisión aprobada durante T08:** todas las revisiones técnicas, análisis de código y verificaciones de solo lectura se realizan exclusivamente desde este chat. No se utilizará GitHub Copilot Reviewer ni otro agente externo para revisar el proyecto. Las modificaciones siguen requiriendo autorización expresa del desarrollador.
 
 No se utilizarán ZIP ni documentos descargables para entregar código.
 
-**Revisión técnica:**
+**Revisión técnica desde este chat:**
 
 - Revisar código y requisitos.
 - Detectar errores y riesgos.
 - Identificar sobreingeniería.
 - Informar resultados sin modificar archivos durante una revisión de solo lectura.
 - Distinguir la evidencia aportada por el desarrollador de las comprobaciones todavía pendientes.
+- No utilizar Copilot Reviewer; la revisión queda centralizada en este chat.
 
 El desarrollador conserva la responsabilidad de autorizar los cambios y ejecutarlos.
 

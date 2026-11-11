@@ -43,9 +43,11 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
           <NavLink to="/" end className={navigationLinkClass}>
             Inicio
           </NavLink>
+
           <NavLink to="/catalogo" className={navigationLinkClass}>
             Catálogo
           </NavLink>
+
           <NavLink
             to="/carrito"
             className={navigationLinkClass}
@@ -58,11 +60,25 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
               ({totalUnits})
             </span>
           </NavLink>
+
           {user && (
-            <NavLink to="/favoritos" className={navigationLinkClass}>
-              Favoritos
-            </NavLink>
+            <>
+              <NavLink
+                to="/favoritos"
+                className={navigationLinkClass}
+              >
+                Favoritos
+              </NavLink>
+
+              <NavLink
+                to="/mis-ordenes"
+                className={navigationLinkClass}
+              >
+                Mis órdenes
+              </NavLink>
+            </>
           )}
+
           <button
             type="button"
             aria-label="Modo oscuro"

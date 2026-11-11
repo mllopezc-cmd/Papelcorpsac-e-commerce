@@ -1,5 +1,8 @@
 import { getApps, initializeApp } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
+import {
+  connectAuthEmulator,
+  getAuth,
+} from 'firebase/auth'
 import type { Firestore } from 'firebase/firestore'
 
 const firebaseEnvironment = {
@@ -21,6 +24,21 @@ if (missingVariables.length > 0) {
   )
 }
 
+const useFirebaseEmulators =
+  import.meta.env.VITE_USE_FIREBASE_EMULATORS === 'true'
+
+if (
+  useFirebaseEmulators &&
+  (
+    !import.meta.env.DEV ||
+    firebaseEnvironment.VITE_FIREBASE_PROJECT_ID !== 'demo-papelcorpsac'
+  )
+) {
+  throw new Error(
+    'Firebase emulators are only allowed in development with demo-papelcorpsac.',
+  )
+}
+
 const app =
   getApps().find((existingApp) => existingApp.name === '[DEFAULT]') ??
   initializeApp({
@@ -34,6 +52,14 @@ const app =
 
 const auth = getAuth(app)
 
+if (useFirebaseEmulators) {
+  connectAuthEmulator(
+    auth,
+    'http://127.0.0.1:9099',
+    { disableWarnings: true },
+  )
+}
+
 type FirestoreServices = {
   db: Firestore
   firestore: typeof import('firebase/firestore')
@@ -44,10 +70,22 @@ let firestoreServicesPromise: Promise<FirestoreServices> | undefined
 function loadFirestore(): Promise<FirestoreServices> {
   if (!firestoreServicesPromise) {
     firestoreServicesPromise = import('firebase/firestore')
-      .then((firestore) => ({
-        db: firestore.getFirestore(app),
-        firestore,
-      }))
+      .then((firestore) => {
+        const db = firestore.getFirestore(app)
+
+        if (useFirebaseEmulators) {
+          firestore.connectFirestoreEmulator(
+            db,
+            '127.0.0.1',
+            8080,
+          )
+        }
+
+        return {
+          db,
+          firestore,
+        }
+      })
       .catch((error: unknown) => {
         firestoreServicesPromise = undefined
         throw error

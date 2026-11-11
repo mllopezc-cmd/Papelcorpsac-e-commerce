@@ -20,9 +20,9 @@ Responsables:
 - MANUAL: desarrollador.
 - COPILOT: implementación asistida utilizada en tareas anteriores.
 - MIXTO: colaboración con intervención manual.
-- REVIEWER: revisión de solo lectura.
+- REVIEWER: revisión de solo lectura utilizada en etapas anteriores; desde T08, la revisión se realiza exclusivamente en este chat.
 
-A partir de T07.2-B, por agotamiento de los créditos gratuitos de Copilot, el desarrollo continúa manualmente en VS Code, con revisión y asistencia técnica desde este chat.
+A partir de T07.2-B, por agotamiento de los créditos gratuitos de Copilot, el desarrollo continúa manualmente en VS Code, con asistencia técnica desde este chat. Desde T08, todas las revisiones de código y seguridad se realizan exclusivamente en este chat; no se utiliza Copilot Reviewer ni otro agente externo.
 
 Los archivos de código se entregarán completos en el chat cuando el desarrollador comparta los archivos correspondientes. No se utilizarán ZIP ni documentos descargables para entregar código.
 
@@ -550,16 +550,68 @@ Responsable: MIXTO
 
 Dependencia: T07
 
-- [ ] Consultar órdenes del usuario autenticado.
-- [ ] Mostrar historial.
-- [ ] Mostrar detalle de una orden.
-- [ ] Mostrar estado de la orden.
-- [ ] Proteger la información por propietario.
-- [ ] Gestionar carga, vacío y errores.
+- [x] Definir tipos de órdenes y estados permitidos.
+- [x] Implementar el servicio de consulta de órdenes del usuario autenticado.
+- [x] Filtrar el historial por el UID autenticado.
+- [x] Ordenar el historial por fecha de creación descendente.
+- [x] Mostrar el historial de órdenes.
+- [x] Mostrar el detalle de una orden.
+- [x] Mostrar los estados de orden permitidos.
+- [x] Proteger las consultas por propietario mediante Firestore Rules.
+- [x] Gestionar carga, estado vacío, orden inexistente, errores y reintentos.
+- [x] Integrar rutas protegidas y navegación para usuarios autenticados.
+- [x] Implementar pruebas del servicio y de ambas páginas.
+- [x] Validar las reglas con dos usuarios en Firebase Emulator Suite.
+- [x] Publicar las reglas actualizadas en Firestore Console (confirmación del desarrollador).
+- [x] Ejecutar build, lint y suite general de pruebas.
 
 Aceptación:
 
-Cada cliente puede consultar únicamente sus órdenes y el detalle de compras anteriores.
+Cada cliente puede consultar únicamente sus órdenes y el detalle de compras anteriores. Las escrituras directas de órdenes permanecen denegadas para clientes; la creación comercial continúa bajo el backend protegido de T07.
+
+Archivos principales:
+
+- `src/types/order.ts`.
+- `src/services/orderService.ts`.
+- `src/services/orderService.test.ts`.
+- `src/pages/OrdersPage.tsx`.
+- `src/pages/OrdersPage.test.tsx`.
+- `src/pages/OrderDetailPage.tsx`.
+- `src/pages/OrderDetailPage.test.tsx`.
+- Integración de rutas en `src/App.tsx` y enlace en `src/components/Header.tsx`.
+- Reglas en `firestore.rules`.
+- Configuración del cliente en `src/lib/firebase.ts` y `.env.example`.
+
+Evidencia automatizada:
+
+- Servicio: 11 pruebas aprobadas.
+- Historial: 4 pruebas aprobadas.
+- Detalle: 5 pruebas aprobadas.
+- Total específico de T08: 20 pruebas aprobadas.
+
+Evidencia manual con Firebase Emulator Suite, proyecto ficticio `demo-papelcorpsac`:
+
+- Dos usuarios independientes, con perfiles `customer` asociados a sus UID.
+- Orden A: `t08-demo-order-a`, S/ 25.00.
+- Orden B: `t08-demo-order-b`, S/ 37.50.
+- Cada usuario obtuvo únicamente su orden en el historial.
+- Lectura propia: HTTP 200.
+- Acceso cruzado entre órdenes: HTTP 403.
+- Lectura autenticada de orden inexistente: HTTP 404.
+- Lectura anónima de orden inexistente: HTTP 403.
+- Creación y actualización directa: cuatro intentos rechazados con HTTP 403.
+- Eliminación directa de un documento temporal: HTTP 403; el documento permaneció hasta su limpieza administrativa mediante Firebase Admin.
+- La regla final permite `get` a usuarios autenticados cuando el documento no existe o cuando son propietarios; `list` exige coincidencia del propietario; `create`, `update` y `delete` permanecen denegados.
+- El desarrollador confirmó la publicación de las reglas en Firestore Console el 11 de noviembre de 2026.
+
+Verificación final reportada el 11 de noviembre de 2026:
+
+- `npm.cmd run build`: satisfactorio; advertencia no bloqueante de chunk JavaScript superior a 500 kB.
+- `npm.cmd run lint`: satisfactorio.
+- `npm.cmd run test`: 284 pruebas aprobadas y 8 omitidas; 12 archivos aprobados y 1 omitido. Las ocho omitidas corresponden a integración de checkout; se habían ejecutado y aprobado separadamente durante T07.
+- `git diff --check`: sin errores; advertencia LF/CRLF no bloqueante para `src/App.tsx`.
+
+Estado: implementación y verificaciones funcionales completadas; reglas publicadas según confirmación del desarrollador. Cierre documental, revisión del diff y autorización de commit/push pendientes.
 
 ## 8. Administración
 
@@ -629,7 +681,7 @@ Los clientes no pueden realizar estas operaciones.
 Responsables:
 
 - MIXTO: implementación y ejecución progresiva de verificaciones.
-- REVIEWER: revisión de solo lectura.
+- Revisión técnica: desde T08 se realiza en este chat, en modo de solo lectura; no se utiliza Copilot Reviewer.
 
 - [ ] Preparar renderWithProviders.
 - [ ] Probar useAuth mediante renderHook.
@@ -651,7 +703,8 @@ Los tests se crean progresivamente durante las tareas anteriores; esta fase corr
 
 Evidencia acumulada:
 
-- 264 pruebas aprobadas y ocho pruebas de integración omitidas en la ejecución general.
+- 264 pruebas aprobadas y ocho pruebas de integración omitidas en la ejecución general durante la verificación de T07.
+- En la ejecución general posterior a T08, el desarrollador reportó 284 pruebas aprobadas y ocho omitidas (12 archivos aprobados y uno omitido); las ocho omitidas corresponden a la suite de integración de checkout.
 - Las ocho pruebas de integración omitidas fueron ejecutadas separadamente con Firestore Emulator y aprobaron.
 - 272 casos aprobados al considerar ambas ejecuciones.
 - `npm.cmd run typecheck:api`: satisfactorio.
@@ -734,9 +787,9 @@ README.md continúa siendo la plantilla genérica de Vite. Su documentación del
 
 ## 10. Seguimiento
 
-**Última tarea funcional completada:** T07 — Implementar checkout.
+**Última tarea funcional implementada y verificada:** T08 — Historial y detalle de órdenes.
 
-**Intervención actual:** cierre documental de T07.
+**Intervención actual:** cierre documental de T08; revisión del diff, autorización de commit y push pendientes.
 
 T00 — Documentación inicial: COMPLETADA.
 
@@ -753,6 +806,8 @@ T05 — Implementar catálogo: COMPLETADA.
 T06 — Implementar carrito: COMPLETADA.
 
 T07 — Implementar checkout: COMPLETADA Y VERIFICADA LOCALMENTE.
+
+T08 — Historial y detalle de órdenes: IMPLEMENTADA Y VERIFICADA LOCALMENTE; reglas de Firestore publicadas según confirmación del desarrollador. Cierre documental y Git pendientes.
 
 T07.1 — Infraestructura mínima de Vercel: IMPLEMENTADA, VALIDADA LOCALMENTE Y PUBLICADA; despliegue público pendiente.
 
@@ -797,23 +852,31 @@ T07.4-C — Protección del carrito e idempotencia: COMPLETADA. Commit `ee29994`
 | 2026-11-11 | T07.4-B | 36 pruebas de servicio y 18 de componente. Commits `fce557c` y `0aeddfb`. | Completada | Ninguno. |
 | 2026-11-11 | T07.4-C | Protección de carrito, persistencia de idempotencia y pruebas adicionales. Commit `ee29994`. | Completada | Ninguno funcional. |
 | 2026-11-11 | T07 integral | 264 pruebas aprobadas, ocho omitidas en la ejecución general; ocho de integración aprobadas por separado. Vercel local, Authentication Emulator y Firestore Emulator. | Verificada localmente | Despliegue público pendiente. |
-| 2026-11-11 | Documentación T07 | Reconciliación de PROJECT.md y TASKS.md con el código, commits y pruebas. | En actualización | Revisar diff, ejecutar git diff --check y autorizar commit/push. |
+| 2026-11-11 | T08 | 20 pruebas específicas aprobadas (11 de servicio, 4 de historial y 5 de detalle); suite general posterior: 284 aprobadas y 8 omitidas; build y lint satisfactorios. Dos usuarios de prueba con órdenes independientes; historial propio, detalle, acceso cruzado, orden inexistente y escrituras directas comprobadas en Firebase Emulator. Reglas actualizadas publicadas en Firestore Console según confirmación del desarrollador. | Implementada y verificada localmente; reglas publicadas; cierre documental pendiente | Revisar los documentos actualizados, `git diff --check`, `git status`, confirmar alcance y ausencia de secretos; solicitar autorización expresa de commit y push. |
 
 ### Condiciones para continuar
 
-Antes de T08:
+Antes del commit y push de T08:
 
-- Confirmar el cierre documental de T07.
-- Mantener el historial de commits publicado.
-- No incorporar nuevas funcionalidades de checkout.
-- Respetar las dependencias de T08.
+- Revisar el contenido completo de `docs/PROJECT.md` y `docs/TASKS.md` frente a la implementación y la evidencia aportada.
+- Ejecutar `git diff --check` y revisar `git diff`, `git status --short` y la lista de archivos.
+- Confirmar que los cambios corresponden a T08 y a su documentación, sin modificaciones ajenas.
+- Comprobar que no se incorporaron secretos ni archivos locales de entorno.
+- Obtener autorización expresa del desarrollador antes de commit y push.
 
-Antes del despliegue público:
+Antes de T09:
 
-- Verificar el árbol y artefacto de producción.
+- Cerrar documentalmente T08.
+- Completar la revisión de Git y publicar los cambios aprobados.
+- Solicitar autorización expresa para iniciar T09.
+- Mantener una sola tarea activa y respetar sus dependencias.
+
+Antes del despliegue público en Vercel:
+
+- Verificar el árbol y el artefacto efectivo de producción.
 - Confirmar que no existan vulnerabilidades conocidas sin tratamiento.
 - Configurar credenciales y permisos mínimos.
 - Confirmar que los emuladores no puedan activarse en Preview o Production.
-- Obtener autorización expresa.
+- Obtener autorización expresa del desarrollador.
 
-No registrar pruebas, despliegues o configuraciones inexistentes.
+No registrar pruebas, despliegues o configuraciones inexistentes. La publicación de reglas de Firestore no equivale al despliegue público de la aplicación o del backend.

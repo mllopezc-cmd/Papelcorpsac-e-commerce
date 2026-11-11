@@ -27,6 +27,18 @@ const CheckoutPage = lazy(() =>
   })),
 );
 
+const OrdersPage = lazy(() =>
+  import("./pages/OrdersPage").then(({ OrdersPage }) => ({
+    default: OrdersPage,
+  })),
+);
+
+const OrderDetailPage = lazy(() =>
+  import("./pages/OrderDetailPage").then(({ OrderDetailPage }) => ({
+    default: OrderDetailPage,
+  })),
+);
+
 const ProductDetailPage = lazy(() =>
   import("./pages/ProductDetailPage").then(({ ProductDetailPage }) => ({
     default: ProductDetailPage,
@@ -178,6 +190,28 @@ function App() {
               <ProtectedRoute>
                 <Suspense fallback={pageLoadingFallback}>
                   <CheckoutPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="mis-ordenes"
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={pageLoadingFallback}>
+                  <OrdersPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="mis-ordenes/:orderId"
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={pageLoadingFallback}>
+                  <OrderDetailPage />
                 </Suspense>
               </ProtectedRoute>
             }
