@@ -619,15 +619,86 @@ Estado: T08 implementada y verificada; reglas de Firestore publicadas según con
 
 Responsable: MANUAL
 
-- [ ] Crear bucket.
-- [ ] Configurar permisos mínimos.
-- [ ] Configurar CORS necesario.
-- [ ] Preparar variables privadas del servidor.
-- [ ] Definir cómo se mostrarán las imágenes.
+- [x] Crear bucket.
+- [x] Configurar permisos mínimos.
+- [x] Configurar CORS necesario.
+- [x] Preparar variables privadas del servidor.
+- [x] Definir cómo se mostrarán las imágenes.
 
 Aceptación:
 
 S3 está preparado sin exponer credenciales en el frontend ni habilitar permisos innecesarios.
+
+**Resultado: T09 COMPLETADA Y VERIFICADA EN SU ALCANCE DE INFRAESTRUCTURA.**
+
+#### Configuración realizada
+
+- Bucket de imágenes creado en AWS S3, región `us-east-1`.
+- Bloqueo de acceso público del bucket completamente activado.
+- ACL deshabilitadas mediante `Bucket owner enforced`.
+- Cifrado predeterminado SSE-S3.
+- CORS configurado para GET y PUT y los orígenes locales aprobados.
+- Usuario IAM `papelcorpsac-s3-uploader` creado sin acceso a la consola.
+- Política personalizada `PapelcorpsacS3ObjectAccess` asociada directamente al usuario.
+- Versión 2 de la política establecida como predeterminada.
+- Permisos `s3:PutObject`, `s3:GetObject` y `s3:DeleteObject` limitados a `products/*`.
+- Ausencia de grupos IAM asociados al usuario.
+- Variables AWS configuradas en `.env` y excluidas de Git.
+- Variables AWS registradas exclusivamente en Vercel Development.
+- `.env.example` actualizado sin credenciales reales.
+
+#### Decisión arquitectónica
+
+Se adopta la alternativa A: bucket completamente privado.
+
+El catálogo continuará siendo público. Las imágenes de productos publicados se visualizarán mediante URLs GET prefirmadas temporales, generadas por el backend.
+
+Las subidas administrativas utilizarán URLs PUT prefirmadas. La eliminación de imágenes se realizará desde el backend con autorización administrativa.
+
+Firestore conservará referencias estables a los objetos S3, evitando almacenar URLs prefirmadas temporales.
+
+Esta arquitectura cumple la consigna académica y utiliza el procedimiento de URLs prefirmadas explicado por el docente, con una política de lectura más restrictiva.
+
+#### Verificaciones realizadas
+
+El desarrollador comprobó mediante AWS Console:
+
+- Configuración pública de cuenta revisada, sin modificarla.
+- Bloqueo público individual del bucket activado.
+- Propiedad de objetos y ACL verificadas.
+- Cifrado SSE-S3 verificado.
+- Política IAM limitada a `products/*`.
+- Versión 2 de IAM predeterminada.
+- Usuario IAM con una sola política asociada.
+- Usuario IAM sin pertenencia a grupos.
+- Credenciales declaradas localmente y protegidas por `.gitignore`.
+- Variables Development registradas en Vercel.
+
+El 11 de noviembre de 2026 se verificó la identidad IAM mediante una solicitud firmada a AWS STS `GetCallerIdentity`.
+
+Resultado:
+
+- HTTP 200.
+- Usuario IAM `papelcorpsac-s3-uploader` confirmado.
+- Sin operaciones de escritura.
+- Sin instalaciones ni modificaciones del repositorio.
+
+#### Alcance de la aceptación
+
+T09 comprende la preparación y verificación de la infraestructura AWS.
+
+La prueba STS confirma la autenticación, pero no demuestra todavía el funcionamiento de las operaciones S3.
+
+Las siguientes actividades pertenecen a T10 y no forman parte del cierre de T09:
+
+- Implementación de funciones serverless para generar URLs prefirmadas.
+- Pruebas reales de subida, lectura y eliminación de objetos.
+- Integración de imágenes privadas con el catálogo.
+- Implementación del CRUD administrativo.
+- Pruebas de autorización y permisos efectivos.
+- Verificación del funcionamiento completo en el navegador.
+
+**Estado final:** configuración de T09 completada y verificada conforme a la evidencia aportada. Las implementaciones funcionales de T10 se realizarán en su etapa correspondiente.
 
 ### T10 — CRUD administrativo e imágenes
 
@@ -789,7 +860,9 @@ README.md continúa siendo la plantilla genérica de Vite. Su documentación del
 
 **Última tarea funcional implementada y verificada:** T08 — Historial y detalle de órdenes.
 
-**Intervención actual:** publicación de la actualización documental final de T08; el código funcional ya está publicado en `main` mediante `b3107e1`.
+**Última tarea de infraestructura completada:** T09 — Configuración AWS S3.
+
+**Intervención actual:** cierre documental de T09. La configuración AWS está verificada; la implementación funcional de imágenes corresponde a T10.
 
 T00 — Documentación inicial: COMPLETADA.
 
@@ -829,7 +902,9 @@ T07.4-B — Pruebas del cliente y componente: COMPLETADA. Commits `fce557c` y `0
 
 T07.4-C — Protección del carrito e idempotencia: COMPLETADA. Commit `ee29994`.
 
-T08 — Historial y detalle de órdenes: COMPLETADA, VERIFICADA Y PUBLICADA EN GITHUB. Reglas de Firestore publicadas según confirmación del desarrollador. Commit de implementación: `b3107e1`. Cierre documental incluido en esta actualización.
+T08 — Historial y detalle de órdenes: COMPLETADA, VERIFICADA Y PUBLICADA EN GITHUB. Implementación `b3107e1` y cierre documental `7979f12`.
+
+T09 — Configurar AWS S3: COMPLETADA Y VERIFICADA EN SU ALCANCE DE INFRAESTRUCTURA. Bucket privado, CORS, IAM con permisos mínimos, credenciales protegidas y AWS STS HTTP 200. La integración funcional corresponde a T10.
 
 ### Registro de avances
 
@@ -856,14 +931,17 @@ T08 — Historial y detalle de órdenes: COMPLETADA, VERIFICADA Y PUBLICADA EN G
 | 2026-11-11 | T07 integral | 264 pruebas aprobadas, ocho omitidas en la ejecución general; ocho de integración aprobadas por separado. Vercel local, Authentication Emulator y Firestore Emulator. | Verificada localmente | Despliegue público pendiente. |
 | 2026-11-11 | T08 | 20 pruebas específicas aprobadas (11 de servicio, 4 de historial y 5 de detalle); suite general posterior: 284 aprobadas y 8 omitidas; build y lint satisfactorios. Dos usuarios de prueba con órdenes independientes; historial propio, detalle, acceso cruzado, orden inexistente y escrituras directas comprobadas en Firebase Emulator. Reglas actualizadas publicadas en Firestore Console según confirmación del desarrollador. | Completada y verificada localmente; reglas publicadas en Firestore Console; código publicado en GitHub mediante b3107e1; cierre documental incluido en esta actualización. | Ninguno. |
 
+| 2026-11-11 | T09 | Bucket privado en `us-east-1`; bloqueo público y ACL verificados; SSE-S3; CORS; IAM restringido a `products/*`; usuario sin grupos; variables locales y Vercel Development configuradas; AWS STS HTTP 200. | Infraestructura completada y verificada. | Ninguno dentro de T09; pruebas operativas S3 previstas para T10. |
+
 ### Condiciones para continuar
 
-Antes de T09:
+Antes de T10:
 
-- Confirmar que el cierre documental de T08 está versionado y publicado en `main`.
+- Confirmar que los cambios documentales de T09 estén versionados y publicados en `main`.
 - Verificar que el árbol de trabajo esté limpio.
 - Confirmar que `main` y `origin/main` estén sincronizadas.
-- Obtener autorización expresa para iniciar T09.
+- Revisar las dependencias y los archivos existentes relacionados con productos, administración y autenticación.
+- Obtener autorización expresa del desarrollador antes de implementar T10.
 - Mantener una sola tarea activa y respetar sus dependencias.
 
 Antes del despliegue público en Vercel:

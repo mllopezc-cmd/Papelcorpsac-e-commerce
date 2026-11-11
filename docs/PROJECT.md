@@ -199,6 +199,90 @@ Estados de orden:
 
 **Estado de implementación de T08:** funcionalidad implementada y verificada localmente. El desarrollador confirmó la publicación de las reglas de Firestore en Firebase Console. El código está publicado en GitHub mediante el commit `b3107e1`. Esta actualización documental registra el cierre formal de T08.
 
+### Almacenamiento de imágenes en AWS S3 — T09
+
+**Estado de T09:** configuración de infraestructura completada y verificada el 11 de noviembre de 2026.
+
+Papelcorpsac utiliza Amazon S3 en la región `us-east-1` para almacenar las imágenes de productos. Por decisión del desarrollador, el bucket permanece completamente privado.
+
+#### Arquitectura aprobada
+
+- El catálogo continúa siendo público y accesible sin autenticación.
+- El bucket mantiene activadas sus cuatro protecciones de bloqueo de acceso público.
+- La propiedad de objetos utiliza `Bucket owner enforced`, con ACL deshabilitadas.
+- El cifrado predeterminado utiliza SSE-S3.
+- Las imágenes de productos se almacenarán bajo el prefijo `products/`.
+- La subida utilizará URLs prefirmadas PUT generadas por el backend.
+- La visualización utilizará URLs prefirmadas GET temporales.
+- El backend comprobará que el producto esté publicado antes de generar una URL GET para el catálogo público.
+- La eliminación de imágenes será una operación administrativa protegida del backend.
+- Firestore conservará una referencia estable al objeto S3, no una URL prefirmada que pueda caducar.
+- Las credenciales AWS permanecerán exclusivamente en el servidor.
+
+Las URLs prefirmadas permiten acceder temporalmente a objetos concretos sin hacer público el bucket. Quien disponga de una URL válida podrá utilizarla durante su vigencia; por ello, no deben registrarse ni almacenarse como identificadores permanentes.
+
+#### Seguridad AWS
+
+Se creó el usuario IAM `papelcorpsac-s3-uploader`, sin acceso a la consola AWS.
+
+La política personalizada `PapelcorpsacS3ObjectAccess` permite exclusivamente:
+
+- `s3:PutObject`.
+- `s3:GetObject`.
+- `s3:DeleteObject`.
+
+Los permisos están limitados a los objetos del prefijo `products/*` del bucket de Papelcorpsac.
+
+La versión 2 de la política fue guardada y establecida como predeterminada. Se comprobó que el usuario tiene asociada directamente esa política y no pertenece a grupos IAM.
+
+El bloqueo de acceso público a nivel de cuenta AWS se encontró desactivado. Se decidió no modificarlo para evitar efectos sobre otros proyectos. El bloqueo individual del bucket de Papelcorpsac permanece activado.
+
+#### CORS y variables de entorno
+
+S3 tiene configurado CORS para los métodos GET y PUT y los orígenes locales de desarrollo aprobados.
+
+El archivo `.env` contiene las variables privadas:
+
+- `AWS_ACCESS_KEY_ID`.
+- `AWS_SECRET_ACCESS_KEY`.
+- `AWS_REGION`.
+- `S3_BUCKET`.
+
+Las mismas cuatro variables se registraron en el entorno Development del proyecto Vercel `looney-ai-chat/papelcorpsac`.
+
+Las credenciales AWS no utilizan el prefijo `VITE_` y no forman parte del repositorio. `.env.example` contiene únicamente los nombres de las variables y valores no sensibles.
+
+#### Evidencia de verificación
+
+El desarrollador confirmó mediante capturas de AWS Console:
+
+- La creación del bucket.
+- Las cuatro protecciones individuales de acceso público activadas.
+- Las ACL deshabilitadas mediante `Bucket owner enforced`.
+- La configuración de cifrado SSE-S3.
+- La configuración CORS guardada.
+- La política IAM restringida a `products/*`.
+- La versión 2 de la política establecida como predeterminada.
+- La asociación de la política al usuario IAM.
+- La ausencia de grupos IAM asociados.
+- El registro de las cuatro variables en Vercel Development.
+
+El 11 de noviembre de 2026 se ejecutó una solicitud firmada a AWS STS `GetCallerIdentity` utilizando las variables privadas locales.
+
+Resultado:
+
+- HTTP 200.
+- Identidad IAM verificada.
+- Usuario confirmado: `papelcorpsac-s3-uploader`.
+
+No se instalaron dependencias ni se modificaron objetos S3 durante esta prueba.
+
+**Alcance:** esta verificación confirma la identidad AWS, pero no constituye una prueba efectiva de `GetObject`, `PutObject` o `DeleteObject`.
+
+La implementación de URLs prefirmadas, el CRUD administrativo, la carga y visualización real de imágenes, las pruebas de permisos efectivos y la integración con Firestore corresponden a T10.
+
+La configuración de infraestructura de T09 se considera completada sin afirmar que la integración funcional de T10 ya esté implementada.
+
 ### Panel administrativo
 
 - Acceso protegido para admin.
