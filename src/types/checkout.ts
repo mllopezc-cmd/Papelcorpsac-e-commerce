@@ -25,6 +25,7 @@ export type CheckoutErrorResponse = {
     | "Invalid Request"
     | "Unauthorized"
     | "Conflict"
+    | "Method Not Allowed"
     | "Service Unavailable"
     | "Internal Server Error";
 };
