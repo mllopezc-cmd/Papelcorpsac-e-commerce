@@ -40,17 +40,18 @@ Las mejoras propias se incorporarán cuando aporten valor sin sustituir requisit
 
 ### Frontend
 
-- React y React DOM.
+- React 19 y React DOM.
 - TypeScript.
 - Vite.
 - React Router.
-- Tailwind CSS.
+- Tailwind CSS 4.
 - Context API y useReducer.
 
 ### Backend y servicios
 
 - Firebase Authentication.
 - Cloud Firestore.
+- Firebase Admin SDK.
 - AWS S3.
 - Vercel Serverless Functions.
 
@@ -58,26 +59,28 @@ Las mejoras propias se incorporarán cuando aporten valor sin sustituir requisit
 
 - Vitest.
 - React Testing Library.
+- jsdom.
+- Firebase Emulator Suite.
 
 ### Control de versiones y despliegue
 
 - Git y GitHub.
-- Integración continua.
+- Integración continua pendiente.
 - Vercel.
 
 ### Política de versiones
 
-Por decisión del desarrollador, se utilizará React 19 y versiones estables actuales de las demás herramientas, siempre que sean compatibles entre sí.
+Por decisión del desarrollador, se utiliza React 19 y versiones estables actuales de las demás herramientas, siempre que sean compatibles entre sí.
 
 La consigna original menciona React 18. Esta diferencia deberá validarse con el docente antes de la entrega.
 
 No se instalarán versiones experimentales ni dependencias adicionales sin una necesidad justificada.
 
-Las versiones exactas se definirán y comprobarán durante la instalación inicial, no anticipadamente en este documento.
+Las versiones exactas se mantienen en package.json y package-lock.json.
 
 ## 4. Identidad visual y experiencia de usuario
 
-Papelcorpsac adoptará una identidad corporativa premium, inspirada en la referencia visual proporcionada por el desarrollador.
+Papelcorpsac adopta una identidad corporativa premium, inspirada en la referencia visual proporcionada por el desarrollador.
 
 ### Estilo visual
 
@@ -96,7 +99,7 @@ Colores principales:
 - Oro atenuado: #c5a059
 - Azul profundo: #16243d
 
-Se utilizarán variantes adecuadas para los modos claro y oscuro.
+Se utilizan variantes adecuadas para los modos claro y oscuro.
 
 ### Tipografías
 
@@ -112,30 +115,32 @@ Se utilizarán variantes adecuadas para los modos claro y oscuro.
 - Botones con estados de interacción reconocibles.
 - Contraste adecuado y textos legibles.
 
-Tailwind CSS se integrará después de inicializar correctamente React, Vite y TypeScript.
+Tailwind CSS 4 se integra mediante Vite.
 
-La implementación visual priorizará la reutilización y evitará efectos decorativos innecesarios.
+La implementación visual prioriza la reutilización y evita efectos decorativos innecesarios.
 
 ## 5. Catálogo y funcionalidades
 
-### Catálogo previsto inicialmente
+### Catálogo
 
-El alcance inicial contemplaba un catálogo demostrativo de doce productos distribuidos en cuatro categorías:
+El catálogo contempla 60 productos demostrativos distribuidos en cuatro categorías:
 
 - Instrumentos de escritura.
 - Papelería.
 - Artículos de oficina.
 - Accesorios de escritorio.
 
-Los productos, precios y existencias son demostrativos.
+Distribución:
 
-### Estado implementado del catálogo
+- Doce productos principales.
+- 48 productos demostrativos.
+- Quince productos por categoría.
 
-Posteriormente se aprobó ampliar el catálogo a 60 productos en soles peruanos (PEN): doce principales y 48 demostrativos, distribuidos en las mismas cuatro categorías con 15 productos por categoría.
+Los doce productos principales conservan sus imágenes reales; los 48 adicionales utilizan una imagen demostrativa SVG local.
 
-Los doce productos principales conservan sus imágenes reales; los 48 adicionales utilizan una imagen demostrativa SVG local. El código local contiene los datos de seed.
+El código local contiene los datos de seed.
 
-El seguimiento reporta que los 60 productos se publicaron en Firestore; ese estado remoto no se verifica mediante la lectura del repositorio.
+El seguimiento del proyecto reporta los 60 productos publicados en Firestore. Su estado remoto no se considera verificado mediante la lectura del repositorio.
 
 ### Autenticación
 
@@ -152,7 +157,8 @@ El seguimiento reporta que los 60 productos se publicaron en Firestore; ese esta
 - Búsqueda por nombre con debounce de 300 ms.
 - Detalle individual del producto.
 - Favoritos para usuarios autenticados.
-- Paginación local de doce productos por página, con navegación compacta en móviles.
+- Paginación local de doce productos por página.
+- Navegación compacta en móviles.
 - Diseño responsive consistente con la identidad visual de PAPEL CORP.
 
 ### Carrito
@@ -162,8 +168,11 @@ El seguimiento reporta que los 60 productos se publicaron en Firestore; ese esta
 - Actualizar cantidades.
 - Calcular el total automáticamente.
 - Compartir el estado mediante Context API y useReducer.
+- Persistencia local aprobada.
+- Notificaciones de adición de productos.
+- Validación de cantidades y disponibilidad.
 
-Como mejora de experiencia, se podrá conservar el carrito al recargar la aplicación.
+El carrito utiliza un reducer para mantener las operaciones de forma predecible.
 
 ### Checkout y órdenes
 
@@ -171,14 +180,24 @@ Como mejora de experiencia, se podrá conservar el carrito al recargar la aplica
 - Simular el pago sin pasarela real.
 - Confirmar la compra.
 - Registrar órdenes en Firestore.
-- Consultar historial y detalle de órdenes.
+- Mostrar confirmación y errores.
+- Descontar existencias de forma transaccional.
+- Aplicar idempotencia para evitar órdenes duplicadas.
+- Limpiar el carrito después de confirmar la orden.
+- Consultar historial y detalle de órdenes en una etapa posterior.
 
-Estados obligatorios:
+No se realizan cobros reales ni se solicitan datos bancarios.
+
+Estados de orden:
 
 - pending
 - processing
 - completed
 - cancelled
+
+**Estado de implementación de T07:** checkout funcional implementado y verificado localmente mediante pruebas automatizadas y recorrido HTTP integrado con Firebase Emulators.
+
+El historial y detalle de órdenes corresponden a T08 y todavía no están implementados.
 
 ### Panel administrativo
 
@@ -190,9 +209,11 @@ Estados obligatorios:
 - Filtro por estado.
 - Actualización autorizada de estados.
 
+Estas funcionalidades administrativas pendientes se desarrollarán en sus respectivas etapas.
+
 ## 6. Arquitectura y reutilización
 
-Se utilizará una arquitectura sencilla con separación clara de responsabilidades.
+Se utiliza una arquitectura sencilla con separación clara de responsabilidades.
 
 Principios generales:
 
@@ -204,12 +225,50 @@ Principios generales:
 - useReducer para gestionar las acciones del carrito.
 - Hooks para lógica React reutilizable.
 - Servicios para interactuar con Firebase y AWS.
+- Firebase Admin SDK exclusivamente en el entorno de servidor.
+- Vercel Serverless Functions para operaciones HTTP protegidas.
 
-La organización inicial seguirá preferentemente un enfoque por capas, como el explicado en el repositorio del docente.
-
-La estructura concreta de carpetas se definirá después de instalar React y conforme aparezcan necesidades reales.
+La estructura sigue un enfoque por capas, como el explicado en el repositorio del docente.
 
 No se crearán componentes, abstracciones ni directorios innecesarios.
+
+### Estructura funcional del checkout
+
+Frontend:
+
+- `src/pages/CheckoutPage.tsx`: interfaz de confirmación.
+- `src/services/checkoutService.ts`: comunicación HTTP con el backend.
+- `src/pages/CheckoutPage.test.tsx`: pruebas del componente.
+- `src/services/checkoutService.test.ts`: pruebas del servicio HTTP.
+
+Carrito:
+
+- `src/contexts/CartContext.tsx`.
+- `src/hooks/useCart.ts`.
+- `src/reducers/cartReducer.ts`.
+- `src/reducers/cartReducer.test.ts`.
+- `src/types/cart.ts`.
+
+Backend:
+
+- `api/health.ts`: comprobación de disponibilidad.
+- `api/auth-check.ts`: verificación de autenticación.
+- `api/checkout.ts`: endpoint protegido de checkout.
+- `server/firebaseAdmin.ts`: inicialización y configuración de Firebase Admin.
+- `server/auth.ts`: verificación de Bearer tokens.
+- `server/checkoutValidation.ts`: validación de solicitudes.
+- `server/checkoutService.ts`: lógica transaccional de órdenes.
+
+Pruebas:
+
+- `api/auth-check.test.ts`.
+- `api/checkout.test.ts`.
+- `server/auth.test.ts`.
+- `server/firebaseAdmin.test.ts`.
+- `server/checkoutValidation.test.ts`.
+- `server/checkoutService.test.ts`.
+- `server/checkoutService.integration.test.ts`.
+- Pruebas del cliente y componentes de checkout.
 
 ## 7. Seguridad y dependencias
 
@@ -224,125 +283,403 @@ No se crearán componentes, abstracciones ni directorios innecesarios.
 - Proteger las operaciones administrativas.
 - Verificar datos comerciales antes de crear órdenes.
 - Utilizar URLs prefirmadas para cargas autorizadas a S3.
+- No confiar en identificadores, precios o importes enviados por el navegador.
 
-### Decisiones aprobadas para checkout (pendientes de implementación)
+### 7.1 Autenticación de servidor
 
-- Utilizar Vercel Serverless Functions como backend de las operaciones de checkout.
-- Verificar en servidor los Firebase ID tokens mediante Firebase Admin SDK. Derivar el UID exclusivamente del token verificado; no confiar en estados de React, localStorage ni identificadores enviados por el cliente.
-- No confiar en precios ni stock enviados por el navegador. Obtener productos, precios vigentes y disponibilidad desde Firestore antes de procesar la compra.
-- Simular el pago, sin efectuar cobros reales.
-- Crear cada orden con estado inicial `pending`; conservar los estados `processing`, `completed` y `cancelled` definidos en este documento.
-- Crear la orden y descontar el stock dentro de una transacción atómica.
-- Aplicar idempotencia para evitar órdenes duplicadas por reintentos.
-- Vaciar el carrito únicamente después de confirmar la creación de la orden.
+Se utiliza Firebase Admin SDK para verificar los Firebase ID tokens.
 
-Estas son decisiones de diseño aprobadas para T07. La infraestructura y la verificación reutilizable de autenticación disponen de avances implementados y validados localmente, pero el checkout, la creación de órdenes y el descuento de stock continúan pendientes.
+La implementación contempla:
 
-### Autenticación de servidor y entornos (T07.2)
+- Extracción del Bearer token.
+- Verificación mediante Firebase Admin.
+- Comprobación de revocación para operaciones sensibles.
+- Obtención del UID exclusivamente a partir del token verificado.
+- Clasificación de errores de autenticación.
+- Rechazo de solicitudes sin credenciales válidas.
 
-**Estado de T07.2-A:** Firebase Authentication Emulator configurado y verificado localmente para el proyecto ficticio `demo-papelcorpsac`, en `127.0.0.1:9099`. Commit publicado: `1a1b71337bbf80ab1ad2d8e457a2c335fb5327b2`.
+El endpoint diagnóstico es:
 
-**Estado de T07.2-B:** implementación y verificaciones locales realizadas; cierre y publicación pendientes por la evaluación de seguridad de dependencias y las comprobaciones finales.
+`GET /api/auth-check`
 
-Archivos implementados para T07.2-B:
+El checkout utiliza:
 
-- `server/firebaseAdmin.ts`: inicialización reutilizable de Firebase Admin y validación de configuración.
-- `server/auth.ts`: extracción de Bearer token, verificación mediante Firebase Admin y obtención del UID verificado.
-- `api/auth-check.ts`: endpoint de diagnóstico `GET /api/auth-check`.
-- Pruebas unitarias correspondientes en `server/` y `api/`.
+`POST /api/checkout`
 
-`firebase-admin@14.5.0` está declarado en `dependencies`, por ser necesario para las funciones de servidor, y se sincronizó `package-lock.json`.
+El endpoint de diagnóstico no sustituye la autorización de las operaciones comerciales.
 
-Decisiones y restricciones:
+### 7.2 Configuración de Firebase Admin
 
-- Utilizar Firebase Authentication Emulator únicamente para pruebas locales autorizadas, con el proyecto `demo-papelcorpsac` y host exacto `127.0.0.1:9099`.
-- Exigir `PAPELCORPSAC_USE_AUTH_EMULATOR=true`, `FIREBASE_PROJECT_ID=demo-papelcorpsac` y `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` para activar el emulador.
-- Rechazar el modo emulador cuando `NODE_ENV=production`, cuando `VERCEL_ENV` sea distinto de `development` o cuando existan marcadores Vercel sin identificar el entorno como `development`.
-- Las variables de entorno no demuestran por sí solas una ejecución físicamente local. La configuración de Preview y Production deberá excluir las variables del emulador.
-- Para el endpoint de diagnóstico, utilizar `verifyIdToken(token)`; para futuras operaciones sensibles de creación de órdenes, se prevé `verifyIdToken(token, true)` para comprobar revocación.
-- Admitir JWT sin firma únicamente cuando la configuración validada autorice el Authentication Emulator. Fuera de ese modo, exigir firma no vacía. En todos los casos, Firebase Admin conserva la responsabilidad de verificar el token y sus claims.
-- Mantener separadas las variables públicas `VITE_*` del frontend y la configuración privada del servidor.
-- No almacenar secretos en el repositorio ni exponerlos al cliente.
-- Mantener las credenciales reales del servidor y su configuración en Vercel como asuntos pendientes de la etapa correspondiente.
-- Reutilizar los módulos de autenticación de servidor en el futuro checkout, sin implementar todavía operaciones comerciales.
+Archivo principal:
 
-Evidencia de T07.2-B reportada por el desarrollador:
+`server/firebaseAdmin.ts`
 
-- `npm.cmd run typecheck:api`: satisfactorio.
-- `npm.cmd run test`: 89 de 89 pruebas aprobadas.
-- `npm.cmd run lint`: satisfactorio.
-- `npm.cmd run build`: satisfactorio, con advertencia no bloqueante de chunk JavaScript superior a 500 kB.
-- `GET /api/auth-check` sin token: HTTP 401.
-- Token válido de `demo-papelcorpsac`: HTTP 200, `{"authenticated":true}`.
-- JWT ficticio: HTTP 401.
-- Token emitido por un segundo emulador para `demo-other-project`, con audiencia y emisor previamente comprobados: HTTP 401.
-- `git diff --check`: sin errores reportados.
+Configuración de demostración:
 
-Las pruebas se realizaron con emuladores y Vercel local. No equivalen a validación de un despliegue real en Vercel Preview o Production.
+- `FIREBASE_PROJECT_ID=demo-papelcorpsac`
+- `PAPELCORPSAC_USE_AUTH_EMULATOR=true`
+- `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099`
+- `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`
+- `PAPELCORPSAC_ENABLE_CHECKOUT_EMULATOR=true`
 
-### Seguridad de dependencias
+La variable `PAPELCORPSAC_ENABLE_CHECKOUT_EMULATOR` habilita expresamente el endpoint de checkout para pruebas con Firestore Emulator. Si no está configurada en `true`, el endpoint rechaza las operaciones de checkout con HTTP 503.
+La configuración del emulador exige el proyecto ficticio y los hosts exactos.
 
-Se utilizarán versiones estables y compatibles.
+Restricciones:
 
-Después de instalar o actualizar dependencias, se revisarán las vulnerabilidades conocidas, especialmente las moderadas, altas y críticas.
+- Rechazar el modo emulador cuando `NODE_ENV=production`.
+- Rechazarlo cuando `VERCEL_ENV` sea distinto de `development`.
+- Rechazar marcadores Vercel sin identificar el entorno como `development`.
+- No utilizar el proyecto ficticio en operaciones reales.
+- Mantener las credenciales privadas fuera del frontend y del repositorio.
+- No incluir secretos en variables `VITE_*`.
 
-Las correcciones deberán preservar la compatibilidad y superar las verificaciones del proyecto.
+La integración local con Vercel requiere establecer explícitamente el entorno de desarrollo y las variables de los emuladores antes de iniciar el proceso.
 
-No se utilizarán overrides ni actualizaciones forzadas sin identificar primero el problema que deben resolver.
+La configuración de Preview y Production deberá excluir las variables de emulador.
 
-Los procedimientos y resultados de auditoría se registrarán durante las tareas correspondientes.
+Las pruebas locales no equivalen a una validación de despliegue público.
 
-**Hallazgo vigente de T07.2-B — 10 de noviembre de 2026:**
+### 7.3 Decisiones de seguridad del checkout
 
-- `npm audit` y `npm audit --omit=dev` reportaron cinco alertas moderadas, sin hallazgos altos ni críticos reportados.
-- La cadena está relacionada con `glob@10.5.0`, `rimraf@5.0.10`, `google-gax@5.0.8`, `gaxios@7.1.3` y `gcp-metadata@8.1.4`, dentro de dependencias transitivas opcionales de Firestore asociadas a Firebase Admin.
-- El aviso principal es `GHSA-3g3m-2fjr-6pw4`, sobre la cancelación de operaciones de recorrido de archivos.
-- El endpoint actual de autenticación importa `firebase-admin/app` y `firebase-admin/auth`, sin consultar Firestore. Esto limita la exposición funcional identificada, pero no demuestra que los paquetes vulnerables estén ausentes del artefacto de producción.
-- La cadena sigue presente en el árbol auditado y no se considera corregida.
-- No se aplicarán overrides de versiones mayores ni `npm audit fix --force` sin evidencia de compatibilidad y autorización expresa.
+Las operaciones comerciales se ejecutan en el servidor.
 
-**Decisión aprobada:** se acepta temporalmente el riesgo identificado **solo para continuar el desarrollo y las verificaciones locales de T07.2-B**, usando proyectos de demostración y emuladores, sin credenciales productivas ni operaciones de escritura comercial.
+El cliente envía únicamente:
 
-Esta aceptación no es una corrección de seguridad, no elimina las alertas de npm y no autoriza despliegues.
+- Identificador del producto.
+- Cantidad solicitada.
+- Clave de idempotencia.
 
-**Condiciones de reevaluación obligatoria:**
+El cliente no determina:
 
-- Antes de incorporar operaciones sensibles de Firestore para checkout y órdenes, evaluar nuevamente la cadena vulnerable y las alternativas compatibles.
-- Antes de cualquier despliegue Vercel, revisar el árbol y el artefacto efectivo de producción, decidir y verificar la mitigación o corrección correspondiente, así como la configuración segura de credenciales y entornos.
-- Ante nuevas versiones compatibles o cambios en los avisos de seguridad, repetir las auditorías y las pruebas pertinentes.
+- UID propietario de la orden.
+- Precio unitario definitivo.
+- Subtotales.
+- Importe total.
+- Existencias disponibles.
 
-La autorización de commit y push deberá evaluarse por separado, tras las verificaciones finales, el control de archivos y la confirmación de ausencia de secretos.
+El servidor obtiene el UID del token verificado y consulta los productos directamente en Firestore.
 
-## 8. Testing y despliegue
+La validación comprueba:
 
-### Testing
+- Estructura del cuerpo.
+- Tipo de contenido.
+- Clave UUID v4.
+- Identificadores de productos.
+- Cantidades enteras válidas.
+- Ausencia de propiedades adicionales.
+- Productos publicados.
+- Precios válidos.
+- Existencias suficientes.
 
-Se implementarán las pruebas exigidas por la consigna:
+### 7.4 Transacciones de checkout
 
-- Wrapper de providers para componentes con contextos.
-- Tests de useAuth mediante renderHook.
-- Tests de useCart mediante renderHook.
-- Tests de las acciones de cartReducer.
-- Tests de componentes importantes.
-- Tests de integración del carrito y checkout.
-- Mocks de Firebase y AWS.
-- Casos límite analizados con apoyo de IA.
+La lógica comercial está implementada en:
 
-Las pruebas se incorporarán progresivamente durante el desarrollo.
+`server/checkoutService.ts`
 
-### Despliegue
+La operación:
 
-- Repositorio del proyecto en GitHub.
-- Integración continua.
-- Variables de entorno configuradas correctamente.
-- Deploy mediante Vercel.
-- URL pública funcional.
-- Verificación de los recorridos customer y admin.
-- Comprobación del funcionamiento en dispositivos móviles.
+1. Valida la solicitud.
+2. Normaliza y ordena los artículos.
+3. Calcula una huella del pedido.
+4. Genera un identificador determinista de orden a partir del UID y la clave de idempotencia.
+5. Comprueba si ya existe una orden para ese intento.
+6. Obtiene los productos y sus precios desde Firestore.
+7. Comprueba publicación y disponibilidad.
+8. Calcula los importes en céntimos.
+9. Crea la orden.
+10. Descuenta el stock dentro de la misma transacción.
 
-El despliegue de funciones de servidor permanece bloqueado mientras no se complete la evaluación y el tratamiento del riesgo de dependencias de producción. La integración local con emuladores no constituye evidencia de despliegue público.
+La orden contiene:
 
-## 9. Uso de IA y responsabilidades
+- `userId`
+- `status`
+- `currency`
+- `items`
+- `totalCents`
+- `idempotencyKey`
+- `requestFingerprint`
+- `createdAt`
+
+Los artículos conservan:
+
+- `productId`
+- `name`
+- `quantity`
+- `unitPriceCents`
+- `subtotalCents`
+
+La orden se crea inicialmente con:
+
+- `status: pending`
+- `currency: PEN`
+
+No se implementa una pasarela de pago real.
+
+### 7.5 Idempotencia
+
+La idempotencia evita que un mismo intento de compra cree varias órdenes o descuente stock nuevamente.
+
+Comportamiento:
+
+- Misma clave y mismo contenido: devuelve la orden existente.
+- Misma clave y contenido diferente: rechaza la solicitud con HTTP 409.
+- Nueva clave: representa un nuevo intento de compra.
+
+El identificador de orden se deriva de una función hash del UID autenticado y de la clave de idempotencia.
+
+En el frontend:
+
+- Se conserva la clave del intento asociado al usuario y al contenido del pedido.
+- Se utiliza sessionStorage para conservar el intento durante la sesión.
+- Se valida la estructura de los datos almacenados.
+- Se descartan registros corruptos o incompatibles.
+- Se genera una clave nueva cuando corresponde.
+
+La persistencia no sustituye la idempotencia del servidor; esta última es la protección definitiva contra órdenes duplicadas.
+
+### 7.6 Protección del carrito
+
+La limpieza del carrito utiliza una comparación con el snapshot de los artículos enviados.
+
+El carrito solamente se vacía cuando sus productos y cantidades continúan coincidiendo con el pedido confirmado.
+
+Si el usuario modifica el carrito durante una solicitud pendiente, los artículos nuevos o modificados se conservan.
+
+Esta protección está implementada mediante:
+
+- `CartSnapshotItem`.
+- `CLEAR_CART_IF_UNCHANGED`.
+- `clearCartIfUnchanged`.
+- Pruebas del reducer y del componente.
+
+No se realizan operaciones de limpieza incondicional después de cualquier respuesta HTTP exitosa.
+
+### 7.7 Reglas de Firestore
+
+Las reglas permanecen restrictivas.
+
+Las operaciones comerciales se realizan mediante Firebase Admin SDK en el servidor.
+
+La lectura directa de órdenes mediante REST puede responder HTTP 403 por las reglas de seguridad.
+
+Esto es esperado: los clientes no deben tener acceso indiscriminado a la colección de órdenes.
+
+La consulta administrativa o del propietario deberá realizarse mediante los mecanismos autorizados de servidor y las reglas correspondientes.
+
+No se habilitarán escrituras públicas para facilitar pruebas.
+
+### 7.8 Auditoría de dependencias
+
+Se utilizan versiones compatibles y estables.
+
+Durante T07 se identificaron cinco alertas moderadas relacionadas con dependencias transitivas de Firestore, principalmente en la cadena de paquetes de Google Cloud.
+
+El problema fue investigado y tratado mediante una actualización compatible del árbol de dependencias.
+
+Evidencia:
+
+- Commit `c8ea255`.
+- Mensaje: `fix: resolve Firestore vulnerabilities and Tailwind warning`.
+- Actualización de `package-lock.json`.
+- El desarrollador ejecutó posteriormente `npm.cmd audit`.
+- El desarrollador ejecutó `npm.cmd audit --omit=dev`.
+- Ambas auditorías reportaron cero vulnerabilidades.
+
+Estado actual:
+
+No se reportan vulnerabilidades conocidas en las últimas auditorías aportadas.
+
+Las auditorías deberán repetirse cuando se actualicen dependencias y antes del despliegue.
+
+No se utilizarán overrides ni actualizaciones forzadas sin justificación y autorización.
+
+### 7.9 Advertencia de compilación
+
+Vite continúa mostrando una advertencia no bloqueante relacionada con el tamaño de un chunk JavaScript superior a 500 kB minificados.
+
+El build termina correctamente.
+
+La optimización se pospone para una revisión posterior, sin introducir división de código innecesaria durante T07.
+
+## 8. Estado de implementación y testing
+
+### 8.1 Estado de T07
+
+**T07 — Implementar checkout: COMPLETADA Y VERIFICADA LOCALMENTE.**
+
+Subtareas:
+
+| Subtarea | Resultado |
+|---|---|
+| T07.1 — Infraestructura Vercel | Implementada y publicada; despliegue público pendiente |
+| T07.2-A — Authentication Emulator | Completada |
+| T07.2-B — Autenticación de servidor | Completada |
+| T07.3-A — Validación | Completada |
+| T07.3-B — Servicio transaccional | Completada |
+| T07.3-C — Endpoint protegido | Completada |
+| T07.3-D — Integración Firestore | Completada |
+| T07.4-A — Interfaz React | Completada |
+| T07.4-B — Pruebas de cliente y componente | Completada |
+| T07.4-C — Protección del carrito e idempotencia | Completada |
+
+Commits principales:
+
+- `5c83725`: infraestructura Vercel.
+- `1a1b713`: configuración Firebase Authentication Emulator.
+- `65eafcd`: verificación de ID tokens en servidor.
+- `beb8f51`: ajustes de TypeScript API.
+- `c8ea255`: corrección de dependencias transitivas.
+- `e578af2`: validación de solicitudes.
+- `58d0c39`: servicio transaccional de checkout.
+- `1d61f22`: endpoint HTTP protegido.
+- `43bd2e7`: pruebas de integración con Firestore Emulator.
+- `86fe9ca`: interfaz y navegación de checkout.
+- `fce557c`: pruebas del cliente HTTP.
+- `0aeddfb`: pruebas del componente React.
+- `ee29994`: protección del carrito e idempotencia.
+
+### 8.2 Pruebas automatizadas
+
+Últimos resultados reportados por el desarrollador:
+
+| Verificación | Resultado |
+|---|---|
+| TypeScript API | Correcto |
+| Build | Correcto |
+| ESLint | Correcto |
+| Vitest | 264 aprobadas |
+| Pruebas omitidas en suite general | 8 |
+| Auditoría general | 0 vulnerabilidades |
+| Auditoría de producción | 0 vulnerabilidades |
+| git diff --check | Sin errores |
+
+Las ocho pruebas omitidas corresponden a las pruebas de integración que requieren Firestore Emulator.
+
+Ejecución independiente:
+
+`PAPELCORPSAC_RUN_FIRESTORE_INTEGRATION=true firebase emulators:exec --only firestore --project demo-papelcorpsac "npm.cmd run test -- server/checkoutService.integration.test.ts"`
+
+Resultado reportado:
+
+- Ocho pruebas aprobadas.
+- Cero fallidas.
+
+Total de casos aprobados considerando ambas ejecuciones: 272.
+
+Este resultado no sustituye la revisión integral de T12.
+
+### 8.3 Pruebas de integración HTTP
+
+Se verificó manualmente el recorrido mediante Vercel local y Firebase Emulators.
+
+Configuración de demostración:
+
+- Proyecto: `demo-papelcorpsac`.
+- Authentication Emulator: `127.0.0.1:9099`.
+- Firestore Emulator: `127.0.0.1:8080`.
+- Vercel local: puerto 3000.
+
+Resultados:
+
+| Escenario | Respuesta |
+|---|---|
+| Health endpoint | HTTP 200 |
+| Auth-check sin token | HTTP 401 |
+| JWT ficticio | HTTP 401 |
+| ID token válido | HTTP 200 |
+| Checkout sin token | HTTP 401 |
+| Primera compra | HTTP 201 |
+| Reintento idempotente | HTTP 200 |
+| Misma clave y contenido diferente | HTTP 409 |
+| Stock insuficiente | HTTP 409 |
+
+Se comprobó una compra demostrativa con:
+
+- Producto: `checkout-test-product`.
+- Precio unitario: S/ 12.50.
+- Stock inicial: cinco unidades.
+- Cantidad comprada: una unidad.
+- Total: 1250 céntimos.
+- Estado de la orden: `pending`.
+- Stock restante: cuatro unidades.
+
+La orden se consultó mediante Firebase Admin SDK.
+
+La repetición de la misma solicitud devolvió la misma orden con `replayed: true`, sin descontar stock nuevamente.
+
+Las solicitudes conflictivas y de stock insuficiente no modificaron las existencias.
+
+Todas estas operaciones se realizaron en emuladores locales. No se utilizaron servicios comerciales reales.
+
+### 8.4 Alcance de la verificación
+
+Las pruebas realizadas demuestran el comportamiento de las funciones de servidor y de los servicios mediante emuladores.
+
+No equivalen a:
+
+- Despliegue de funciones en Vercel Production.
+- Prueba comercial con Firebase real.
+- Integración con una pasarela de pagos.
+- Implementación del historial de órdenes.
+- Pruebas completas de navegación de todos los roles.
+- Revisión integral de calidad de T12.
+
+## 9. Despliegue
+
+### Infraestructura local
+
+- Vercel CLI instalada y disponible.
+- Proyecto Vercel `looney-ai-chat/papelcorpsac` vinculado localmente.
+- Funciones API reconocidas por Vercel.
+- Endpoint `/api/health` verificado localmente.
+- Endpoint `/api/auth-check` verificado localmente.
+- Endpoint `/api/checkout` verificado localmente.
+- Rutas SPA verificadas en el entorno local.
+
+### Estado de producción
+
+La aplicación Papelcorpsac no está desplegada en producción.
+
+No se activó integración automática con GitHub.
+
+No se realizó un despliegue público del backend.
+
+Antes de desplegar:
+
+- Revisar el árbol efectivo de dependencias.
+- Comprobar el artefacto de producción.
+- Verificar la configuración de credenciales y permisos.
+- Mantener los emuladores deshabilitados en Preview y Production.
+- Configurar variables por entorno.
+- Comprobar autenticación y endpoints.
+- Obtener autorización expresa del desarrollador.
+
+La verificación local no constituye autorización de despliegue.
+
+## 10. Testing y revisión integral
+
+La revisión integral corresponde a T12.
+
+Requisitos pendientes:
+
+- Preparar renderWithProviders.
+- Probar useAuth mediante renderHook.
+- Probar useCart mediante renderHook.
+- Completar pruebas de componentes importantes.
+- Completar pruebas automatizadas de integración del carrito y checkout.
+- Mockear Firebase y AWS en los escenarios correspondientes.
+- Evaluar casos límite.
+- Revisar responsive y accesibilidad.
+- Ejecutar tests, lint y build como revisión integral.
+- Mantener auditorías de dependencias actualizadas.
+
+Las pruebas de reducer, servicio, componente y Firestore Emulator implementadas durante T07 forman parte de la cobertura incremental del proyecto.
+
+No deben presentarse como sustituto de todos los requisitos de T12.
+
+## 11. Uso de IA y responsabilidades
 
 ### Uso de inteligencia artificial
 
@@ -359,7 +696,7 @@ El README incluirá una bitácora con al menos cinco entradas reales sobre el us
 
 Cada entrada documentará la consulta realizada, lo aprendido y la decisión tomada.
 
-No se inventarán evidencias ni reflexiones.
+No se inventarán evidencias ni reflexiones personales.
 
 ### Responsabilidades
 
@@ -372,18 +709,20 @@ No se inventarán evidencias ni reflexiones.
 - Autorizar cambios sensibles y despliegues.
 - Documentar el aprendizaje con IA.
 - Tomar las decisiones finales.
-- Ejecutar manualmente los comandos y comprobar los resultados en su equipo.
+- Ejecutar manualmente los comandos y comprobar sus resultados.
 
 **Implementación asistida con IA:**
 
 - Desarrollar únicamente funcionalidades autorizadas.
-- Proponer componentes, servicios y código completo en el chat cuando se solicite modificar archivos.
-- Aplicar el diseño visual aprobado.
+- Entregar archivos completos cuando se soliciten modificaciones.
+- Reutilizar componentes y servicios existentes.
 - Proponer pruebas pertinentes.
 - Explicar los cambios, riesgos y verificaciones necesarias.
 - No afirmar que se ejecutaron comandos o pruebas sin evidencia del desarrollador.
 
-GitHub Copilot se utilizó durante las etapas anteriores. A partir de T07.2-B, por agotamiento de los créditos del plan gratuito, el desarrollo continuará manualmente en VS Code con asistencia desde este chat, sin ZIP ni documentos descargables.
+GitHub Copilot se utilizó durante las etapas anteriores. A partir de T07.2-B, por agotamiento de los créditos gratuitos, el desarrollo continúa manualmente en VS Code con asistencia desde este chat.
+
+No se utilizarán ZIP ni documentos descargables para entregar código.
 
 **Revisión técnica:**
 
@@ -395,7 +734,7 @@ GitHub Copilot se utilizó durante las etapas anteriores. A partir de T07.2-B, p
 
 El desarrollador conserva la responsabilidad de autorizar los cambios y ejecutarlos.
 
-## 10. Alcance y criterios de finalización
+## 12. Alcance y criterios de finalización
 
 ### Alcance
 
@@ -426,4 +765,4 @@ Papelcorpsac se considerará terminado cuando:
 - La aplicación esté desplegada y accesible.
 - El README contenga la documentación técnica y la bitácora de IA requerida.
 
-El desarrollo seguirá el principio de cumplir los requisitos con la menor complejidad razonable, sin sacrificar funcionalidad, calidad ni seguridad.
+El desarrollo seguirá el principio de cumplir la consigna con la menor complejidad razonable, sin sacrificar funcionalidad, calidad ni seguridad.
