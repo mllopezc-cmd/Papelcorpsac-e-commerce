@@ -14,31 +14,43 @@ const CatalogPage = lazy(() =>
     default: CatalogPage,
   })),
 );
+
 const CartPage = lazy(() =>
   import("./pages/CartPage").then(({ CartPage }) => ({
     default: CartPage,
   })),
 );
+
+const CheckoutPage = lazy(() =>
+  import("./pages/CheckoutPage").then(({ CheckoutPage }) => ({
+    default: CheckoutPage,
+  })),
+);
+
 const ProductDetailPage = lazy(() =>
   import("./pages/ProductDetailPage").then(({ ProductDetailPage }) => ({
     default: ProductDetailPage,
   })),
 );
+
 const FavoritesPage = lazy(() =>
   import("./pages/FavoritesPage").then(({ FavoritesPage }) => ({
     default: FavoritesPage,
   })),
 );
+
 const LoginPage = lazy(() =>
   import("./pages/LoginPage").then(({ LoginPage }) => ({
     default: LoginPage,
   })),
 );
+
 const RegisterPage = lazy(() =>
   import("./pages/RegisterPage").then(({ RegisterPage }) => ({
     default: RegisterPage,
   })),
 );
+
 const AdminReservedPage = lazy(() =>
   import("./pages/AdminReservedPage").then(({ AdminReservedPage }) => ({
     default: AdminReservedPage,
@@ -71,6 +83,7 @@ function App() {
       ? "dark"
       : "light";
   });
+
   const { user, profile, signOut } = useAuth();
   const [signOutError, setSignOutError] = useState<string | null>(null);
 
@@ -91,7 +104,9 @@ function App() {
       await signOut();
     } catch (error) {
       setSignOutError(
-        error instanceof Error ? error.message : "No se pudo cerrar sesión.",
+        error instanceof Error
+          ? error.message
+          : "No se pudo cerrar sesión.",
       );
     }
   };
@@ -102,8 +117,12 @@ function App() {
         <div className="border-b border-line bg-surface px-5 py-2 sm:px-8">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 text-sm">
             <p className="text-muted">
-              Hola, <span className="font-semibold text-ink">{profile.displayName}</span>
+              Hola,{" "}
+              <span className="font-semibold text-ink">
+                {profile.displayName}
+              </span>
             </p>
+
             <button
               type="button"
               onClick={() => void handleSignOut()}
@@ -112,20 +131,29 @@ function App() {
               Cerrar sesión
             </button>
           </div>
+
           {signOutError && (
-            <p role="alert" className="mx-auto mt-1 max-w-7xl text-sm text-ink">
+            <p
+              role="alert"
+              className="mx-auto mt-1 max-w-7xl text-sm text-ink"
+            >
               {signOutError}
             </p>
           )}
         </div>
       )}
+
       <Routes>
         <Route
           element={
-            <PublicLayout theme={theme} onToggleTheme={toggleTheme} />
+            <PublicLayout
+              theme={theme}
+              onToggleTheme={toggleTheme}
+            />
           }
         >
           <Route index element={<HomePage />} />
+
           <Route
             path="catalogo"
             element={
@@ -134,6 +162,7 @@ function App() {
               </Suspense>
             }
           />
+
           <Route
             path="carrito"
             element={
@@ -142,6 +171,18 @@ function App() {
               </Suspense>
             }
           />
+
+          <Route
+            path="checkout"
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={pageLoadingFallback}>
+                  <CheckoutPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="catalogo/:productId"
             element={
@@ -150,6 +191,7 @@ function App() {
               </Suspense>
             }
           />
+
           <Route
             path="favoritos"
             element={
@@ -160,6 +202,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="login"
             element={
@@ -168,6 +211,7 @@ function App() {
               </Suspense>
             }
           />
+
           <Route
             path="register"
             element={
@@ -176,6 +220,7 @@ function App() {
               </Suspense>
             }
           />
+
           <Route
             path="admin/*"
             element={
@@ -186,9 +231,11 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
+
       <CartAddNotification />
     </>
   );

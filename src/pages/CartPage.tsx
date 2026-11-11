@@ -8,8 +8,14 @@ const priceFormatter = new Intl.NumberFormat("es-PE", {
 });
 
 export function CartPage() {
-  const { items, totalUnits, subtotal, updateQuantity, removeItem, clearCart } =
-    useCart();
+  const {
+    items,
+    totalUnits,
+    subtotal,
+    updateQuantity,
+    removeItem,
+    clearCart,
+  } = useCart();
 
   return (
     <section
@@ -19,21 +25,25 @@ export function CartPage() {
       <p className="mb-4 text-xs font-semibold tracking-[0.2em] text-gold-text uppercase">
         PAPEL CORP
       </p>
+
       <h1
         id="cart-title"
         className="font-display text-3xl font-medium text-ink sm:text-5xl"
       >
         Mi carrito
       </h1>
+
       <div className="mt-8 rounded-sm border border-line bg-surface p-5 sm:p-8">
         {items.length === 0 ? (
           <div className="py-8 text-center">
             <p className="font-display text-xl text-ink">
               Tu carrito está vacío.
             </p>
+
             <p className="mt-3 text-muted">
               Explora el catálogo y agrega tus productos favoritos.
             </p>
+
             <Link
               to="/catalogo"
               className="mt-6 inline-flex min-h-11 items-center rounded-sm bg-deep-blue px-5 py-3 text-sm font-semibold text-cream transition-colors hover:bg-graphite focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-text"
@@ -45,8 +55,10 @@ export function CartPage() {
           <>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <p className="font-semibold text-ink">
-                {totalUnits} {totalUnits === 1 ? "unidad" : "unidades"}
+                {totalUnits}{" "}
+                {totalUnits === 1 ? "unidad" : "unidades"}
               </p>
+
               <button
                 type="button"
                 onClick={clearCart}
@@ -71,19 +83,26 @@ export function CartPage() {
                     <div className="aspect-square w-28 overflow-hidden border border-line bg-page">
                       <ProductImage product={product} />
                     </div>
+
                     <div className="min-w-0">
                       <h2 className="wrap-break-word font-display text-lg font-medium text-ink">
                         {product.name}
                       </h2>
+
                       <p className="mt-1 text-sm text-muted">
-                        Precio unitario: {priceFormatter.format(product.price)}
+                        Precio unitario:{" "}
+                        {priceFormatter.format(product.price)}
                       </p>
+
                       <p className="mt-1 font-semibold text-ink">
                         Subtotal:{" "}
                         {priceFormatter.format(
-                          (Math.round(product.price * 100) * quantity) / 100,
+                          (Math.round(product.price * 100) *
+                            quantity) /
+                            100,
                         )}
                       </p>
+
                       <div className="mt-4 flex flex-wrap items-center gap-2">
                         <button
                           type="button"
@@ -96,12 +115,14 @@ export function CartPage() {
                         >
                           −
                         </button>
+
                         <span
                           aria-label={`Cantidad: ${quantity}`}
                           className="min-w-10 text-center font-semibold text-ink"
                         >
                           {quantity}
                         </span>
+
                         <button
                           type="button"
                           aria-label={`Aumentar cantidad de ${product.name}`}
@@ -109,12 +130,14 @@ export function CartPage() {
                             updateQuantity(product.id, quantity + 1)
                           }
                           disabled={
-                            !hasStock || quantity >= (product.stock ?? 0)
+                            !hasStock ||
+                            quantity >= (product.stock ?? 0)
                           }
                           className="flex size-11 items-center justify-center rounded-sm border border-line bg-page text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-text disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           +
                         </button>
+
                         <button
                           type="button"
                           onClick={() => removeItem(product.id)}
@@ -137,11 +160,20 @@ export function CartPage() {
                     {priceFormatter.format(subtotal)}
                   </dd>
                 </div>
+
                 <div className="flex justify-between gap-4 border-t border-line pt-3 font-display text-xl text-ink">
-                  <dt>Total</dt>
+                  <dt>Total estimado</dt>
                   <dd>{priceFormatter.format(subtotal)}</dd>
                 </div>
               </dl>
+
+              <Link
+                to="/checkout"
+                className="inline-flex min-h-12 items-center justify-center rounded-sm bg-deep-blue px-5 py-3 text-sm font-semibold text-cream transition-colors hover:bg-graphite focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-text"
+              >
+                Finalizar compra
+              </Link>
+
               <Link
                 to="/catalogo"
                 className="inline-flex min-h-11 items-center justify-center rounded-sm border border-line px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-page focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-text"
