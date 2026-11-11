@@ -1,9 +1,11 @@
 import { getApp, getApps, initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
+import { getFirestore } from 'firebase-admin/firestore'
 
 const ADMIN_APP_NAME = 'papelcorpsac-api'
 const DEMO_PROJECT_ID = 'demo-papelcorpsac'
 const AUTH_EMULATOR_HOST = '127.0.0.1:9099'
+const FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080'
 
 export class FirebaseAdminConfigurationError extends Error {
   constructor() {
@@ -75,19 +77,40 @@ export function resolveFirebaseAdminConfiguration(
   return { projectId, emulatorEnabled: true }
 }
 
-export function getFirebaseAdminAuth(
+function getFirebaseAdminApp(
   env: NodeJS.ProcessEnv = process.env,
 ) {
   const { projectId } = resolveFirebaseAdminConfiguration(env)
   const appExists = getApps().some((app) => app.name === ADMIN_APP_NAME)
-  const app =
-    appExists
-      ? getApp(ADMIN_APP_NAME)
-      : initializeApp({ projectId }, ADMIN_APP_NAME)
+
+  const app = appExists
+    ? getApp(ADMIN_APP_NAME)
+    : initializeApp({ projectId }, ADMIN_APP_NAME)
 
   if (app.options.projectId !== projectId) {
     throw new FirebaseAdminConfigurationError()
   }
 
-  return getAuth(app)
+  return app
+}
+
+export function getFirebaseAdminAuth(
+  env: NodeJS.ProcessEnv = process.env,
+) {
+  return getAuth(getFirebaseAdminApp(env))
+}
+
+export function getFirebaseAdminFirestore() {
+  const { emulatorEnabled } = resolveFirebaseAdminConfiguration()
+  const firestoreEmulatorHost = process.env.FIRESTORE_EMULATOR_HOST
+
+  if (emulatorEnabled) {
+    if (firestoreEmulatorHost !== FIRESTORE_EMULATOR_HOST) {
+      throw new FirebaseAdminConfigurationError()
+    }
+  } else if (firestoreEmulatorHost !== undefined) {
+    throw new FirebaseAdminConfigurationError()
+  }
+
+  return getFirestore(getFirebaseAdminApp())
 }
