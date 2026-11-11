@@ -16,9 +16,111 @@ const priceFormatter = new Intl.NumberFormat('es-PE', {
   currency: 'PEN',
 })
 
+const CHECKOUT_ATTEMPT_STORAGE_KEY =
+  'papelcorpsac:checkout-attempt:v1'
+
+const CHECKOUT_ATTEMPT_VERSION = 1
+
+const UUID_V4_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 type CheckoutAttempt = {
+  userId: string
   fingerprint: string
   idempotencyKey: string
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function discardInvalidCheckoutAttempt(): void {
+  try {
+    window.sessionStorage.removeItem(
+      CHECKOUT_ATTEMPT_STORAGE_KEY,
+    )
+  } catch {
+    // El almacenamiento puede estar bloqueado por el navegador.
+  }
+}
+
+function readCheckoutAttempt(): CheckoutAttempt | null {
+  let storedValue: string | null
+
+  try {
+    storedValue = window.sessionStorage.getItem(
+      CHECKOUT_ATTEMPT_STORAGE_KEY,
+    )
+  } catch {
+    return null
+  }
+
+  if (storedValue === null) {
+    return null
+  }
+
+  let parsedValue: unknown
+
+  try {
+    parsedValue = JSON.parse(storedValue)
+  } catch {
+    discardInvalidCheckoutAttempt()
+    return null
+  }
+
+  if (
+    !isRecord(parsedValue) ||
+    parsedValue.version !== CHECKOUT_ATTEMPT_VERSION ||
+    typeof parsedValue.userId !== 'string' ||
+    parsedValue.userId.length === 0 ||
+    parsedValue.userId.length > 128 ||
+    typeof parsedValue.fingerprint !== 'string' ||
+    parsedValue.fingerprint.length === 0 ||
+    typeof parsedValue.idempotencyKey !== 'string' ||
+    !UUID_V4_PATTERN.test(parsedValue.idempotencyKey) ||
+    Object.keys(parsedValue).length !== 4
+  ) {
+    discardInvalidCheckoutAttempt()
+    return null
+  }
+
+  return {
+    userId: parsedValue.userId,
+    fingerprint: parsedValue.fingerprint,
+    idempotencyKey: parsedValue.idempotencyKey,
+  }
+}
+
+function saveCheckoutAttempt(attempt: CheckoutAttempt): void {
+  try {
+    window.sessionStorage.setItem(
+      CHECKOUT_ATTEMPT_STORAGE_KEY,
+      JSON.stringify({
+        version: CHECKOUT_ATTEMPT_VERSION,
+        ...attempt,
+      }),
+    )
+  } catch {
+    // El checkout puede continuar con la referencia temporal en memoria.
+  }
+}
+
+function removeCheckoutAttempt(attempt: CheckoutAttempt): void {
+  try {
+    const storedAttempt = readCheckoutAttempt()
+
+    if (
+      storedAttempt?.userId === attempt.userId &&
+      storedAttempt.fingerprint === attempt.fingerprint &&
+      storedAttempt.idempotencyKey === attempt.idempotencyKey
+    ) {
+      window.sessionStorage.removeItem(
+        CHECKOUT_ATTEMPT_STORAGE_KEY,
+      )
+    }
+  } catch {
+    // La limpieza del almacenamiento no debe bloquear la confirmación.
+  }
 }
 
 function getErrorMessage(error: unknown): string {
@@ -42,7 +144,12 @@ function getErrorMessage(error: unknown): string {
 
 export function CheckoutPage() {
   const { user } = useAuth()
-  const { items, subtotal, clearCart } = useCart()
+
+  const {
+    items,
+    subtotal,
+    clearCartIfUnchanged,
+  } = useCart()
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -88,19 +195,42 @@ export function CheckoutPage() {
 
     const fingerprint = JSON.stringify(
       [...requestedItems].sort((a, b) =>
-        a.productId.localeCompare(b.productId),
+        a.productId < b.productId
+          ? -1
+          : a.productId > b.productId
+            ? 1
+            : 0,
       ),
     )
 
-    if (attemptRef.current?.fingerprint !== fingerprint) {
-      attemptRef.current = {
+    const storedAttempt = readCheckoutAttempt()
+
+    const matchingStoredAttempt =
+      storedAttempt?.userId === user.uid &&
+      storedAttempt.fingerprint === fingerprint
+        ? storedAttempt
+        : null
+
+    const matchingMemoryAttempt =
+      attemptRef.current?.userId === user.uid &&
+      attemptRef.current.fingerprint === fingerprint
+        ? attemptRef.current
+        : null
+
+    const attempt =
+      matchingStoredAttempt ??
+      matchingMemoryAttempt ?? {
+        userId: user.uid,
         fingerprint,
         idempotencyKey: crypto.randomUUID(),
       }
-    }
+
+    attemptRef.current = attempt
+
+    saveCheckoutAttempt(attempt)
 
     const request: CheckoutRequest = {
-      idempotencyKey: attemptRef.current.idempotencyKey,
+      idempotencyKey: attempt.idempotencyKey,
       items: requestedItems,
     }
 
@@ -108,7 +238,17 @@ export function CheckoutPage() {
       const result = await submitCheckout(user, request)
 
       setConfirmedOrder(result)
-      clearCart()
+
+      clearCartIfUnchanged(requestedItems)
+
+      removeCheckoutAttempt(attempt)
+
+      if (
+        attemptRef.current?.idempotencyKey ===
+        attempt.idempotencyKey
+      ) {
+        attemptRef.current = null
+      }
     } catch (caughtError: unknown) {
       setError(getErrorMessage(caughtError))
     } finally {
@@ -158,7 +298,9 @@ export function CheckoutPage() {
 
           <dl className="mt-6 space-y-4 border-y border-line py-5">
             <div>
-              <dt className="text-sm text-muted">Identificador de orden</dt>
+              <dt className="text-sm text-muted">
+                Identificador de orden
+              </dt>
               <dd className="mt-1 break-all font-mono text-sm text-ink">
                 {confirmedOrder.order.id}
               </dd>

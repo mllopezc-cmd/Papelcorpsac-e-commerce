@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import type { CartItem, CartState } from '../types/cart'
+import type { CartItem, CartSnapshotItem, CartState } from '../types/cart'
 import type { Product } from '../types/product'
 
 export type CartContextValue = {
@@ -12,6 +12,7 @@ export type CartContextValue = {
   updateQuantity: (id: string, quantity: number) => void
   removeItem: (id: string) => void
   clearCart: () => void
+  clearCartIfUnchanged: (items: CartSnapshotItem[]) => void
   dismissNotification: (id: number) => void
 }
 

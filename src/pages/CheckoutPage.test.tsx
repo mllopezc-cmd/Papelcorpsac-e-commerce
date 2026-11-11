@@ -13,12 +13,14 @@ const {
   useCartMock,
   submitCheckoutMock,
   clearCartMock,
+  clearCartIfUnchangedMock,
   randomUUIDMock,
 } = vi.hoisted(() => ({
   useAuthMock: vi.fn(),
   useCartMock: vi.fn(),
   submitCheckoutMock: vi.fn(),
   clearCartMock: vi.fn(),
+  clearCartIfUnchangedMock: vi.fn(),
   randomUUIDMock: vi.fn(),
 }))
 
@@ -97,6 +99,7 @@ function setCart(items: CartItem[]) {
     items,
     subtotal: subtotalCents / 100,
     clearCart: clearCartMock,
+    clearCartIfUnchanged: clearCartIfUnchangedMock,
   })
 }
 
@@ -136,6 +139,11 @@ function submittedRequest(callIndex = 0): CheckoutRequest {
 
 beforeEach(() => {
   vi.clearAllMocks()
+
+  // Evita que los UUID pendientes de otra prueba se reutilicen.
+  randomUUIDMock.mockReset()
+
+  window.sessionStorage.clear()
 
   useAuthMock.mockReturnValue({
     user: testUser,
@@ -344,7 +352,7 @@ describe('CheckoutPage', () => {
     resolveRequest(orderResponse())
 
     await waitFor(() => {
-      expect(clearCartMock).toHaveBeenCalledTimes(1)
+      expect(clearCartIfUnchangedMock).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -385,7 +393,13 @@ describe('CheckoutPage', () => {
 
     expect(normalizedTotal).toBe('S/ 75.00')
 
-    expect(clearCartMock).toHaveBeenCalledTimes(1)
+    expect(clearCartIfUnchangedMock).toHaveBeenCalledTimes(1)
+
+    expect(
+      window.sessionStorage.getItem(
+        'papelcorpsac:checkout-attempt:v1',
+      ),
+    ).toBeNull()
 
     expect(
       screen.queryByRole('button', {
@@ -409,7 +423,7 @@ describe('CheckoutPage', () => {
       ).toBeTruthy()
     })
 
-    expect(clearCartMock).toHaveBeenCalledTimes(1)
+    expect(clearCartIfUnchangedMock).toHaveBeenCalledTimes(1)
   })
 
   it('muestra el error de stock sin vaciar el carrito', async () => {
@@ -427,7 +441,7 @@ describe('CheckoutPage', () => {
       ).toMatch(/no tenga stock disponible/)
     })
 
-    expect(clearCartMock).not.toHaveBeenCalled()
+    expect(clearCartIfUnchangedMock).not.toHaveBeenCalled()
 
     expect(
       screen.getByText('Cuaderno premium'),
@@ -449,7 +463,7 @@ describe('CheckoutPage', () => {
       ).toMatch(/no está disponible en este entorno/)
     })
 
-    expect(clearCartMock).not.toHaveBeenCalled()
+    expect(clearCartIfUnchangedMock).not.toHaveBeenCalled()
   })
 
   it('conserva la clave de idempotencia al reintentar el mismo pedido', async () => {
@@ -482,7 +496,7 @@ describe('CheckoutPage', () => {
     expect(randomUUIDMock).toHaveBeenCalledTimes(1)
 
     await waitFor(() => {
-      expect(clearCartMock).toHaveBeenCalledTimes(1)
+      expect(clearCartIfUnchangedMock).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -535,7 +549,7 @@ describe('CheckoutPage', () => {
     ])
 
     expect(randomUUIDMock).toHaveBeenCalledTimes(2)
-    expect(clearCartMock).not.toHaveBeenCalled()
+    expect(clearCartIfUnchangedMock).not.toHaveBeenCalled()
   })
 
   it('muestra un error inesperado sin confirmar la compra', async () => {
@@ -553,10 +567,161 @@ describe('CheckoutPage', () => {
       ).toMatch(/Ocurrió un error inesperado/)
     })
 
-    expect(clearCartMock).not.toHaveBeenCalled()
+    expect(clearCartIfUnchangedMock).not.toHaveBeenCalled()
 
     expect(
       screen.queryByText('Tu orden fue registrada'),
     ).toBeNull()
+  })
+
+  it('C1-A: no vacía un carrito modificado durante una solicitud pendiente', async () => {
+    let resolveRequest:
+      | ((result: CheckoutSuccessResponse) => void)
+      | undefined
+
+    submitCheckoutMock.mockImplementation(
+      () =>
+        new Promise<CheckoutSuccessResponse>((resolve) => {
+          resolveRequest = resolve
+        }),
+    )
+
+    const view = renderCheckout()
+
+    fireEvent.click(confirmButton())
+
+    await waitFor(() => {
+      expect(submitCheckoutMock).toHaveBeenCalledTimes(1)
+    })
+
+    expect(submittedRequest().items).toEqual([
+      {
+        productId: 'producto-001',
+        quantity: 2,
+      },
+    ])
+
+    setCart([
+      cartItem(firstProduct, 2),
+      cartItem(secondProduct, 1),
+    ])
+
+    view.rerender(
+      <MemoryRouter initialEntries={['/checkout']}>
+        <CheckoutPage />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText('Bolígrafo premium')).toBeTruthy()
+
+    if (!resolveRequest) {
+      throw new Error('La solicitud simulada no se inició.')
+    }
+
+    resolveRequest(orderResponse())
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Tu orden fue registrada'),
+      ).toBeTruthy()
+    })
+
+    expect(clearCartIfUnchangedMock).toHaveBeenCalledTimes(1)
+
+    expect(clearCartIfUnchangedMock).toHaveBeenCalledWith([
+      {
+        productId: 'producto-001',
+        quantity: 2,
+      },
+    ])
+
+    expect(clearCartMock).not.toHaveBeenCalled()
+  })
+
+  it('C1-B: conserva la clave al volver al checkout después de una respuesta incierta', async () => {
+    randomUUIDMock
+      .mockReturnValueOnce(
+        '11111111-1111-4111-8111-111111111111',
+      )
+      .mockReturnValueOnce(
+        '22222222-2222-4222-8222-222222222222',
+      )
+
+    submitCheckoutMock
+      .mockRejectedValueOnce(
+        new CheckoutClientError('unavailable'),
+      )
+      .mockResolvedValueOnce(orderResponse(true))
+
+    const firstView = renderCheckout()
+
+    fireEvent.click(confirmButton())
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('alert').textContent,
+      ).toMatch(/no está disponible en este entorno/)
+    })
+
+    expect(submitCheckoutMock).toHaveBeenCalledTimes(1)
+
+    const firstRequest = submittedRequest(0)
+
+    firstView.unmount()
+
+    renderCheckout()
+
+    fireEvent.click(confirmButton())
+
+    await waitFor(() => {
+      expect(submitCheckoutMock).toHaveBeenCalledTimes(2)
+    })
+
+    const secondRequest = submittedRequest(1)
+
+    expect(secondRequest.items).toEqual(firstRequest.items)
+
+    expect(secondRequest.idempotencyKey).toBe(
+      firstRequest.idempotencyKey,
+    )
+
+    expect(randomUUIDMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('descarta un intento corrupto y genera una clave nueva', async () => {
+    window.sessionStorage.setItem(
+      'papelcorpsac:checkout-attempt:v1',
+      '{invalid-json',
+    )
+
+    submitCheckoutMock.mockRejectedValue(
+      new CheckoutClientError('unavailable'),
+    )
+
+    renderCheckout()
+
+    fireEvent.click(confirmButton())
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy()
+    })
+
+    expect(randomUUIDMock).toHaveBeenCalledTimes(1)
+
+    const storedValue = window.sessionStorage.getItem(
+      'papelcorpsac:checkout-attempt:v1',
+    )
+
+    expect(storedValue).not.toBeNull()
+
+    const storedAttempt = JSON.parse(storedValue!)
+
+    expect(storedAttempt.version).toBe(1)
+
+    expect(storedAttempt.idempotencyKey).toBe(
+      '11111111-1111-4111-8111-111111111111',
+    )
+
+    expect(storedAttempt.userId).toBe(testUser.uid)
   })
 })

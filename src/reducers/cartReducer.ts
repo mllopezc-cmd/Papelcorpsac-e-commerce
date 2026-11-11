@@ -1,4 +1,8 @@
-import type { CartAction, CartState } from '../types/cart'
+import type {
+  CartAction,
+  CartSnapshotItem,
+  CartState,
+} from '../types/cart'
 import type { Product } from '../types/product'
 
 function isValidProductId(id: unknown): id is string {
@@ -47,6 +51,37 @@ function isAddableProduct(
     isValidProductId(product.id) &&
     isValidPrice(product.price) &&
     isValidStock(product.stock)
+  )
+}
+
+function cartMatchesSnapshot(
+  state: CartState,
+  expectedItems: CartSnapshotItem[],
+): boolean {
+  if (
+    expectedItems.length === 0 ||
+    state.items.length !== expectedItems.length
+  ) {
+    return false
+  }
+
+  const expectedQuantities = new Map<string, number>()
+
+  for (const item of expectedItems) {
+    if (
+      !isValidProductId(item.productId) ||
+      !isValidQuantity(item.quantity) ||
+      expectedQuantities.has(item.productId)
+    ) {
+      return false
+    }
+
+    expectedQuantities.set(item.productId, item.quantity)
+  }
+
+  return state.items.every(
+    ({ product, quantity }) =>
+      expectedQuantities.get(product.id) === quantity,
   )
 }
 
@@ -104,6 +139,7 @@ export function cartReducer(
       const existingItem = state.items.find(
         (item) => item.product.id === action.id,
       )
+
       if (
         !existingItem ||
         !isValidStock(existingItem.product.stock) ||
@@ -134,11 +170,21 @@ export function cartReducer(
       const items = state.items.filter(
         (item) => item.product.id !== action.id,
       )
-      return items.length === state.items.length ? state : { ...state, items }
+
+      return items.length === state.items.length
+        ? state
+        : { ...state, items }
     }
 
     case 'CLEAR_CART':
-      return state.items.length === 0 ? state : { ...state, items: [] }
+      return state.items.length === 0
+        ? state
+        : { ...state, items: [] }
+
+    case 'CLEAR_CART_IF_UNCHANGED':
+      return cartMatchesSnapshot(state, action.items)
+        ? { ...state, items: [] }
+        : state
 
     default:
       return state

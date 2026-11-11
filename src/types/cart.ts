@@ -9,6 +9,11 @@ export type CartState = {
   items: CartItem[]
 }
 
+export type CartSnapshotItem = {
+  productId: string
+  quantity: number
+}
+
 export type CartAction =
   | {
       type: 'ADD_ITEM'
@@ -26,4 +31,8 @@ export type CartAction =
     }
   | {
       type: 'CLEAR_CART'
+    }
+  | {
+      type: 'CLEAR_CART_IF_UNCHANGED'
+      items: CartSnapshotItem[]
     }

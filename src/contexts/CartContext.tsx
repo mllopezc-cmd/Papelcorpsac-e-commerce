@@ -7,7 +7,11 @@ import {
   type ReactNode,
 } from 'react'
 import { cartReducer } from '../reducers/cartReducer'
-import type { CartAction, CartState } from '../types/cart'
+import type {
+  CartAction,
+  CartSnapshotItem,
+  CartState,
+} from '../types/cart'
 import type { Product } from '../types/product'
 import { readCartState, writeCartState } from '../utils/cartStorage'
 import {
@@ -69,6 +73,7 @@ function cartContextReducer(
   const pendingResults = state.addItemResults.filter(
     (result) => result.requestId > action.acknowledgedThrough,
   )
+
   const currentState =
     pendingResults.length === state.addItemResults.length
       ? state
@@ -90,6 +95,7 @@ function cartContextReducer(
             quantity: action.quantity,
           }
       : action.action
+
   const cart = cartReducer(currentState.cart, cartAction)
 
   if (action.type !== 'ADD_ITEM') {
@@ -99,6 +105,7 @@ function cartContextReducer(
   }
 
   const accepted = cart !== currentState.cart
+
   if (!accepted) {
     return {
       ...currentState,
@@ -110,6 +117,7 @@ function cartContextReducer(
   }
 
   const quantity = action.quantity ?? 1
+
   const notification: CartAddNotification = {
     id: action.requestId,
     product: action.product,
@@ -141,12 +149,14 @@ export function CartProvider({ children }: CartProviderProps) {
       addItemResults: [],
     }),
   )
+
   const nextRequestId = useRef(0)
   const acknowledgedAddItemId = useRef(0)
   const lifecycleGeneration = useRef(0)
   const addItemResolvers = useRef(
     new Map<number, (accepted: boolean) => void>(),
   )
+
   const { cart: state } = contextState
 
   useEffect(() => {
@@ -167,6 +177,7 @@ export function CartProvider({ children }: CartProviderProps) {
         for (const resolve of resolvers.values()) {
           resolve(false)
         }
+
         resolvers.clear()
       })
     }
@@ -183,10 +194,12 @@ export function CartProvider({ children }: CartProviderProps) {
       }
 
       const resolve = addItemResolvers.current.get(result.requestId)
+
       if (resolve) {
         resolve(result.accepted)
         addItemResolvers.current.delete(result.requestId)
       }
+
       acknowledgedAddItemId.current = result.requestId
     }
   }, [contextState.addItemResults])
@@ -197,6 +210,7 @@ export function CartProvider({ children }: CartProviderProps) {
         const requestId = nextRequestId.current + 1
         nextRequestId.current = requestId
         addItemResolvers.current.set(requestId, resolve)
+
         dispatch(
           quantity === undefined
             ? {
@@ -247,6 +261,17 @@ export function CartProvider({ children }: CartProviderProps) {
     })
   }, [dispatch])
 
+  const clearCartIfUnchanged = useCallback(
+    (items: CartSnapshotItem[]) => {
+      dispatch({
+        type: 'DISPATCH',
+        action: { type: 'CLEAR_CART_IF_UNCHANGED', items },
+        acknowledgedThrough: acknowledgedAddItemId.current,
+      })
+    },
+    [dispatch],
+  )
+
   const dismissNotification = useCallback((id: number) => {
     dispatch({
       type: 'DISMISS_NOTIFICATION',
@@ -276,6 +301,7 @@ export function CartProvider({ children }: CartProviderProps) {
       updateQuantity,
       removeItem,
       clearCart,
+      clearCartIfUnchanged,
       dismissNotification,
     }),
     [
@@ -287,9 +313,14 @@ export function CartProvider({ children }: CartProviderProps) {
       updateQuantity,
       removeItem,
       clearCart,
+      clearCartIfUnchanged,
       dismissNotification,
     ],
   )
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+    </CartContext.Provider>
+  )
 }

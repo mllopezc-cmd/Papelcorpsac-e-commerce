@@ -338,4 +338,112 @@ describe('cartReducer', () => {
       expect(cartReducer(state, { type: 'CLEAR_CART' })).toBe(state)
     })
   })
+
+  describe('CLEAR_CART_IF_UNCHANGED', () => {
+    it('vacía el carrito cuando coincide con el pedido confirmado', () => {
+      const product = createProduct()
+      const state = createState(product, 2)
+
+      const nextState = cartReducer(state, {
+        type: 'CLEAR_CART_IF_UNCHANGED',
+        items: [
+          { productId: product.id, quantity: 2 },
+        ],
+      })
+
+      expect(nextState.items).toEqual([])
+      expect(state.items).toHaveLength(1)
+    })
+
+    it('acepta los artículos en distinto orden', () => {
+      const first = createProduct('pencil-1')
+      const second = createProduct('notebook-1')
+
+      const state: CartState = {
+        items: [
+          { product: first, quantity: 2 },
+          { product: second, quantity: 1 },
+        ],
+      }
+
+      const nextState = cartReducer(state, {
+        type: 'CLEAR_CART_IF_UNCHANGED',
+        items: [
+          { productId: second.id, quantity: 1 },
+          { productId: first.id, quantity: 2 },
+        ],
+      })
+
+      expect(nextState.items).toEqual([])
+    })
+
+    it.each([
+      {
+        description: 'un producto adicional',
+        currentItems: [
+          { product: createProduct('pencil-1'), quantity: 2 },
+          { product: createProduct('notebook-1'), quantity: 1 },
+        ],
+        expectedItems: [
+          { productId: 'pencil-1', quantity: 2 },
+        ],
+      },
+      {
+        description: 'una cantidad diferente',
+        currentItems: [
+          { product: createProduct('pencil-1'), quantity: 3 },
+        ],
+        expectedItems: [
+          { productId: 'pencil-1', quantity: 2 },
+        ],
+      },
+      {
+        description: 'un producto eliminado',
+        currentItems: [
+          { product: createProduct('notebook-1'), quantity: 1 },
+        ],
+        expectedItems: [
+          { productId: 'pencil-1', quantity: 2 },
+        ],
+      },
+    ])(
+      'conserva el carrito si existe $description',
+      ({ currentItems, expectedItems }) => {
+        const state: CartState = { items: currentItems }
+
+        const nextState = cartReducer(state, {
+          type: 'CLEAR_CART_IF_UNCHANGED',
+          items: expectedItems,
+        })
+
+        expect(nextState).toBe(state)
+      },
+    )
+
+    it('rechaza una clave de producto duplicada', () => {
+      const state = createState(createProduct(), 2)
+
+      const nextState = cartReducer(state, {
+        type: 'CLEAR_CART_IF_UNCHANGED',
+        items: [
+          { productId: 'pencil-1', quantity: 2 },
+          { productId: 'pencil-1', quantity: 2 },
+        ],
+      })
+
+      expect(nextState).toBe(state)
+    })
+
+    it('no vacía el carrito cuando el snapshot está vacío', () => {
+      const state = createState(createProduct(), 2)
+
+      const nextState = cartReducer(state, {
+        type: 'CLEAR_CART_IF_UNCHANGED',
+        items: [],
+      })
+
+      expect(nextState).toBe(state)
+    })
+  })
+
 })
