@@ -15,12 +15,17 @@ type HeaderProps = {
 };
 
 export function Header({ theme, onToggleTheme }: HeaderProps) {
-  const { user } = useAuth();
+  const { user, profile, loading } = useAuth();
   const { totalUnits } = useCart();
+
+  const showVisitorLinks = !loading && !user;
+  const showCustomerLinks = !loading && Boolean(user && profile);
+  const showAdminLink =
+    showCustomerLinks && profile?.role === "admin";
 
   return (
     <header className="border-b border-line bg-page">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-4 sm:flex-row sm:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-4 sm:px-8 lg:flex-row">
         <NavLink
           to="/"
           aria-label="PAPEL CORP, inicio"
@@ -52,7 +57,7 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
             to="/carrito"
             className={navigationLinkClass}
             aria-label={`Carrito, ${totalUnits} ${
-              totalUnits === 1 ? 'unidad' : 'unidades'
+              totalUnits === 1 ? "unidad" : "unidades"
             }`}
           >
             Carrito
@@ -61,7 +66,7 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
             </span>
           </NavLink>
 
-          {user && (
+          {showCustomerLinks && (
             <>
               <NavLink
                 to="/favoritos"
@@ -75,6 +80,33 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
                 className={navigationLinkClass}
               >
                 Mis órdenes
+              </NavLink>
+            </>
+          )}
+
+          {showAdminLink && (
+            <NavLink to="/admin" className={navigationLinkClass}>
+              Administración
+            </NavLink>
+          )}
+
+          {showVisitorLinks && (
+            <>
+              <NavLink to="/login" className={navigationLinkClass}>
+                Iniciar sesión
+              </NavLink>
+
+              <NavLink
+                to="/register"
+                className={({ isActive }) =>
+                  `rounded-sm border border-gold/60 px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-text ${
+                    isActive
+                      ? "bg-deep-blue text-cream"
+                      : "text-gold-text hover:bg-surface"
+                  }`
+                }
+              >
+                Registrarse
               </NavLink>
             </>
           )}
@@ -119,6 +151,7 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
                   d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"
                   stroke="currentColor"
                   strokeLinecap="round"
+                  strokeLinejoin="round"
                   strokeWidth="1.8"
                 />
               </svg>

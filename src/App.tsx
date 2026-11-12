@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Route, Routes } from "react-router";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { CartAddNotification } from "./components/CartAddNotification";
+import { AdminLayout } from "./layouts/AdminLayout";
 import { PublicLayout } from "./layouts/PublicLayout";
 import { HomePage } from "./pages/HomePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -255,17 +256,25 @@ function App() {
             }
           />
 
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+
+        <Route
+          path="admin"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route
-            path="admin/*"
+            index
             element={
-              <ProtectedRoute requireAdmin>
-                <Suspense fallback={pageLoadingFallback}>
-                  <AdminReservedPage />
-                </Suspense>
-              </ProtectedRoute>
+              <Suspense fallback={pageLoadingFallback}>
+                <AdminReservedPage />
+              </Suspense>
             }
           />
-
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

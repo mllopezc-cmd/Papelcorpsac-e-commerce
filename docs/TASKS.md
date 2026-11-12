@@ -706,10 +706,10 @@ Responsable: MIXTO
 
 Dependencias: T04, T05, T09
 
-COPILOT:
+IMPLEMENTACIÓN (asistencia desde este chat y edición manual en VS Code):
 
-- [ ] Implementar layout administrativo diferenciado.
-- [ ] Implementar navegación administrativa.
+- [x] Implementar layout administrativo diferenciado.
+- [x] Implementar navegación administrativa.
 - [ ] Crear, consultar, editar y eliminar productos.
 - [ ] Validar formularios administrativos.
 - [ ] Confirmar eliminaciones de productos.
@@ -726,6 +726,85 @@ El CRUD completo y la carga de imágenes funcionan.
 Las operaciones administrativas están protegidas.
 
 Las órdenes históricas conservan sus detalles.
+
+#### T10.1 — Revisión técnica de la base existente
+
+Responsable: MIXTO
+
+Dependencias: T04, T05, T09.
+
+- [x] Confirmar el estado del repositorio y la rama `main`.
+- [x] Revisar las rutas públicas y administrativas existentes.
+- [x] Revisar la autenticación y la protección por roles.
+- [x] Identificar los componentes y layouts reutilizables.
+- [x] Revisar el modelo y los servicios de productos.
+- [x] Revisar las reglas actuales de Firestore.
+- [x] Revisar las dependencias declaradas.
+- [x] Contrastar la arquitectura con PROJECT.md y TASKS.md.
+- [x] Consultar las guías pertinentes del repositorio docente.
+- [x] Identificar los cambios mínimos necesarios para T10.2.
+- [x] Presentar y obtener autorización para la propuesta de implementación.
+
+**Resultado: T10.1 COMPLETADA.**
+
+Evidencia:
+
+- Revisión de solo lectura del repositorio publicado en `main`.
+- Dependencias T04, T05 y T09 verificadas.
+- Componentes reutilizables identificados.
+- Protección administrativa existente comprobada en código.
+- Ausencia de layout administrativo diferenciado identificada.
+- Limitaciones actuales del CRUD y de Firestore documentadas.
+- Arquitectura privada S3 conservada conforme a T09.
+- Propuesta de T10.2 presentada y autorizada.
+
+Durante T10.1 no se modificaron archivos, instalaron dependencias ni ejecutaron pruebas.
+
+La implementación funcional comenzó posteriormente en T10.2.
+
+#### T10.2 — Layout y navegación administrativa
+
+Responsable: MIXTO
+
+Dependencias: T04, T05, T09, T10.1.
+
+- [x] Separar el layout administrativo del público.
+- [x] Conservar la protección de rutas administrativas.
+- [x] Crear la navegación administrativa inicial.
+- [x] Incorporar enlaces de Login y Registro para visitantes.
+- [x] Mostrar navegación de Customer según autenticación.
+- [x] Mostrar acceso a Administración únicamente para admin.
+- [x] Mantener el cierre de sesión existente.
+- [x] Verificar diseño responsive y modos claro y oscuro.
+- [x] Implementar pruebas de navegación y layout.
+- [x] Ejecutar lint, build y suite general.
+- [x] Verificar manualmente los recorridos de visitante, Customer y Admin.
+
+**Resultado:** T10.2 IMPLEMENTADA Y VERIFICADA LOCALMENTE.
+
+Archivos:
+
+- `src/App.tsx`.
+- `src/components/Header.tsx`.
+- `src/pages/AdminReservedPage.tsx`.
+- `src/layouts/AdminLayout.tsx`.
+- `src/components/Header.test.tsx`.
+- `src/layouts/AdminLayout.test.tsx`.
+
+Evidencia:
+
+- Seis pruebas específicas aprobadas.
+- Suite general: 290 pruebas aprobadas y ocho omitidas.
+- ESLint satisfactorio.
+- Build satisfactorio.
+- `git diff --check` sin errores.
+- Verificaciones visuales satisfactorias para visitante, Customer y Admin.
+- Acceso administrativo restringido correctamente.
+- Navegación responsive comprobada en móvil y escritorio.
+
+La página administrativa inicial no permite modificar productos. La implementación del CRUD y de las imágenes privadas S3 permanece pendiente dentro de T10.
+
+No se instalaron dependencias ni se modificaron reglas de Firestore, credenciales o recursos AWS.
 
 ### T11 — Administrar órdenes
 
@@ -858,11 +937,11 @@ README.md continúa siendo la plantilla genérica de Vite. Su documentación del
 
 ## 10. Seguimiento
 
-**Última tarea funcional implementada y verificada:** T08 — Historial y detalle de órdenes.
+**Última tarea funcional implementada y verificada:** T10.2 — Layout y navegación administrativa.
 
 **Última tarea de infraestructura completada:** T09 — Configuración AWS S3.
 
-**Intervención actual:** cierre documental de T09. La configuración AWS está verificada; la implementación funcional de imágenes corresponde a T10.
+**Intervención actual:** T10.2 — Layout y navegación administrativa implementada y verificada localmente; cierre documental incorporado en los cambios actuales. T10.3 no iniciada.
 
 T00 — Documentación inicial: COMPLETADA.
 
@@ -880,7 +959,7 @@ T06 — Implementar carrito: COMPLETADA.
 
 T07 — Implementar checkout: COMPLETADA Y VERIFICADA LOCALMENTE.
 
-T08 — Historial y detalle de órdenes: IMPLEMENTADA Y VERIFICADA LOCALMENTE; reglas de Firestore publicadas según confirmación del desarrollador. Cierre documental y Git pendientes.
+T08 — Historial y detalle de órdenes: COMPLETADA, VERIFICADA Y PUBLICADA EN GITHUB. Implementación `b3107e1` y cierre documental `7979f12`.
 
 T07.1 — Infraestructura mínima de Vercel: IMPLEMENTADA, VALIDADA LOCALMENTE Y PUBLICADA; despliegue público pendiente.
 
@@ -906,6 +985,10 @@ T08 — Historial y detalle de órdenes: COMPLETADA, VERIFICADA Y PUBLICADA EN G
 
 T09 — Configurar AWS S3: COMPLETADA Y VERIFICADA EN SU ALCANCE DE INFRAESTRUCTURA. Bucket privado, CORS, IAM con permisos mínimos, credenciales protegidas y AWS STS HTTP 200. La integración funcional corresponde a T10.
 
+T10.1 — Revisión técnica de la base existente: COMPLETADA. Revisión de solo lectura, dependencias verificadas y propuesta T10.2 autorizada.
+
+T10.2 — Layout y navegación administrativa: IMPLEMENTADA Y VERIFICADA LOCALMENTE; cierre documental incorporado en los cambios actuales. Commit y push aún no realizados.
+
 ### Registro de avances
 
 | Fecha | Tarea | Evidencia | Resultado | Pendiente |
@@ -930,18 +1013,19 @@ T09 — Configurar AWS S3: COMPLETADA Y VERIFICADA EN SU ALCANCE DE INFRAESTRUCT
 | 2026-11-11 | T07.4-C | Protección de carrito, persistencia de idempotencia y pruebas adicionales. Commit `ee29994`. | Completada | Ninguno funcional. |
 | 2026-11-11 | T07 integral | 264 pruebas aprobadas, ocho omitidas en la ejecución general; ocho de integración aprobadas por separado. Vercel local, Authentication Emulator y Firestore Emulator. | Verificada localmente | Despliegue público pendiente. |
 | 2026-11-11 | T08 | 20 pruebas específicas aprobadas (11 de servicio, 4 de historial y 5 de detalle); suite general posterior: 284 aprobadas y 8 omitidas; build y lint satisfactorios. Dos usuarios de prueba con órdenes independientes; historial propio, detalle, acceso cruzado, orden inexistente y escrituras directas comprobadas en Firebase Emulator. Reglas actualizadas publicadas en Firestore Console según confirmación del desarrollador. | Completada y verificada localmente; reglas publicadas en Firestore Console; código publicado en GitHub mediante b3107e1; cierre documental incluido en esta actualización. | Ninguno. |
-
 | 2026-11-11 | T09 | Bucket privado en `us-east-1`; bloqueo público y ACL verificados; SSE-S3; CORS; IAM restringido a `products/*`; usuario sin grupos; variables locales y Vercel Development configuradas; AWS STS HTTP 200. | Infraestructura completada y verificada. | Ninguno dentro de T09; pruebas operativas S3 previstas para T10. |
+| 2026-11-11 | T10.1 | Revisión de solo lectura del repositorio, autenticación, rutas, componentes, catálogo, reglas Firestore y dependencias; contraste con PROJECT.md, TASKS.md y las guías del docente. | Revisión técnica completada; propuesta T10.2 autorizada. | Ninguno. |
+| 2026-11-11 | T10.2 | Layout administrativo independiente, navegación por rol, seis pruebas específicas aprobadas, 290 pruebas generales aprobadas, lint y build satisfactorios, comprobaciones visuales de visitante, Customer y Admin. | Implementada y verificada localmente. | Publicación del commit de T10.2. |
 
 ### Condiciones para continuar
 
-Antes de T10:
+Antes de T10.3:
 
-- Confirmar que los cambios documentales de T09 estén versionados y publicados en `main`.
+- Confirmar que el código y la documentación de T10.2 estén versionados y publicados en `main`.
 - Verificar que el árbol de trabajo esté limpio.
 - Confirmar que `main` y `origin/main` estén sincronizadas.
-- Revisar las dependencias y los archivos existentes relacionados con productos, administración y autenticación.
-- Obtener autorización expresa del desarrollador antes de implementar T10.
+- Revisar los archivos y dependencias existentes relacionados con el CRUD de productos, Firestore y almacenamiento S3.
+- Obtener autorización expresa del desarrollador antes de implementar T10.3.
 - Mantener una sola tarea activa y respetar sus dependencias.
 
 Antes del despliegue público en Vercel:

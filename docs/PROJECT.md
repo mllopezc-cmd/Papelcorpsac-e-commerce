@@ -293,7 +293,85 @@ La configuración de infraestructura de T09 se considera completada sin afirmar 
 - Filtro por estado.
 - Actualización autorizada de estados.
 
-Estas funcionalidades administrativas pendientes se desarrollarán en sus respectivas etapas.
+#### T10.1 — Revisión técnica de la base existente
+
+**Estado:** completada el 11 de noviembre de 2026.
+
+Se realizó una revisión de solo lectura del repositorio Papelcorpsac en la rama `main`, después del cierre de T09 publicado mediante el commit `42aa9bf`.
+
+La revisión confirmó que las dependencias T04, T05 y T09 estaban completadas y que podían reutilizarse los componentes y servicios existentes.
+
+Archivos y elementos revisados:
+
+- `src/App.tsx`: rutas públicas y administrativas.
+- `src/components/ProtectedRoute.tsx`: protección por autenticación y rol.
+- `src/contexts/AuthContext.tsx` y `src/hooks/useAuth.ts`: gestión de sesión y perfiles.
+- `src/pages/AdminReservedPage.tsx`: página administrativa inicialmente reservada.
+- `src/types/product.ts`: modelo de productos.
+- `src/services/productService.ts` y `src/hooks/useProducts.ts`: consultas del catálogo.
+- `src/components/ProductCard.tsx`: presentación de productos.
+- `firestore.rules`: reglas de acceso a productos y usuarios.
+- `package.json`: dependencias existentes.
+
+Se contrastó la arquitectura con `docs/PROJECT.md`, `docs/TASKS.md`, las instrucciones del repositorio, la Skill `complete-feature` y las guías de administración y AWS S3 del docente.
+
+Hallazgos:
+
+- La ruta `/admin/*` ya disponía de protección mediante `ProtectedRoute requireAdmin`.
+- No existía un layout administrativo diferenciado.
+- El Header no mostraba enlaces visibles de Login, Registro ni Administración.
+- El servicio de productos solamente consultaba productos publicados.
+- Las reglas de Firestore no permitían operaciones CRUD administrativas desde el cliente.
+- El modelo de productos todavía no incluía referencias persistentes a objetos privados S3.
+- La infraestructura AWS estaba preparada, pero su integración funcional permanecía pendiente.
+
+Se acordó comenzar por el layout y la navegación administrativa, conservando la protección existente y evitando dependencias o componentes innecesarios.
+
+**Alcance:** T10.1 fue exclusivamente una revisión técnica. No se modificaron archivos, dependencias, reglas, credenciales ni recursos externos. Tampoco se ejecutaron pruebas durante esta subtarea.
+
+#### T10.2 — Layout y navegación administrativa
+
+**Estado:** implementada y verificada localmente el 11 de noviembre de 2026.
+
+Se incorporó un layout administrativo independiente del layout público de la tienda.
+
+Archivos principales:
+
+- `src/layouts/AdminLayout.tsx`: cabecera, navegación y estructura administrativa.
+- `src/App.tsx`: separación de las rutas administrativas y públicas.
+- `src/pages/AdminReservedPage.tsx`: página inicial del panel administrativo.
+- `src/components/Header.tsx`: navegación diferenciada según autenticación y rol.
+- `src/components/Header.test.tsx`: pruebas de navegación por rol.
+- `src/layouts/AdminLayout.test.tsx`: prueba del layout administrativo.
+
+La ruta `/admin` continúa protegida mediante `ProtectedRoute requireAdmin`.
+
+La navegación pública distingue tres estados:
+
+- Visitante: Inicio, Catálogo, Carrito, Iniciar sesión y Registrarse.
+- Customer autenticado: navegación de la tienda, Favoritos, Mis órdenes y Cerrar sesión.
+- Admin autenticado: navegación de la tienda, acceso a Administración y Cerrar sesión.
+
+El panel administrativo presenta su propia identidad visual y permite regresar al catálogo público.
+
+Las herramientas de CRUD de productos y la integración de imágenes privadas S3 permanecen pendientes para las siguientes subtareas de T10.
+
+**Verificaciones reportadas por el desarrollador:**
+
+- Seis pruebas específicas de T10.2 aprobadas.
+- Suite general: 290 pruebas aprobadas y ocho pruebas de integración omitidas.
+- ESLint satisfactorio.
+- Build TypeScript y Vite satisfactorio.
+- `git diff --check` sin errores.
+- Navegación de visitante, Customer y Admin comprobada mediante capturas.
+- Acceso de Customer a `/admin` rechazado correctamente.
+- Diseño responsive comprobado en escritorio y anchos móviles de 320 y 375 píxeles.
+
+Durante la comprobación se identificó que los emuladores de Firebase estaban activados sin estar ejecutándose. Para validar las cuentas existentes se inició temporalmente Vite con Firebase real mediante variables de entorno del proceso, sin modificar los archivos de configuración.
+
+La comprobación visual no equivale a un despliegue público ni sustituye las pruebas de autorización de las futuras operaciones administrativas.
+
+Las funcionalidades administrativas restantes, incluido el CRUD de productos y la integración de imágenes privadas mediante AWS S3, se implementarán y verificarán en las siguientes subtareas de T10.
 
 ## 6. Arquitectura y reutilización
 
@@ -418,6 +496,7 @@ Configuración de demostración:
 - `PAPELCORPSAC_ENABLE_CHECKOUT_EMULATOR=true`
 
 La variable `PAPELCORPSAC_ENABLE_CHECKOUT_EMULATOR` habilita expresamente el endpoint de checkout para pruebas con Firestore Emulator. Si no está configurada en `true`, el endpoint rechaza las operaciones de checkout con HTTP 503.
+
 La configuración del emulador exige el proyecto ficticio y los hosts exactos.
 
 Restricciones:
