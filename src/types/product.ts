@@ -37,3 +37,19 @@ export type Product = ProductFields &
         sourceUrl?: string
       }
   )
+
+/**
+ * Datos necesarios para crear o actualizar un producto desde
+ * el panel administrativo.
+ *
+ * Se requiere marca y stock porque ambos forman parte
+ * de los productos comerciales utilizados por el checkout.
+ *
+ * La imagen puede omitirse durante T10.3. En ese caso,
+ * se utilizará la imagen demostrativa local.
+ */
+export type ProductInput = Omit<ProductFields, 'id'> & {
+  brand: string
+  stock: number
+  sourceUrl?: string
+}

@@ -3,6 +3,7 @@ import {
   PRODUCT_CATEGORIES,
   type Product,
   type ProductCategory,
+  type ProductInput,
 } from '../types/product'
 
 type ProductData = Omit<Product, 'id' | 'brand' | 'stock' | 'sourceUrl'> & {
@@ -10,6 +11,8 @@ type ProductData = Omit<Product, 'id' | 'brand' | 'stock' | 'sourceUrl'> & {
   stock?: number
   sourceUrl?: string
 }
+
+const PRODUCT_PLACEHOLDER = '/images/product-placeholder.svg'
 
 let publishedProductsRequest: Promise<Product[]> | undefined
 
@@ -34,6 +37,7 @@ function isValidProductUrl(value: unknown): value is string {
 
   try {
     const url = new URL(value)
+
     return (
       url.protocol === 'https:' &&
       url.hostname.length > 0 &&
@@ -47,7 +51,7 @@ function isValidProductUrl(value: unknown): value is string {
 
 function isValidImageUrl(value: unknown): value is string {
   return (
-    value === '/images/product-placeholder.svg' ||
+    value === PRODUCT_PLACEHOLDER ||
     isValidProductUrl(value)
   )
 }
@@ -65,6 +69,7 @@ function isProductData(value: unknown): value is ProductData {
     'sourceUrl',
   )
   const hasProductMetadata = hasBrand || hasStock || hasSourceUrl
+
   const productMetadataIsValid =
     hasBrand === hasStock &&
     (!hasBrand ||
@@ -73,6 +78,7 @@ function isProductData(value: unknown): value is ProductData {
         typeof product.stock === 'number' &&
         Number.isInteger(product.stock) &&
         product.stock >= 0))
+
   const sourceUrlIsValid =
     !hasSourceUrl || isValidProductUrl(product.sourceUrl)
 
@@ -90,12 +96,25 @@ function isProductData(value: unknown): value is ProductData {
   )
 }
 
+function isValidProductInput(value: unknown): value is ProductInput {
+  return (
+    isProductData(value) &&
+    typeof value.brand === 'string' &&
+    value.brand.trim().length > 0 &&
+    typeof value.stock === 'number' &&
+    Number.isSafeInteger(value.stock) &&
+    value.stock >= 0 &&
+    isValidPrice(value.price, true)
+  )
+}
+
 function toProduct(id: string, value: unknown): Product {
   if (!isProductData(value)) {
     throw new Error(`El producto "${id}" tiene datos inválidos.`)
   }
 
   const { name, description, category, price, imageUrl, published } = value
+
   const product = {
     id,
     name,
@@ -130,12 +149,44 @@ function toProduct(id: string, value: unknown): Product {
   return product
 }
 
+function prepareProductData(input: ProductInput): ProductInput {
+  if (!isValidProductInput(input)) {
+    throw new Error('Los datos del producto son inválidos.')
+  }
+
+  return {
+    name: input.name.trim(),
+    description: input.description.trim(),
+    category: input.category,
+    price: input.price,
+    brand: input.brand.trim(),
+    stock: input.stock,
+    imageUrl: input.imageUrl ?? PRODUCT_PLACEHOLDER,
+    published: input.published,
+    ...(input.sourceUrl?.trim()
+      ? { sourceUrl: input.sourceUrl.trim() }
+      : {}),
+  }
+}
+
+function validateProductId(id: string): void {
+  if (
+    typeof id !== 'string' ||
+    id.trim().length === 0 ||
+    id.includes('/')
+  ) {
+    throw new Error('El identificador del producto no es válido.')
+  }
+}
+
 async function fetchPublishedProducts(): Promise<Product[]> {
   const { db, firestore } = await loadFirestore()
+
   const productsQuery = firestore.query(
     firestore.collection(db, 'products'),
     firestore.where('published', '==', true),
   )
+
   const snapshot = await firestore.getDocs(productsQuery)
 
   return snapshot.docs
@@ -153,16 +204,75 @@ export function getPublishedProducts(): Promise<Product[]> {
   return publishedProductsRequest
 }
 
+export async function getAdminProducts(): Promise<Product[]> {
+  const { db, firestore } = await loadFirestore()
+
+  const snapshot = await firestore.getDocs(
+    firestore.collection(db, 'products'),
+  )
+
+  return snapshot.docs
+    .map((document) => toProduct(document.id, document.data()))
+    .sort((first, second) =>
+      first.name.localeCompare(second.name, 'es'),
+    )
+}
+
+export async function createProduct(input: ProductInput): Promise<string> {
+  const productData = prepareProductData(input)
+  const { db, firestore } = await loadFirestore()
+
+  const document = await firestore.addDoc(
+    firestore.collection(db, 'products'),
+    productData,
+  )
+
+  return document.id
+}
+
+export async function updateProduct(
+  id: string,
+  input: ProductInput,
+): Promise<void> {
+  validateProductId(id)
+
+  const productData = prepareProductData(input)
+  const { db, firestore } = await loadFirestore()
+
+  await firestore.updateDoc(
+    firestore.doc(db, 'products', id),
+    {
+      ...productData,
+      sourceUrl:
+        productData.sourceUrl ?? firestore.deleteField(),
+    },
+  )
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+  validateProductId(id)
+
+  const { db, firestore } = await loadFirestore()
+
+  await firestore.deleteDoc(
+    firestore.doc(db, 'products', id),
+  )
+}
+
 export async function getPublishedProductById(
   id: string,
 ): Promise<Product | null> {
   const { db, firestore } = await loadFirestore()
-  const document = await firestore.getDoc(firestore.doc(db, 'products', id))
+
+  const document = await firestore.getDoc(
+    firestore.doc(db, 'products', id),
+  )
 
   if (!document.exists()) {
     return null
   }
 
   const product = toProduct(document.id, document.data())
+
   return product.published ? product : null
 }

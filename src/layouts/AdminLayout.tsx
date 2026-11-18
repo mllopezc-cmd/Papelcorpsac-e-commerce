@@ -36,10 +36,11 @@ export function AdminLayout() {
               Panel
             </NavLink>
 
-            <NavLink
-              to="/catalogo"
-              className={adminLinkClass}
-            >
+            <NavLink to="/admin/productos" className={adminLinkClass}>
+              Productos
+            </NavLink>
+
+            <NavLink to="/catalogo" className={adminLinkClass}>
               Ver tienda
             </NavLink>
           </nav>

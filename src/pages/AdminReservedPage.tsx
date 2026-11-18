@@ -19,8 +19,7 @@ export function AdminReservedPage() {
 
       <p className="mt-5 max-w-2xl leading-7 text-muted">
         Bienvenido al área administrativa de Papelcorpsac.
-        Desde aquí podrás gestionar los productos y sus imágenes
-        cuando se incorporen las herramientas correspondientes.
+        Desde aquí podrás gestionar los productos de la tienda.
       </p>
 
       <div className="mt-10 max-w-2xl rounded-sm border border-line bg-surface p-6 sm:p-8">
@@ -29,21 +28,30 @@ export function AdminReservedPage() {
         </h2>
 
         <p className="mt-3 leading-7 text-muted">
-          La consulta, creación, edición y eliminación de productos
-          se implementarán en la siguiente subtarea de T10.
+          Consulta, crea, edita y elimina productos del catálogo,
+          incluidos los que aún no están publicados.
         </p>
 
         <p className="mt-3 text-sm text-muted">
-          La integración con imágenes privadas de AWS S3 también
-          se encuentra pendiente.
+          La gestión de imágenes privadas de AWS S3 corresponde
+          a T10.4.
         </p>
 
-        <Link
-          to="/catalogo"
-          className="mt-6 inline-flex min-h-11 items-center rounded-sm bg-deep-blue px-5 py-3 text-sm font-semibold text-cream transition-colors hover:bg-graphite focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-text"
-        >
-          Ver catálogo público
-        </Link>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            to="/admin/productos"
+            className="inline-flex min-h-11 items-center rounded-sm bg-deep-blue px-5 py-3 text-sm font-semibold text-cream transition-colors hover:bg-graphite focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-text"
+          >
+            Gestionar productos
+          </Link>
+
+          <Link
+            to="/catalogo"
+            className="inline-flex min-h-11 items-center rounded-sm border border-line px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-page focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-text"
+          >
+            Ver catálogo público
+          </Link>
+        </div>
       </div>
     </section>
   );

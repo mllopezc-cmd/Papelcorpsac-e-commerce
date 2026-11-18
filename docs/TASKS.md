@@ -710,9 +710,9 @@ IMPLEMENTACIÓN (asistencia desde este chat y edición manual en VS Code):
 
 - [x] Implementar layout administrativo diferenciado.
 - [x] Implementar navegación administrativa.
-- [ ] Crear, consultar, editar y eliminar productos.
-- [ ] Validar formularios administrativos.
-- [ ] Confirmar eliminaciones de productos.
+- [x] Crear, consultar, editar y eliminar productos.
+- [x] Validar formularios administrativos.
+- [x] Confirmar eliminaciones de productos.
 - [ ] Integrar subida de imágenes mediante URLs prefirmadas.
 
 MANUAL:
@@ -780,7 +780,9 @@ Dependencias: T04, T05, T09, T10.1.
 - [x] Ejecutar lint, build y suite general.
 - [x] Verificar manualmente los recorridos de visitante, Customer y Admin.
 
-**Resultado:** T10.2 IMPLEMENTADA Y VERIFICADA LOCALMENTE.
+**Resultado:** T10.2 COMPLETADA, VERIFICADA Y PUBLICADA EN GITHUB.
+
+Commit `ea95c91` publicado en la rama `main` con código y documentación de T10.2.
 
 Archivos:
 
@@ -802,9 +804,79 @@ Evidencia:
 - Acceso administrativo restringido correctamente.
 - Navegación responsive comprobada en móvil y escritorio.
 
-La página administrativa inicial no permite modificar productos. La implementación del CRUD y de las imágenes privadas S3 permanece pendiente dentro de T10.
+La página administrativa inicial quedó preparada para el CRUD incorporado posteriormente en T10.3. La integración de imágenes privadas AWS S3 corresponde a T10.4.
 
 No se instalaron dependencias ni se modificaron reglas de Firestore, credenciales o recursos AWS.
+
+#### T10.3 — CRUD administrativo de productos
+
+Responsable: MIXTO
+
+Dependencias: T04, T05, T09, T10.1 y T10.2.
+
+- [x] Revisar requisitos, dependencias y arquitectura del CRUD.
+- [x] Obtener autorización para implementar T10.3.
+- [x] Consultar productos publicados y no publicados como Admin.
+- [x] Crear productos desde el panel.
+- [x] Editar productos y conservar campos opcionales válidos.
+- [x] Eliminar productos con confirmación.
+- [x] Validar datos de los formularios administrativos.
+- [x] Publicar y despublicar productos.
+- [x] Incorporar la ruta protegida `/admin/productos`.
+- [x] Proteger escrituras y lecturas con Firestore Rules.
+- [x] Verificar los permisos con cuentas Admin y Customer del emulador.
+- [x] Comprobar precios con centavos y rechazo de importes inválidos.
+- [x] Probar conservación y eliminación del campo opcional `sourceUrl`.
+- [x] Ejecutar pruebas unitarias, lint y build.
+- [x] Probar el CRUD completo en el navegador con Firestore Emulator.
+- [x] Revisar el diff y preparar la documentación del cierre.
+
+**Resultado:** T10.3 COMPLETADA Y VERIFICADA LOCALMENTE. Código y documentación integrados en el cierre de esta subtarea; commit y push pendientes de ejecución autorizada.
+
+**Implementación y arquitectura**
+
+Se mantiene el flujo `AdminProductsPage` → `productService` → SDK cliente de Firestore → Firestore Rules. No se añadieron contextos, hooks administrativos, servicios ni dependencias adicionales. La gestión de imágenes privadas S3 corresponde a T10.4.
+
+Archivos implicados:
+
+- `src/App.tsx`: ruta `/admin/productos`.
+- `src/layouts/AdminLayout.tsx`: navegación administrativa.
+- `src/pages/AdminReservedPage.tsx`: acceso desde el panel.
+- `src/pages/AdminProductsPage.tsx`: formulario y listado CRUD.
+- `src/services/productService.ts`: consulta, creación, actualización y eliminación.
+- `src/services/productService.test.ts`: pruebas del servicio.
+- `src/types/product.ts`: tipo `ProductInput`.
+- `firestore.rules`: autorización y validación de productos.
+
+Los productos nuevos utilizan la imagen local `/images/product-placeholder.svg`. Las imágenes existentes se conservan durante la edición. El campo opcional `sourceUrl` puede conservarse o eliminarse mediante `deleteField()`.
+
+**Seguridad**
+
+El permiso para crear, editar y eliminar productos exige rol `admin` en `users/{uid}`. Admin puede consultar productos publicados y no publicados; el catálogo público solo consulta publicados. Las reglas validan campos, tipos, categorías, longitudes, precios, existencias e imagen. Se conservan las restricciones de usuarios, favoritos y órdenes.
+
+Las pruebas locales no publicaron las reglas modificadas en Firebase real. Su despliegue requiere autorización independiente.
+
+**Evidencia automatizada**
+
+- `productService.test.ts`: 13 pruebas aprobadas.
+- Suite general: 303 pruebas aprobadas y 8 omitidas, sin fallos.
+- Ocho omitidas: integración de checkout, ejecutada y aprobada por separado durante T07.
+- ESLint y build TypeScript/Vite satisfactorios.
+- `git diff --check` sin errores de formato; advertencia LF/CRLF no bloqueante.
+- Vite mantiene la advertencia no bloqueante de un chunk de aproximadamente 580,46 kB.
+
+**Pruebas de Firebase Emulator**
+
+Proyecto ficticio `demo-papelcorpsac`; Authentication Emulator en `127.0.0.1:9099` y Firestore Emulator en `127.0.0.1:8080`. Se configuraron perfiles separados de Customer y Admin.
+
+- 15 de 15 comprobaciones de permisos correctas: lectura pública y administrativa, bloqueo de accesos Customer, creación, edición, eliminación y rechazo de datos inválidos.
+- 4 de 4 verificaciones de precios: `0.07`, `19.99` y `29.90` aceptados; `12.345` rechazado.
+- Interfaz `/admin/productos`: creación, consulta, edición, publicación, despublicación y eliminación con confirmación de un mismo producto temporal, seguida de su ausencia en Firestore Emulator.
+- La imagen local provisional se visualizó en el catálogo al publicar el producto.
+- Customer recibió «Acceso restringido» al intentar acceder a `/admin` y `/admin/productos`.
+- No se modificaron los productos reales ni los recursos AWS.
+
+**Alcance:** T10.3 no incluye subida de imágenes S3 (T10.4) ni administración de órdenes (T11). La etapa T10 general continúa pendiente hasta completar T10.4. La publicación de esta subtarea se confirmará tras commit y push autorizados.
 
 ### T11 — Administrar órdenes
 
@@ -937,11 +1009,11 @@ README.md continúa siendo la plantilla genérica de Vite. Su documentación del
 
 ## 10. Seguimiento
 
-**Última tarea funcional implementada y verificada:** T10.2 — Layout y navegación administrativa.
+**Última tarea funcional implementada y verificada:** T10.3 — CRUD administrativo de productos.
 
 **Última tarea de infraestructura completada:** T09 — Configuración AWS S3.
 
-**Intervención actual:** T10.2 — Layout y navegación administrativa implementada y verificada localmente; cierre documental incorporado en los cambios actuales. T10.3 no iniciada.
+**Intervención actual:** cierre de T10.3, completada y verificada localmente. Código y documentación preparados para commit y push autorizados. T10.4 no iniciada.
 
 T00 — Documentación inicial: COMPLETADA.
 
@@ -987,7 +1059,11 @@ T09 — Configurar AWS S3: COMPLETADA Y VERIFICADA EN SU ALCANCE DE INFRAESTRUCT
 
 T10.1 — Revisión técnica de la base existente: COMPLETADA. Revisión de solo lectura, dependencias verificadas y propuesta T10.2 autorizada.
 
-T10.2 — Layout y navegación administrativa: IMPLEMENTADA Y VERIFICADA LOCALMENTE; cierre documental incorporado en los cambios actuales. Commit y push aún no realizados.
+T10.2 — Layout y navegación administrativa: COMPLETADA, VERIFICADA Y PUBLICADA EN GITHUB. Commit `ea95c91`.
+
+T10.3 — CRUD administrativo de productos: COMPLETADA Y VERIFICADA LOCALMENTE. Commit y push de cierre pendientes de ejecución autorizada.
+
+T10.4 — Imágenes privadas AWS S3: PENDIENTE.
 
 ### Registro de avances
 
@@ -1015,18 +1091,20 @@ T10.2 — Layout y navegación administrativa: IMPLEMENTADA Y VERIFICADA LOCALME
 | 2026-11-11 | T08 | 20 pruebas específicas aprobadas (11 de servicio, 4 de historial y 5 de detalle); suite general posterior: 284 aprobadas y 8 omitidas; build y lint satisfactorios. Dos usuarios de prueba con órdenes independientes; historial propio, detalle, acceso cruzado, orden inexistente y escrituras directas comprobadas en Firebase Emulator. Reglas actualizadas publicadas en Firestore Console según confirmación del desarrollador. | Completada y verificada localmente; reglas publicadas en Firestore Console; código publicado en GitHub mediante b3107e1; cierre documental incluido en esta actualización. | Ninguno. |
 | 2026-11-11 | T09 | Bucket privado en `us-east-1`; bloqueo público y ACL verificados; SSE-S3; CORS; IAM restringido a `products/*`; usuario sin grupos; variables locales y Vercel Development configuradas; AWS STS HTTP 200. | Infraestructura completada y verificada. | Ninguno dentro de T09; pruebas operativas S3 previstas para T10. |
 | 2026-11-11 | T10.1 | Revisión de solo lectura del repositorio, autenticación, rutas, componentes, catálogo, reglas Firestore y dependencias; contraste con PROJECT.md, TASKS.md y las guías del docente. | Revisión técnica completada; propuesta T10.2 autorizada. | Ninguno. |
-| 2026-11-11 | T10.2 | Layout administrativo independiente, navegación por rol, seis pruebas específicas aprobadas, 290 pruebas generales aprobadas, lint y build satisfactorios, comprobaciones visuales de visitante, Customer y Admin. | Implementada y verificada localmente. | Publicación del commit de T10.2. |
+| 2026-11-11 | T10.2 | Layout administrativo independiente, navegación por rol, seis pruebas específicas, 290 pruebas generales, lint y build correctos; comprobaciones visuales por rol. Commit `ea95c91`. | Completada, verificada y publicada en `main`. | Ninguno. |
+| 2026-11-17 | T10.3 | CRUD de productos, ruta protegida, validación y reglas Firestore; 13 pruebas del servicio, 303 generales aprobadas y 8 omitidas; lint y build correctos; 15/15 pruebas de permisos, 4/4 de precios; recorrido CRUD completo y bloqueo Customer verificados en emulador. | Completada y verificada localmente; documentación preparada en el cierre de T10.3. | Confirmar commit y push; S3 reservado para T10.4. |
 
 ### Condiciones para continuar
 
-Antes de T10.3:
+Antes de T10.4:
 
-- Confirmar que el código y la documentación de T10.2 estén versionados y publicados en `main`.
-- Verificar que el árbol de trabajo esté limpio.
-- Confirmar que `main` y `origin/main` estén sincronizadas.
-- Revisar los archivos y dependencias existentes relacionados con el CRUD de productos, Firestore y almacenamiento S3.
-- Obtener autorización expresa del desarrollador antes de implementar T10.3.
-- Mantener una sola tarea activa y respetar sus dependencias.
+- Confirmar que T10.3 quedó versionada y publicada en `main`.
+- Verificar el árbol de trabajo limpio y la sincronización con `origin/main`.
+- Revisar requisitos de imágenes privadas y URLs prefirmadas.
+- Reutilizar la infraestructura AWS S3 preparada en T09.
+- Verificar autorización administrativa del backend y protección de credenciales AWS.
+- Obtener autorización expresa para implementar T10.4.
+- Mantener una sola subtarea activa y respetar dependencias.
 
 Antes del despliegue público en Vercel:
 

@@ -70,6 +70,12 @@ const AdminReservedPage = lazy(() =>
   })),
 );
 
+const AdminProductsPage = lazy(() =>
+  import("./pages/AdminProductsPage").then(({ AdminProductsPage }) => ({
+    default: AdminProductsPage,
+  })),
+);
+
 const pageLoadingFallback = (
   <div
     role="status"
@@ -275,6 +281,16 @@ function App() {
               </Suspense>
             }
           />
+
+          <Route
+            path="productos"
+            element={
+              <Suspense fallback={pageLoadingFallback}>
+                <AdminProductsPage />
+              </Suspense>
+            }
+          />
+
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

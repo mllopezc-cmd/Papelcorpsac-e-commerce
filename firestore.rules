@@ -2,17 +2,85 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
     function isSignedIn() {
       return request.auth != null;
     }
 
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return isSignedIn()
+        && request.auth.uid == userId;
     }
 
     function isAdmin() {
       return isSignedIn()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        && exists(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        )
+        && get(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        ).data.role == 'admin';
+    }
+
+    function validProduct(data) {
+      return data.keys().hasAll([
+          'name',
+          'description',
+          'category',
+          'price',
+          'brand',
+          'stock',
+          'imageUrl',
+          'published'
+        ])
+        && data.keys().hasOnly([
+          'name',
+          'description',
+          'category',
+          'price',
+          'brand',
+          'stock',
+          'imageUrl',
+          'published',
+          'sourceUrl'
+        ])
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 120
+        && data.description is string
+        && data.description.size() > 0
+        && data.description.size() <= 1000
+        && data.category in [
+          'writing-instruments',
+          'stationery',
+          'office-supplies',
+          'desk-accessories'
+        ]
+        && data.price is number
+        && data.price > 0
+        && data.price <= 1000000
+        && math.abs(
+          data.price * 100 - math.round(data.price * 100)
+        ) <= 0.00000001
+        && data.brand is string
+        && data.brand.size() > 0
+        && data.brand.size() <= 80
+        && data.stock is int
+        && data.stock >= 0
+        && data.stock <= 1000000
+        && data.imageUrl is string
+        && (
+          data.imageUrl == '/images/product-placeholder.svg'
+          || data.imageUrl.matches('https://.*')
+        )
+        && data.published is bool
+        && (
+          !data.keys().hasAny(['sourceUrl'])
+          || (
+            data.sourceUrl is string
+            && data.sourceUrl.matches('https://.*')
+          )
+        );
     }
 
     match /users/{userId} {
@@ -48,6 +116,7 @@ service cloud.firestore {
         function productIsPublished() {
           let productPath =
             /databases/$(database)/documents/products/$(productId);
+
           return exists(productPath)
             && get(productPath).data.published == true;
         }
@@ -86,10 +155,20 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-      allow get: if resource == null
+      allow get: if isAdmin()
+        || resource == null
         || resource.data.published == true;
-      allow list: if resource.data.published == true;
-      allow create, update, delete: if false;
+
+      allow list: if isAdmin()
+        || resource.data.published == true;
+
+      allow create: if isAdmin()
+        && validProduct(request.resource.data);
+
+      allow update: if isAdmin()
+        && validProduct(request.resource.data);
+
+      allow delete: if isAdmin();
     }
 
     match /{document=**} {

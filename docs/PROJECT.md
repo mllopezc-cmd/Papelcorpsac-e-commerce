@@ -331,7 +331,7 @@ Se acordó comenzar por el layout y la navegación administrativa, conservando l
 
 #### T10.2 — Layout y navegación administrativa
 
-**Estado:** implementada y verificada localmente el 11 de noviembre de 2026.
+**Estado:** completada, verificada y publicada en GitHub mediante el commit `ea95c91` de `main`.
 
 Se incorporó un layout administrativo independiente del layout público de la tienda.
 
@@ -354,7 +354,7 @@ La navegación pública distingue tres estados:
 
 El panel administrativo presenta su propia identidad visual y permite regresar al catálogo público.
 
-Las herramientas de CRUD de productos y la integración de imágenes privadas S3 permanecen pendientes para las siguientes subtareas de T10.
+Las herramientas CRUD se incorporaron posteriormente en T10.3. La integración de imágenes privadas S3 corresponde a T10.4.
 
 **Verificaciones reportadas por el desarrollador:**
 
@@ -371,7 +371,25 @@ Durante la comprobación se identificó que los emuladores de Firebase estaban a
 
 La comprobación visual no equivale a un despliegue público ni sustituye las pruebas de autorización de las futuras operaciones administrativas.
 
-Las funcionalidades administrativas restantes, incluido el CRUD de productos y la integración de imágenes privadas mediante AWS S3, se implementarán y verificarán en las siguientes subtareas de T10.
+La funcionalidad CRUD quedó reservada para T10.3 y la integración de imágenes privadas mediante AWS S3 para T10.4.
+
+#### T10.3 — CRUD administrativo de productos
+
+**Estado:** completada y verificada localmente el 17 de noviembre de 2026. Código y documentación preparados para commit y push de cierre autorizados.
+
+La ruta `/admin/productos` está protegida por `ProtectedRoute requireAdmin`. `AdminProductsPage.tsx` consume `productService.ts`, que utiliza el SDK cliente de Firestore. Las reglas de Firestore constituyen la autorización efectiva y exigen un perfil `admin` para crear, editar y eliminar productos.
+
+El panel permite consultar productos publicados y no publicados, crearlos, editar sus datos comerciales, publicarlos, despublicarlos y eliminarlos con confirmación. El formulario valida los datos antes de guardar. Cuando un producto histórico no tiene marca o stock, el administrador debe completar esos campos; no se inventan valores.
+
+Las escrituras validan campos permitidos, categorías, límites, existencias y precios con dos decimales. La lectura del catálogo público sigue limitada a productos publicados. Los permisos de usuarios, favoritos y órdenes permanecen restrictivos. `sourceUrl` se conserva cuando se proporciona y puede retirarse de una actualización mediante `deleteField()`.
+
+Las imágenes existentes se conservan y los productos nuevos emplean provisionalmente `/images/product-placeholder.svg`. La subida, visualización y eliminación de imágenes privadas mediante AWS S3 se realizarán en T10.4, sin exponer credenciales en React.
+
+No se incorporaron contextos, hooks administrativos, servicios ni dependencias adicionales.
+
+**Evidencia reportada por el desarrollador:** 13 pruebas de `productService` aprobadas; suite general con 303 aprobadas, 8 omitidas y cero fallidas; ESLint, build y `git diff --check` correctos. En el proyecto ficticio `demo-papelcorpsac`, 15 pruebas de permisos y 4 de precios aprobaron. El navegador permitió completar creación, edición, publicación, despublicación y eliminación de un producto temporal; Customer recibió «Acceso restringido» al acceder a `/admin` y `/admin/productos`.
+
+Las reglas modificadas se validaron únicamente en Firestore Emulator. No se publicaron en Firebase real durante esta subtarea. T10.3 no comprende la administración de órdenes T11 ni el despliegue público.
 
 ## 6. Arquitectura y reutilización
 
@@ -663,6 +681,8 @@ Las operaciones de creación de órdenes y descuento de stock continúan ejecut�
 
 **Estado de publicación:** el desarrollador confirmó la publicación de las reglas actualizadas en Firestore Console el 11 de noviembre de 2026. La validación de comportamiento se realizó previamente en Firestore Emulator con el proyecto ficticio `demo-papelcorpsac`.
 
+Durante T10.3 se ampliaron las reglas de `products` para permitir operaciones CRUD únicamente al rol Admin, validar datos comerciales y admitir precios con dos decimales. El catálogo público conserva lecturas únicamente de productos publicados, y las restricciones de usuarios, favoritos y órdenes se mantienen. Las 15 verificaciones de permisos y cuatro de precios se realizaron en Firestore Emulator; estas reglas nuevas no se publicaron todavía en Firebase real.
+
 ### 7.8 Configuración de emuladores en el frontend (T08)
 
 El cliente utiliza `VITE_USE_FIREBASE_EMULATORS` para conectar Firebase Authentication y Firestore Emulator únicamente durante desarrollo local.
@@ -746,33 +766,27 @@ Commits principales:
 
 ### 8.2 Pruebas automatizadas
 
-Últimos resultados reportados por el desarrollador:
+Últimos resultados generales reportados por el desarrollador durante T10.3:
 
 | Verificación | Resultado |
 |---|---|
-| TypeScript API | Correcto |
-| Build | Correcto |
+| Build TypeScript y Vite | Correcto |
 | ESLint | Correcto |
-| Vitest | 264 aprobadas |
+| Vitest, suite general | 303 pruebas aprobadas |
+| Pruebas fallidas | 0 |
 | Pruebas omitidas en suite general | 8 |
-| Auditoría general | 0 vulnerabilidades |
-| Auditoría de producción | 0 vulnerabilidades |
-| git diff --check | Sin errores |
+| Pruebas específicas de `productService` | 13 aprobadas |
+| `git diff --check` | Sin errores de formato |
 
-Las ocho pruebas omitidas corresponden a las pruebas de integración que requieren Firestore Emulator.
+Las ocho pruebas omitidas pertenecen a la suite de integración transaccional de checkout; se habían ejecutado y aprobado por separado en T07 usando Firestore Emulator.
 
-Ejecución independiente:
+Evidencia histórica de T07:
 
-`PAPELCORPSAC_RUN_FIRESTORE_INTEGRATION=true firebase emulators:exec --only firestore --project demo-papelcorpsac "npm.cmd run test -- server/checkoutService.integration.test.ts"`
+- Suite general: 264 pruebas aprobadas y ocho omitidas.
+- Suite de integración independiente: ocho pruebas aprobadas.
+- Total histórico considerando ambas ejecuciones: 272 aprobadas.
 
-Resultado reportado:
-
-- Ocho pruebas aprobadas.
-- Cero fallidas.
-
-Total de casos aprobados considerando ambas ejecuciones: 272.
-
-Este resultado no sustituye la revisión integral de T12.
+Las auditorías anteriores reportaron cero vulnerabilidades, pero no se registra una auditoría nueva ejecutada durante T10.3. Estas pruebas no sustituyen la revisión integral de T12.
 
 ### 8.3 Pruebas de integración HTTP
 
