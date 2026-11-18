@@ -375,7 +375,7 @@ La funcionalidad CRUD quedó reservada para T10.3 y la integración de imágenes
 
 #### T10.3 — CRUD administrativo de productos
 
-**Estado:** completada y verificada localmente el 17 de noviembre de 2026. Código y documentación preparados para commit y push de cierre autorizados.
+**Estado:** completada y verificada localmente el 17 de noviembre de 2026; código y documentación publicados en la rama `main` mediante el commit `cac3b48`.
 
 La ruta `/admin/productos` está protegida por `ProtectedRoute requireAdmin`. `AdminProductsPage.tsx` consume `productService.ts`, que utiliza el SDK cliente de Firestore. Las reglas de Firestore constituyen la autorización efectiva y exigen un perfil `admin` para crear, editar y eliminar productos.
 
@@ -390,6 +390,22 @@ No se incorporaron contextos, hooks administrativos, servicios ni dependencias a
 **Evidencia reportada por el desarrollador:** 13 pruebas de `productService` aprobadas; suite general con 303 aprobadas, 8 omitidas y cero fallidas; ESLint, build y `git diff --check` correctos. En el proyecto ficticio `demo-papelcorpsac`, 15 pruebas de permisos y 4 de precios aprobaron. El navegador permitió completar creación, edición, publicación, despublicación y eliminación de un producto temporal; Customer recibió «Acceso restringido» al acceder a `/admin` y `/admin/productos`.
 
 Las reglas modificadas se validaron únicamente en Firestore Emulator. No se publicaron en Firebase real durante esta subtarea. T10.3 no comprende la administración de órdenes T11 ni el despliegue público.
+
+#### T10.4-A — Backend para URLs PUT prefirmadas de AWS S3
+
+**Estado:** implementada y verificada localmente el 18 de noviembre de 2026. Pendiente de revisión final del diff, commit y push de esta subtarea.
+
+Se implementó `POST /api/product-image-upload-url` en `api/product-image-upload-url.ts` para solicitar una URL PUT prefirmada de AWS S3. La función reutiliza `verifyBearerRequest` de `server/auth.ts` con comprobación de revocación y consulta el rol `admin` del perfil `users/{uid}` mediante Firebase Admin en el servidor. Rechaza métodos no admitidos, tokens inválidos, usuarios sin rol Admin y metadatos de imagen no válidos.
+
+`server/s3Upload.ts` valida que la solicitud contenga exactamente `contentType` y `size`; acepta JPEG, PNG y WebP, con tamaño declarado entero positivo y máximo de 5 MiB. Genera una clave aleatoria `products/<uuid>.<extensión>` y una URL PUT de 60 segundos usando `@aws-sdk/client-s3` y `@aws-sdk/s3-request-presigner`, ambos en versión exacta `3.1170.0`. El SDK y las credenciales AWS permanecen en el backend; no se incorporan al bundle React.
+
+La firma vincula `content-type` y `content-length` junto con `host`. El desarrollador verificó su presencia con el SDK real y credenciales ficticias, sin conexión a AWS, junto con `X-Amz-Expires=60` y `X-Amz-Signature`. Esta prueba confirma los parámetros de firma generados, pero no equivale a comprobar el rechazo de tamaños diferentes por S3 ni verifica los bytes del archivo.
+
+Archivos de implementación y prueba: `api/product-image-upload-url.ts`, `api/product-image-upload-url.test.ts`, `server/s3Upload.ts` y `server/s3Upload.test.ts`. También se actualizaron `package.json` y `package-lock.json` para incorporar las dos dependencias AWS. No se modificaron las reglas Firestore, el frontend ni los recursos AWS.
+
+**Evidencia aportada:** 20 pruebas del servicio y ocho del endpoint aprobadas (28/28); suite general de Vitest con 331 pruebas aprobadas, ocho omitidas y cero fallidas; `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run typecheck:api` y `git diff --check` satisfactorios. Las ocho omitidas son las pruebas de checkout con Firestore Emulator que se aprobaron previamente en una ejecución separada de T07. Vite mantiene una advertencia no bloqueante por un chunk JavaScript de 580,46 kB.
+
+**Límites y pasos posteriores:** no se realizó un PUT real ni un despliegue. La integración del formulario de subida corresponde a T10.4-B; la referencia estable `imageKey` y las URLs GET privadas corresponden a T10.4-C; la eliminación de objetos pertenece a T10.4-D. La validación de funcionamiento real con S3, incluido el comportamiento de encabezados firmados, queda pendiente de una prueba controlada autorizada. La aceptación del hallazgo de dependencias se registra en el apartado 7.9 y no significa que la auditoría general esté limpia.
 
 ## 6. Arquitectura y reutilización
 
@@ -711,13 +727,17 @@ Evidencia:
 - El desarrollador ejecutó `npm.cmd audit --omit=dev`.
 - Ambas auditorías reportaron cero vulnerabilidades.
 
-Estado actual:
+Los resultados sin vulnerabilidades corresponden a aquella corrección histórica de T07; no representan la situación actual de T10.4-A.
 
-No se reportan vulnerabilidades conocidas en las últimas auditorías aportadas.
+**Seguimiento de seguridad de T10.4-A (18 de noviembre de 2026):** tras instalar las dependencias oficiales AWS SDK v3, `npm.cmd audit` reportó **12 alertas altas** derivadas de un único aviso sobre `picomatch@4.0.7`, `GHSA-fc5q-39xc-vjpf`, utilizado en el árbol de herramientas de desarrollo por Vite 8.3.6, Vitest 5.1.0, `tinyglobby`, `fdir` y dependencias asociadas a TypeScript ESLint. El conteo de 12 se refiere a paquetes afectados en esa cadena y no a 12 fallos independientes confirmados. `npm.cmd audit --omit=dev` reportó **cero vulnerabilidades**.
 
-Las auditorías deberán repetirse cuando se actualicen dependencias y antes del despliegue.
+Se reprodujo la alerta con `--prefer-online` y una caché nueva. El 18 de noviembre de 2026, GitHub Advisory Database marcó retirado el aviso `GHSA-fc5q-39xc-vjpf`, pero el servicio de auditoría del registro npm continuó reportándolo. Esto constituye una discrepancia entre fuentes de seguridad; no se presenta como auditoría general limpia ni como garantía de ausencia de riesgos.
 
-No se utilizarán overrides ni actualizaciones forzadas sin justificación y autorización.
+Se evaluaron la versión oficial, overrides, forks y la recomendación de `npm audit fix --force`. No se acreditó una versión oficial corregida compatible; forzar la instalación proponía degradar Vite o Vitest y podía romper el proyecto. No se introdujo un fork no verificado ni un override ficticio. Permanecen los overrides históricos `minimatch: 11.0.3` y `@firebase/firestore@4.19.1` → `@grpc/grpc-js: 1.13.7`.
+
+**Decisión autorizada:** el desarrollador acepta provisionalmente este hallazgo residual del entorno de desarrollo, documentado de forma explícita, para el cierre de T10.4-A. Las pruebas funcionales, el build y el análisis de tipos fueron satisfactorios; la auditoría de producción permanece en cero según los resultados aportados. Se realizará seguimiento de fuentes oficiales para aplicar una corrección compatible cuando exista, previa evaluación, autorización y nuevas pruebas. Esta excepción no autoriza publicar secretos, desactivar controles ni desplegar sin una revisión de seguridad posterior.
+
+Las auditorías deberán repetirse cuando cambien las dependencias y antes del despliegue. No se utilizarán overrides ni actualizaciones forzadas sin justificación y autorización.
 
 ### 7.10 Advertencia de compilación
 
@@ -766,16 +786,19 @@ Commits principales:
 
 ### 8.2 Pruebas automatizadas
 
-Últimos resultados generales reportados por el desarrollador durante T10.3:
+Últimos resultados generales reportados por el desarrollador durante T10.4-A:
 
 | Verificación | Resultado |
 |---|---|
 | Build TypeScript y Vite | Correcto |
 | ESLint | Correcto |
-| Vitest, suite general | 303 pruebas aprobadas |
+| Vitest, suite general | 331 pruebas aprobadas |
 | Pruebas fallidas | 0 |
 | Pruebas omitidas en suite general | 8 |
-| Pruebas específicas de `productService` | 13 aprobadas |
+| Pruebas específicas del backend S3 PUT | 28 aprobadas (20 de servicio y 8 de endpoint) |
+| TypeScript API | Correcto |
+| `npm audit` | 12 alertas altas asociadas al aviso retirado de `picomatch` (excepción documentada en 7.9) |
+| `npm audit --omit=dev` | 0 vulnerabilidades |
 | `git diff --check` | Sin errores de formato |
 
 Las ocho pruebas omitidas pertenecen a la suite de integración transaccional de checkout; se habían ejecutado y aprobado por separado en T07 usando Firestore Emulator.
@@ -786,7 +809,7 @@ Evidencia histórica de T07:
 - Suite de integración independiente: ocho pruebas aprobadas.
 - Total histórico considerando ambas ejecuciones: 272 aprobadas.
 
-Las auditorías anteriores reportaron cero vulnerabilidades, pero no se registra una auditoría nueva ejecutada durante T10.3. Estas pruebas no sustituyen la revisión integral de T12.
+Las auditorías históricas de T07 habían reportado cero vulnerabilidades; durante T10.4-A se detectó y documentó el aviso `picomatch`, con 12 alertas generales y cero de producción. Estas pruebas no sustituyen la revisión integral de T12.
 
 ### 8.3 Pruebas de integración HTTP
 
