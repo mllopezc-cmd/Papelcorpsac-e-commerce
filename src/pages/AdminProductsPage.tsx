@@ -27,6 +27,7 @@ type ProductForm = {
   stock: string;
   published: boolean;
   imageUrl?: string;
+  imageKey?: string;
   sourceUrl?: string;
 };
 
@@ -74,6 +75,7 @@ function toForm(product: Product): ProductForm {
         : String(product.stock),
     published: product.published,
     imageUrl: product.imageUrl,
+    imageKey: product.imageKey,
     sourceUrl: product.sourceUrl,
   };
 }
@@ -119,7 +121,12 @@ function validateForm(form: ProductForm): string | null {
   return null;
 }
 
-function toInput(form: ProductForm): ProductInput {
+function toInput(
+  form: ProductForm,
+  uploadedKey: string | null,
+): ProductInput {
+  const imageKey = uploadedKey ?? form.imageKey;
+
   return {
     name: form.name.trim(),
     description: form.description.trim(),
@@ -131,6 +138,9 @@ function toInput(form: ProductForm): ProductInput {
     ...(form.imageUrl === undefined
       ? {}
       : { imageUrl: form.imageUrl }),
+    ...(imageKey === undefined
+      ? {}
+      : { imageKey }),
     ...(form.sourceUrl === undefined
       ? {}
       : { sourceUrl: form.sourceUrl }),
@@ -281,7 +291,7 @@ export function AdminProductsPage() {
     setBusy(true);
 
     try {
-      const input = toInput(form);
+      const input = toInput(form, uploadedKey);
       const wasEditing = editingId !== null;
 
       if (editingId !== null) {
@@ -374,9 +384,9 @@ export function AdminProductsPage() {
       </div>
 
       <p className="mt-5 text-sm text-muted">
-        La subida de imágenes a S3 está disponible para
-        administradores. Su vinculación permanente con los
-        productos corresponde a T10.4-C.
+        Las imágenes se suben al bucket privado de AWS S3.
+        Para asociar una imagen al producto, súbela y guarda
+        el formulario.
       </p>
 
       {notice && (
@@ -546,6 +556,21 @@ export function AdminProductsPage() {
                 La selección no inicia una subida.
               </p>
 
+              {form.imageKey && (
+                <div className="mt-4 rounded-sm border border-line bg-surface p-4">
+                  <p className="text-sm font-semibold text-ink">
+                    Imagen S3 asociada actualmente
+                  </p>
+                  <p className="mt-2 break-all font-mono text-xs text-muted">
+                    Clave S3: {form.imageKey}
+                  </p>
+                  <p className="mt-2 text-sm text-muted">
+                    Si guardas sin subir otra imagen, se
+                    conservará esta referencia.
+                  </p>
+                </div>
+              )}
+
               <label
                 htmlFor="admin-product-image"
                 className="mt-4 block text-sm font-semibold text-ink"
@@ -615,18 +640,18 @@ export function AdminProductsPage() {
                   </p>
 
                   <p className="mt-3 text-sm text-muted">
-                    La imagen todavía no está asociada al
-                    producto. Guardar el formulario no almacenará
-                    esta clave en Firestore; esa integración
-                    corresponde a T10.4-C.
+                    Esta imagen se asociará al producto
+                    cuando guardes el formulario.
+                    Si el guardado falla, podrás reintentarlo
+                    sin volver a subir el archivo.
                   </p>
                 </div>
               )}
 
               <p className="mt-4 text-sm text-muted">
-                Evita subir archivos de prueba innecesarios.
-                Hasta T10.4-C, las imágenes subidas pueden quedar
-                sin una referencia permanente.
+                La imagen actual no se elimina automáticamente
+                al reemplazarla. La eliminación de archivos
+                S3 se gestionará en una etapa posterior.
               </p>
             </fieldset>
 

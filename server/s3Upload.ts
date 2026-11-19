@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import {
+  GetObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
@@ -8,12 +9,16 @@ import { getFirebaseAdminFirestore } from './firebaseAdmin.js'
 
 export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
 export const UPLOAD_URL_EXPIRES_IN = 60
+export const IMAGE_GET_URL_EXPIRES_IN = 60
 
 const IMAGE_EXTENSIONS = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
 } as const
+
+const PRODUCT_IMAGE_KEY_PATTERN =
+  /^products\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(jpg|png|webp)$/
 
 export type ImageContentType = keyof typeof IMAGE_EXTENSIONS
 
@@ -29,11 +34,25 @@ export type UploadImageResult = {
   expiresIn: number
 }
 
+export type ReadImageResult = {
+  url: string
+  expiresIn: number
+}
+
 export class S3UploadConfigurationError extends Error {
   constructor() {
     super('Invalid S3 upload configuration')
     this.name = 'S3UploadConfigurationError'
   }
+}
+
+export function isValidProductImageKey(
+  value: unknown,
+): value is string {
+  return (
+    typeof value === 'string' &&
+    PRODUCT_IMAGE_KEY_PATTERN.test(value)
+  )
 }
 
 export function parseUploadImageInput(
@@ -155,5 +174,29 @@ export async function createPresignedUpload(
     key,
     contentType: validated.contentType,
     expiresIn: UPLOAD_URL_EXPIRES_IN,
+  }
+}
+
+export async function createPresignedRead(
+  key: string,
+): Promise<ReadImageResult> {
+  if (!isValidProductImageKey(key)) {
+    throw new Error('Invalid product image key')
+  }
+
+  const { client, bucket } = getS3Configuration()
+
+  const command = new GetObjectCommand({
+    Bucket: bucket,
+    Key: key,
+  })
+
+  const url = await getSignedUrl(client, command, {
+    expiresIn: IMAGE_GET_URL_EXPIRES_IN,
+  })
+
+  return {
+    url,
+    expiresIn: IMAGE_GET_URL_EXPIRES_IN,
   }
 }

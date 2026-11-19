@@ -22,6 +22,16 @@ service cloud.firestore {
         ).data.role == 'admin';
     }
 
+    function validProductImageKey(data) {
+      return !data.keys().hasAny(['imageKey'])
+        || (
+          data.imageKey is string
+          && data.imageKey.matches(
+            'products/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.(jpg|png|webp)'
+          )
+        );
+    }
+
     function validProduct(data) {
       return data.keys().hasAll([
           'name',
@@ -41,6 +51,7 @@ service cloud.firestore {
           'brand',
           'stock',
           'imageUrl',
+          'imageKey',
           'published',
           'sourceUrl'
         ])
@@ -73,6 +84,7 @@ service cloud.firestore {
           data.imageUrl == '/images/product-placeholder.svg'
           || data.imageUrl.matches('https://.*')
         )
+        && validProductImageKey(data)
         && data.published is bool
         && (
           !data.keys().hasAny(['sourceUrl'])

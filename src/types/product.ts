@@ -21,6 +21,7 @@ type ProductFields = {
   category: ProductCategory
   price: number
   imageUrl?: string
+  imageKey?: string
   published: boolean
 }
 
@@ -45,8 +46,9 @@ export type Product = ProductFields &
  * Se requiere marca y stock porque ambos forman parte
  * de los productos comerciales utilizados por el checkout.
  *
- * La imagen puede omitirse durante T10.3. En ese caso,
- * se utilizará la imagen demostrativa local.
+ * imageUrl conserva la compatibilidad con el catálogo anterior.
+ * imageKey identifica un objeto privado de AWS S3.
+ * Ninguna URL prefirmada se almacena de forma permanente.
  */
 export type ProductInput = Omit<ProductFields, 'id'> & {
   brand: string

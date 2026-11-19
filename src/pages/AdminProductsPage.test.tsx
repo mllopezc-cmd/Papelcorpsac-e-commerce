@@ -68,6 +68,9 @@ const admin = { uid: 'admin-test' }
 const key =
   'products/11111111-1111-4111-8111-111111111111.jpg'
 
+const previousKey =
+  'products/22222222-2222-4222-8222-222222222222.webp'
+
 const existingProduct: Product = {
   id: 'producto-001',
   name: 'Cuaderno premium',
@@ -114,6 +117,47 @@ function openCreateForm() {
   fireEvent.click(
     screen.getByRole('button', {
       name: 'Nuevo producto',
+    }),
+  )
+}
+
+function fillRequiredFields() {
+  fireEvent.change(screen.getByLabelText('Nombre'), {
+    target: { value: 'Cuaderno de prueba' },
+  })
+
+  fireEvent.change(screen.getByLabelText('Marca'), {
+    target: { value: 'Papel Corp' },
+  })
+
+  fireEvent.change(screen.getByLabelText('Precio (S/)'), {
+    target: { value: '25.50' },
+  })
+
+  fireEvent.change(screen.getByLabelText('Stock'), {
+    target: { value: '10' },
+  })
+
+  fireEvent.change(screen.getByLabelText('Descripción'), {
+    target: { value: 'Cuaderno con imagen S3' },
+  })
+}
+
+async function uploadSelectedImage() {
+  selectFile(imageFile())
+  fireEvent.click(uploadButton())
+
+  await screen.findByText(`Clave S3: ${key}`)
+}
+
+async function openExistingProduct() {
+  render(<AdminProductsPage />)
+
+  await screen.findByText('Cuaderno premium')
+
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: 'Editar',
     }),
   )
 }
@@ -327,5 +371,170 @@ describe('AdminProductsPage — T10.4-B', () => {
     ).toBeNull()
 
     expect(uploadButton().disabled).toBe(true)
+  })
+})
+
+describe('AdminProductsPage — T10.4-C', () => {
+  it('guarda uploadedKey al crear un producto', async () => {
+    render(<AdminProductsPage />)
+
+    openCreateForm()
+    fillRequiredFields()
+    await uploadSelectedImage()
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Crear producto',
+      }),
+    )
+
+    await waitFor(() => {
+      expect(createProductMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Cuaderno de prueba',
+          imageKey: key,
+        }),
+      )
+    })
+
+    expect(
+      await screen.findByText(
+        'Producto creado correctamente.',
+      ),
+    ).toBeTruthy()
+  })
+
+  it('conserva la referencia existente al editar sin subir otra imagen', async () => {
+    getAdminProductsMock.mockResolvedValue([
+      {
+        ...existingProduct,
+        imageKey: previousKey,
+      },
+    ])
+
+    await openExistingProduct()
+
+    expect(
+      screen.getByText(`Clave S3: ${previousKey}`),
+    ).toBeTruthy()
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Guardar cambios',
+      }),
+    )
+
+    await waitFor(() => {
+      expect(updateProductMock).toHaveBeenCalledWith(
+        'producto-001',
+        expect.objectContaining({
+          imageKey: previousKey,
+        }),
+      )
+    })
+
+    expect(uploadProductImageMock).not.toHaveBeenCalled()
+  })
+
+  it('reemplaza la referencia al guardar una imagen nueva', async () => {
+    getAdminProductsMock.mockResolvedValue([
+      {
+        ...existingProduct,
+        imageKey: previousKey,
+      },
+    ])
+
+    await openExistingProduct()
+    await uploadSelectedImage()
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Guardar cambios',
+      }),
+    )
+
+    await waitFor(() => {
+      expect(updateProductMock).toHaveBeenCalledWith(
+        'producto-001',
+        expect.objectContaining({
+          imageKey: key,
+        }),
+      )
+    })
+  })
+
+  it('mantiene uploadedKey si Firestore rechaza el guardado', async () => {
+    createProductMock.mockRejectedValueOnce(
+      new Error('Firestore no disponible'),
+    )
+
+    render(<AdminProductsPage />)
+
+    openCreateForm()
+    fillRequiredFields()
+    await uploadSelectedImage()
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Crear producto',
+      }),
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('alert').textContent,
+      ).toMatch(/Firestore no disponible/)
+    })
+
+    expect(
+      screen.getByText(`Clave S3: ${key}`),
+    ).toBeTruthy()
+
+    expect(
+      screen.getByRole('button', {
+        name: 'Crear producto',
+      }),
+    ).toBeTruthy()
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Crear producto',
+      }),
+    )
+
+    await waitFor(() => {
+      expect(createProductMock).toHaveBeenCalledTimes(2)
+    })
+
+    expect(createProductMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        imageKey: key,
+      }),
+    )
+
+    expect(uploadProductImageMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('no vincula una imagen si solamente se selecciona el archivo', async () => {
+    render(<AdminProductsPage />)
+
+    openCreateForm()
+    fillRequiredFields()
+    selectFile(imageFile())
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Crear producto',
+      }),
+    )
+
+    await waitFor(() => {
+      expect(createProductMock).toHaveBeenCalledTimes(1)
+    })
+
+    const [input] = createProductMock.mock.calls[0]
+
+    expect(input).not.toHaveProperty('imageKey')
+    expect(uploadProductImageMock).not.toHaveBeenCalled()
   })
 })

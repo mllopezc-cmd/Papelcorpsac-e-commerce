@@ -6,7 +6,10 @@ import {
   type ProductInput,
 } from '../types/product'
 
-type ProductData = Omit<Product, 'id' | 'brand' | 'stock' | 'sourceUrl'> & {
+type ProductData = Omit<
+  Product,
+  'id' | 'brand' | 'stock' | 'sourceUrl'
+> & {
   brand?: string
   stock?: number
   sourceUrl?: string
@@ -14,13 +17,23 @@ type ProductData = Omit<Product, 'id' | 'brand' | 'stock' | 'sourceUrl'> & {
 
 const PRODUCT_PLACEHOLDER = '/images/product-placeholder.svg'
 
+const PRODUCT_IMAGE_KEY_PATTERN =
+  /^products\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(jpg|png|webp)$/
+
 let publishedProductsRequest: Promise<Product[]> | undefined
 
-function isProductCategory(value: unknown): value is ProductCategory {
-  return PRODUCT_CATEGORIES.some((category) => category === value)
+function isProductCategory(
+  value: unknown,
+): value is ProductCategory {
+  return PRODUCT_CATEGORIES.some(
+    (category) => category === value,
+  )
 }
 
-function isValidPrice(value: unknown, requireCents: boolean): value is number {
+function isValidPrice(
+  value: unknown,
+  requireCents: boolean,
+): value is number {
   return (
     typeof value === 'number' &&
     Number.isFinite(value) &&
@@ -30,8 +43,13 @@ function isValidPrice(value: unknown, requireCents: boolean): value is number {
   )
 }
 
-function isValidProductUrl(value: unknown): value is string {
-  if (typeof value !== 'string' || value.trim().length === 0) {
+function isValidProductUrl(
+  value: unknown,
+): value is string {
+  if (
+    typeof value !== 'string' ||
+    value.trim().length === 0
+  ) {
     return false
   }
 
@@ -49,26 +67,45 @@ function isValidProductUrl(value: unknown): value is string {
   }
 }
 
-function isValidImageUrl(value: unknown): value is string {
+function isValidImageUrl(
+  value: unknown,
+): value is string {
   return (
     value === PRODUCT_PLACEHOLDER ||
     isValidProductUrl(value)
   )
 }
 
-function isProductData(value: unknown): value is ProductData {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+function isValidImageKey(
+  value: unknown,
+): value is string {
+  return (
+    typeof value === 'string' &&
+    PRODUCT_IMAGE_KEY_PATTERN.test(value)
+  )
+}
+
+function isProductData(
+  value: unknown,
+): value is ProductData {
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    Array.isArray(value)
+  ) {
     return false
   }
 
   const product = value as Record<string, unknown>
   const hasBrand = product.brand !== undefined
   const hasStock = product.stock !== undefined
-  const hasSourceUrl = Object.prototype.hasOwnProperty.call(
-    product,
-    'sourceUrl',
-  )
-  const hasProductMetadata = hasBrand || hasStock || hasSourceUrl
+  const hasSourceUrl =
+    Object.prototype.hasOwnProperty.call(
+      product,
+      'sourceUrl',
+    )
+  const hasProductMetadata =
+    hasBrand || hasStock || hasSourceUrl
 
   const productMetadataIsValid =
     hasBrand === hasStock &&
@@ -80,7 +117,12 @@ function isProductData(value: unknown): value is ProductData {
         product.stock >= 0))
 
   const sourceUrlIsValid =
-    !hasSourceUrl || isValidProductUrl(product.sourceUrl)
+    !hasSourceUrl ||
+    isValidProductUrl(product.sourceUrl)
+
+  const imageKeyIsValid =
+    product.imageKey === undefined ||
+    isValidImageKey(product.imageKey)
 
   return (
     typeof product.name === 'string' &&
@@ -89,14 +131,18 @@ function isProductData(value: unknown): value is ProductData {
     product.description.trim().length > 0 &&
     isProductCategory(product.category) &&
     isValidPrice(product.price, hasProductMetadata) &&
-    (product.imageUrl === undefined || isValidImageUrl(product.imageUrl)) &&
+    (product.imageUrl === undefined ||
+      isValidImageUrl(product.imageUrl)) &&
+    imageKeyIsValid &&
     productMetadataIsValid &&
     sourceUrlIsValid &&
     typeof product.published === 'boolean'
   )
 }
 
-function isValidProductInput(value: unknown): value is ProductInput {
+function isValidProductInput(
+  value: unknown,
+): value is ProductInput {
   return (
     isProductData(value) &&
     typeof value.brand === 'string' &&
@@ -108,12 +154,25 @@ function isValidProductInput(value: unknown): value is ProductInput {
   )
 }
 
-function toProduct(id: string, value: unknown): Product {
+function toProduct(
+  id: string,
+  value: unknown,
+): Product {
   if (!isProductData(value)) {
-    throw new Error(`El producto "${id}" tiene datos inválidos.`)
+    throw new Error(
+      `El producto "${id}" tiene datos inválidos.`,
+    )
   }
 
-  const { name, description, category, price, imageUrl, published } = value
+  const {
+    name,
+    description,
+    category,
+    price,
+    imageUrl,
+    imageKey,
+    published,
+  } = value
 
   const product = {
     id,
@@ -121,11 +180,19 @@ function toProduct(id: string, value: unknown): Product {
     description,
     category,
     price,
-    ...(imageUrl === undefined ? {} : { imageUrl }),
+    ...(imageUrl === undefined
+      ? {}
+      : { imageUrl }),
+    ...(imageKey === undefined
+      ? {}
+      : { imageKey }),
     published,
   }
 
-  if (typeof value.brand === 'string' && typeof value.stock === 'number') {
+  if (
+    typeof value.brand === 'string' &&
+    typeof value.stock === 'number'
+  ) {
     const productWithInventory = {
       ...product,
       brand: value.brand,
@@ -133,7 +200,10 @@ function toProduct(id: string, value: unknown): Product {
     }
 
     if (typeof value.sourceUrl === 'string') {
-      return { ...productWithInventory, sourceUrl: value.sourceUrl }
+      return {
+        ...productWithInventory,
+        sourceUrl: value.sourceUrl,
+      }
     }
 
     return productWithInventory
@@ -149,9 +219,13 @@ function toProduct(id: string, value: unknown): Product {
   return product
 }
 
-function prepareProductData(input: ProductInput): ProductInput {
+function prepareProductData(
+  input: ProductInput,
+): ProductInput {
   if (!isValidProductInput(input)) {
-    throw new Error('Los datos del producto son inválidos.')
+    throw new Error(
+      'Los datos del producto son inválidos.',
+    )
   }
 
   return {
@@ -161,7 +235,11 @@ function prepareProductData(input: ProductInput): ProductInput {
     price: input.price,
     brand: input.brand.trim(),
     stock: input.stock,
-    imageUrl: input.imageUrl ?? PRODUCT_PLACEHOLDER,
+    imageUrl:
+      input.imageUrl ?? PRODUCT_PLACEHOLDER,
+    ...(input.imageKey === undefined
+      ? {}
+      : { imageKey: input.imageKey }),
     published: input.published,
     ...(input.sourceUrl?.trim()
       ? { sourceUrl: input.sourceUrl.trim() }
@@ -169,13 +247,17 @@ function prepareProductData(input: ProductInput): ProductInput {
   }
 }
 
-function validateProductId(id: string): void {
+function validateProductId(
+  id: string,
+): void {
   if (
     typeof id !== 'string' ||
     id.trim().length === 0 ||
     id.includes('/')
   ) {
-    throw new Error('El identificador del producto no es válido.')
+    throw new Error(
+      'El identificador del producto no es válido.',
+    )
   }
 }
 
@@ -187,18 +269,23 @@ async function fetchPublishedProducts(): Promise<Product[]> {
     firestore.where('published', '==', true),
   )
 
-  const snapshot = await firestore.getDocs(productsQuery)
+  const snapshot = await firestore.getDocs(
+    productsQuery,
+  )
 
   return snapshot.docs
-    .map((document) => toProduct(document.id, document.data()))
+    .map((document) =>
+      toProduct(document.id, document.data()),
+    )
     .filter((product) => product.published)
 }
 
 export function getPublishedProducts(): Promise<Product[]> {
   if (!publishedProductsRequest) {
-    publishedProductsRequest = fetchPublishedProducts().finally(() => {
-      publishedProductsRequest = undefined
-    })
+    publishedProductsRequest =
+      fetchPublishedProducts().finally(() => {
+        publishedProductsRequest = undefined
+      })
   }
 
   return publishedProductsRequest
@@ -212,13 +299,17 @@ export async function getAdminProducts(): Promise<Product[]> {
   )
 
   return snapshot.docs
-    .map((document) => toProduct(document.id, document.data()))
+    .map((document) =>
+      toProduct(document.id, document.data()),
+    )
     .sort((first, second) =>
       first.name.localeCompare(second.name, 'es'),
     )
 }
 
-export async function createProduct(input: ProductInput): Promise<string> {
+export async function createProduct(
+  input: ProductInput,
+): Promise<string> {
   const productData = prepareProductData(input)
   const { db, firestore } = await loadFirestore()
 
@@ -244,12 +335,15 @@ export async function updateProduct(
     {
       ...productData,
       sourceUrl:
-        productData.sourceUrl ?? firestore.deleteField(),
+        productData.sourceUrl ??
+        firestore.deleteField(),
     },
   )
 }
 
-export async function deleteProduct(id: string): Promise<void> {
+export async function deleteProduct(
+  id: string,
+): Promise<void> {
   validateProductId(id)
 
   const { db, firestore } = await loadFirestore()
@@ -272,7 +366,10 @@ export async function getPublishedProductById(
     return null
   }
 
-  const product = toProduct(document.id, document.data())
+  const product = toProduct(
+    document.id,
+    document.data(),
+  )
 
   return product.published ? product : null
 }

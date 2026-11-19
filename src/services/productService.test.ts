@@ -54,6 +54,9 @@ const validInput = {
   published: false,
 }
 
+const imageKey =
+  'products/11111111-1111-4111-8111-111111111111.webp'
+
 function createDocument(id: string, data: object) {
   return {
     id,
@@ -121,6 +124,40 @@ describe('productService', () => {
       })
 
       await expect(getAdminProducts()).resolves.toEqual([])
+    })
+
+    it('recupera imageKey de un producto S3', async () => {
+      firestoreMock.getDocs.mockResolvedValue({
+        docs: [
+          createDocument('product-s3', {
+            ...validInput,
+            imageKey,
+          }),
+        ],
+      })
+
+      const products = await getAdminProducts()
+
+      expect(products).toHaveLength(1)
+      expect(products[0].imageKey).toBe(imageKey)
+    })
+
+    it('admite productos anteriores sin imageKey', async () => {
+      firestoreMock.getDocs.mockResolvedValue({
+        docs: [
+          createDocument('product-legacy', {
+            ...validInput,
+            imageUrl: 'https://example.com/cuaderno.webp',
+          }),
+        ],
+      })
+
+      const products = await getAdminProducts()
+
+      expect(products[0].imageKey).toBeUndefined()
+      expect(products[0].imageUrl).toBe(
+        'https://example.com/cuaderno.webp',
+      )
     })
   })
 
@@ -192,6 +229,39 @@ describe('productService', () => {
 
       expect(firestoreMock.addDoc).not.toHaveBeenCalled()
     })
+
+    it('persiste imageKey al crear un producto S3', async () => {
+      await createProduct({
+        ...validInput,
+        imageKey,
+      })
+
+      const [, productData] = firestoreMock.addDoc.mock.calls[0]
+
+      expect(productData).toEqual({
+        ...validInput,
+        imageKey,
+        imageUrl: '/images/product-placeholder.svg',
+      })
+    })
+
+    it.each([
+      '../private/image.jpg',
+      'products/example.jpg',
+      'products/11111111-1111-4111-8111-111111111111.svg',
+      'https://example.com/image.jpg',
+      '',
+    ])('rechaza imageKey inválido: %s', async (invalidKey) => {
+      await expect(
+        createProduct({
+          ...validInput,
+          imageKey: invalidKey,
+        }),
+      ).rejects.toThrow('Los datos del producto son inválidos.')
+
+      expect(loadFirestoreMock).not.toHaveBeenCalled()
+      expect(firestoreMock.addDoc).not.toHaveBeenCalled()
+    })
   })
 
   describe('updateProduct', () => {
@@ -258,6 +328,44 @@ describe('productService', () => {
       expect(loadFirestoreMock).not.toHaveBeenCalled()
       expect(firestoreMock.updateDoc).not.toHaveBeenCalled()
     })
+
+    it('actualiza imageKey cuando recibe una clave válida', async () => {
+      await updateProduct('product-s3', {
+        ...validInput,
+        imageKey,
+      })
+
+      expect(firestoreMock.updateDoc).toHaveBeenCalledWith(
+        { type: 'product-document' },
+        {
+          ...validInput,
+          imageKey,
+          imageUrl: '/images/product-placeholder.svg',
+          sourceUrl: deleteFieldValue,
+        },
+      )
+    })
+
+    it('no elimina imageKey cuando se omite', async () => {
+      await updateProduct('product-legacy', validInput)
+
+      const [, changes] = firestoreMock.updateDoc.mock.calls[0]
+
+      expect(changes).not.toHaveProperty('imageKey')
+      expect(firestoreMock.deleteField).toHaveBeenCalledTimes(1)
+    })
+
+    it('rechaza una referencia S3 inválida antes de actualizar', async () => {
+      await expect(
+        updateProduct('product-s3', {
+          ...validInput,
+          imageKey: 'products/invalid.jpg',
+        }),
+      ).rejects.toThrow('Los datos del producto son inválidos.')
+
+      expect(loadFirestoreMock).not.toHaveBeenCalled()
+      expect(firestoreMock.updateDoc).not.toHaveBeenCalled()
+    })
   })
 
   describe('deleteProduct', () => {
@@ -318,6 +426,27 @@ describe('productService', () => {
       )
 
       expect(firestoreMock.query).toHaveBeenCalledTimes(1)
+    })
+
+    it('incluye imageKey en productos publicados', async () => {
+      firestoreMock.query.mockReturnValue({
+        type: 'published-query',
+      })
+
+      firestoreMock.getDocs.mockResolvedValue({
+        docs: [
+          createDocument('product-public-s3', {
+            ...validInput,
+            published: true,
+            imageKey,
+          }),
+        ],
+      })
+
+      const products = await getPublishedProducts()
+
+      expect(products).toHaveLength(1)
+      expect(products[0].imageKey).toBe(imageKey)
     })
   })
 })
