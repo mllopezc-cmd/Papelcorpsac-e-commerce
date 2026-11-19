@@ -393,7 +393,7 @@ Las reglas modificadas se validaron únicamente en Firestore Emulator. No se pub
 
 #### T10.4-A — Backend para URLs PUT prefirmadas de AWS S3
 
-**Estado:** implementada y verificada localmente el 18 de noviembre de 2026. Pendiente de revisión final del diff, commit y push de esta subtarea.
+**Estado:** implementada, verificada localmente y publicada en `main` mediante el commit `40f15ed`, el 18 de noviembre de 2026.
 
 Se implementó `POST /api/product-image-upload-url` en `api/product-image-upload-url.ts` para solicitar una URL PUT prefirmada de AWS S3. La función reutiliza `verifyBearerRequest` de `server/auth.ts` con comprobación de revocación y consulta el rol `admin` del perfil `users/{uid}` mediante Firebase Admin en el servidor. Rechaza métodos no admitidos, tokens inválidos, usuarios sin rol Admin y metadatos de imagen no válidos.
 
@@ -406,6 +406,49 @@ Archivos de implementación y prueba: `api/product-image-upload-url.ts`, `api/pr
 **Evidencia aportada:** 20 pruebas del servicio y ocho del endpoint aprobadas (28/28); suite general de Vitest con 331 pruebas aprobadas, ocho omitidas y cero fallidas; `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run typecheck:api` y `git diff --check` satisfactorios. Las ocho omitidas son las pruebas de checkout con Firestore Emulator que se aprobaron previamente en una ejecución separada de T07. Vite mantiene una advertencia no bloqueante por un chunk JavaScript de 580,46 kB.
 
 **Límites y pasos posteriores:** no se realizó un PUT real ni un despliegue. La integración del formulario de subida corresponde a T10.4-B; la referencia estable `imageKey` y las URLs GET privadas corresponden a T10.4-C; la eliminación de objetos pertenece a T10.4-D. La validación de funcionamiento real con S3, incluido el comportamiento de encabezados firmados, queda pendiente de una prueba controlada autorizada. La aceptación del hallazgo de dependencias se registra en el apartado 7.9 y no significa que la auditoría general esté limpia.
+
+#### T10.4-B — Interfaz administrativa de subida de imágenes a AWS S3
+
+**Estado:** implementada y verificada localmente el 19 de noviembre de 2026 mediante pruebas automatizadas y revisión visual. El cierre documental, commit y push permanecen pendientes.
+
+Se amplió `src/pages/AdminProductsPage.tsx` con una sección independiente que permite seleccionar una imagen y solicitar su subida a AWS S3. La implementación conserva el CRUD administrativo de productos y no añade dependencias nuevas.
+
+El servicio `src/services/productImageUploadService.ts` valida que el archivo seleccionado corresponda a JPEG, PNG o WebP y no supere 5 MiB. Obtiene el Firebase ID token del usuario autenticado y realiza una solicitud autenticada a `POST /api/product-image-upload-url` para obtener los datos de una subida PUT prefirmada. Valida la respuesta y utiliza `fetch` para enviar el archivo directamente a la URL HTTPS proporcionada por el servidor.
+
+El formulario mantiene estados de selección, operación en curso, error y resultado. Cuando el servicio devuelve una clave S3, puede mostrarse en la interfaz; esta referencia se mantiene únicamente en el estado local del componente.
+
+**Archivos implementados:**
+
+- `src/pages/AdminProductsPage.tsx`.
+- `src/pages/AdminProductsPage.test.tsx`.
+- `src/services/productImageUploadService.ts`.
+- `src/services/productImageUploadService.test.ts`.
+
+**Evidencia automatizada aportada por el desarrollador:**
+
+- 14 pruebas del servicio de subida aprobadas.
+- Nueve pruebas del componente administrativo aprobadas.
+- 23 pruebas específicas aprobadas en total.
+- Suite general: 354 pruebas aprobadas, ocho omitidas y cero fallidas.
+- `npm.cmd run lint`: satisfactorio.
+- `npm.cmd run build`: satisfactorio.
+- `npm.cmd run typecheck:api`: satisfactorio.
+- `git diff --check`: sin errores.
+- Advertencia histórica no bloqueante de Vite por un chunk de aproximadamente 580,46 kB.
+
+**Verificación visual y diagnóstico local:** el desarrollador comprobó la presentación de la sección de subida en escritorio y móvil. La primera solicitud al endpoint desde Vite devolvió HTTP 404 porque `npm.cmd run dev` no ejecuta las funciones de Vercel. Al iniciar `vercel dev`, la ruta API quedó accesible y una solicitud GET devolvió HTTP 405 con el mensaje `Method Not Allowed`, respuesta esperada para un endpoint que admite POST.
+
+Inicialmente, el frontend mostró un error de configuración por incompatibilidad entre el indicador de emuladores y el proyecto Firebase. La interfaz volvió a cargar mediante `vercel dev` y las variables temporales de proceso `VITE_USE_FIREBASE_EMULATORS=false` y `VITE_FIREBASE_PROJECT_ID=papelcorpsac`, sin modificar los archivos de configuración.
+
+**Limitaciones verificadas:** no se completó una solicitud POST autenticada de generación de URL prefirmada ni una transferencia PUT real contra AWS S3. Tampoco se confirmó la configuración efectiva de Firebase Admin para ese recorrido. Las pruebas automatizadas utilizaron mocks y no sustituyen la verificación de credenciales, autorización, permisos y funcionamiento real.
+
+T10.4-B no guarda `imageKey` en Firestore, no proporciona URLs GET privadas para visualizar las imágenes del catálogo y no elimina objetos de S3. La persistencia y visualización corresponden a T10.4-C; la eliminación autorizada corresponde a T10.4-D.
+
+**Decisión del desarrollador:** posponer las comprobaciones reales de Firebase Admin y AWS S3 hasta la integración final de T10.4, una vez completadas las subtareas de persistencia, visualización y eliminación. Se mantiene la obligación de comprobar los encabezados firmados, la autorización administrativa, las operaciones efectivas con S3 y la seguridad de las reglas antes de considerar T10 cerrada.
+
+Las reglas de Firestore ampliadas durante T10.3 todavía no se han publicado en Firebase real. Su publicación requerirá comparar las reglas locales con las activas en Firebase Console y obtener autorización independiente.
+
+No se instalaron nuevas dependencias, no se modificaron credenciales ni se realizaron operaciones reales sobre objetos S3 durante T10.4-B.
 
 ## 6. Arquitectura y reutilización
 
@@ -595,7 +638,7 @@ La operación:
 5. Comprueba si ya existe una orden para ese intento.
 6. Obtiene los productos y sus precios desde Firestore.
 7. Comprueba publicación y disponibilidad.
-8. Calcula los importes en céntimos.
+8. Calcula importes en céntimos.
 9. Crea la orden.
 10. Descuenta el stock dentro de la misma transacción.
 
@@ -699,6 +742,8 @@ Las operaciones de creación de órdenes y descuento de stock continúan ejecut�
 
 Durante T10.3 se ampliaron las reglas de `products` para permitir operaciones CRUD únicamente al rol Admin, validar datos comerciales y admitir precios con dos decimales. El catálogo público conserva lecturas únicamente de productos publicados, y las restricciones de usuarios, favoritos y órdenes se mantienen. Las 15 verificaciones de permisos y cuatro de precios se realizaron en Firestore Emulator; estas reglas nuevas no se publicaron todavía en Firebase real.
 
+La publicación pendiente de las reglas de T10.3 se realizará únicamente tras comparar las versiones local y activa, revisar cualquier ajuste necesario por T10.4 y obtener autorización independiente del desarrollador.
+
 ### 7.8 Configuración de emuladores en el frontend (T08)
 
 El cliente utiliza `VITE_USE_FIREBASE_EMULATORS` para conectar Firebase Authentication y Firestore Emulator únicamente durante desarrollo local.
@@ -709,6 +754,8 @@ El cliente utiliza `VITE_USE_FIREBASE_EMULATORS` para conectar Firebase Authenti
 - Firestore Emulator utiliza `127.0.0.1:8080`.
 - `.env.development.local` está excluido de Git mediante `.gitignore` y se utiliza para las pruebas locales.
 - No se deben habilitar emuladores en Preview ni Production.
+
+Durante el diagnóstico de T10.4-B, `vercel dev` mostró un error de configuración al cargar la interfaz con emuladores. La página volvió a funcionar cuando se inició Vercel Dev con el indicador de emuladores desactivado y el proyecto Firebase real mediante variables temporales de proceso. Esto confirmó la carga visual del frontend, pero no la autenticación efectiva de Firebase Admin ni una subida real a S3.
 
 ### 7.9 Auditoría de dependencias
 
@@ -778,7 +825,7 @@ Commits principales:
 - `e578af2`: validación de solicitudes.
 - `58d0c39`: servicio transaccional de checkout.
 - `1d61f22`: endpoint HTTP protegido.
-- `43bd2e7`: pruebas de integración con Firestore Emulator.
+- `43bd2e7`: pruebas de integración Firestore.
 - `86fe9ca`: interfaz y navegación de checkout.
 - `fce557c`: pruebas del cliente HTTP.
 - `0aeddfb`: pruebas del componente React.
@@ -786,19 +833,20 @@ Commits principales:
 
 ### 8.2 Pruebas automatizadas
 
-Últimos resultados generales reportados por el desarrollador durante T10.4-A:
+Últimos resultados generales reportados por el desarrollador durante T10.4-B:
 
 | Verificación | Resultado |
 |---|---|
 | Build TypeScript y Vite | Correcto |
 | ESLint | Correcto |
-| Vitest, suite general | 331 pruebas aprobadas |
+| Vitest, suite general | 354 pruebas aprobadas |
 | Pruebas fallidas | 0 |
 | Pruebas omitidas en suite general | 8 |
-| Pruebas específicas del backend S3 PUT | 28 aprobadas (20 de servicio y 8 de endpoint) |
+| Pruebas específicas de T10.4-B | 23 aprobadas: 14 del servicio y nueve del componente |
+| Pruebas específicas del backend S3 PUT, T10.4-A | 28 aprobadas: 20 de servicio y ocho de endpoint |
 | TypeScript API | Correcto |
-| `npm audit` | 12 alertas altas asociadas al aviso retirado de `picomatch` (excepción documentada en 7.9) |
-| `npm audit --omit=dev` | 0 vulnerabilidades |
+| `npm audit` | Última auditoría reportada: 12 alertas altas asociadas al aviso retirado de `picomatch` (excepción documentada en 7.9) |
+| `npm audit --omit=dev` | Última auditoría reportada: cero vulnerabilidades |
 | `git diff --check` | Sin errores de formato |
 
 Las ocho pruebas omitidas pertenecen a la suite de integración transaccional de checkout; se habían ejecutado y aprobado por separado en T07 usando Firestore Emulator.
@@ -866,6 +914,8 @@ No equivalen a:
 - Implementación del panel de administración de órdenes (T11).
 - Revisión integral de calidad de T12.
 
+T10.4-A y T10.4-B incorporaron pruebas unitarias y de componentes para la subida de imágenes, pero no se ha realizado todavía una transferencia PUT real a S3 ni una verificación completa de Firebase Admin para ese flujo. Ambas comprobaciones son requisitos de la integración final de T10.4.
+
 ### 8.5 T08 — Historial y detalle de órdenes
 
 **Estado de implementación de T08:** funcionalidad implementada y verificada localmente. El desarrollador confirmó la publicación de las reglas de Firestore en Firebase Console. El código está publicado en GitHub mediante el commit `b3107e1`. Esta actualización documental registra el cierre formal de T08.
@@ -919,6 +969,7 @@ La publicación de reglas en Firestore Console fue confirmada por el desarrollad
 - Endpoint `/api/health` verificado localmente.
 - Endpoint `/api/auth-check` verificado localmente.
 - Endpoint `/api/checkout` verificado localmente.
+- Endpoint `/api/product-image-upload-url` reconocido localmente mediante Vercel Dev; respuesta GET HTTP 405 esperada.
 - Rutas SPA verificadas en el entorno local.
 
 ### Estado de producción
@@ -959,6 +1010,8 @@ Requisitos pendientes:
 - Mantener auditorías de dependencias actualizadas.
 
 Las pruebas de reducer, servicio, componente y Firestore Emulator implementadas durante T07 forman parte de la cobertura incremental del proyecto.
+
+Las pruebas de subida de imágenes de T10.4-A y T10.4-B amplían esta cobertura, pero requieren una integración final con los servicios externos reales antes de cerrar T10.
 
 No deben presentarse como sustituto de todos los requisitos de T12.
 

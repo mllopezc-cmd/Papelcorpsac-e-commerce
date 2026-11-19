@@ -1,10 +1,15 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useAuth } from "../hooks/useAuth";
 import {
   createProduct,
   deleteProduct,
   getAdminProducts,
   updateProduct,
 } from "../services/productService";
+import {
+  uploadProductImage,
+  validateProductImage,
+} from "../services/productImageUploadService";
 import {
   PRODUCT_CATEGORIES,
   PRODUCT_CATEGORY_LABELS,
@@ -133,6 +138,8 @@ function toInput(form: ProductForm): ProductInput {
 }
 
 export function AdminProductsPage() {
+  const { user } = useAuth();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -143,6 +150,14 @@ export function AdminProductsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ProductForm>({ ...emptyForm });
+
+  const [selectedImage, setSelectedImage] =
+    useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] =
+    useState<string | null>(null);
+  const [uploadedKey, setUploadedKey] =
+    useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -175,11 +190,18 @@ export function AdminProductsPage() {
     };
   }, [reload]);
 
+  const resetUpload = () => {
+    setSelectedImage(null);
+    setUploadError(null);
+    setUploadedKey(null);
+  };
+
   const openCreate = () => {
     setEditingId(null);
     setForm({ ...emptyForm });
     setError(null);
     setNotice(null);
+    resetUpload();
     setFormOpen(true);
   };
 
@@ -188,6 +210,7 @@ export function AdminProductsPage() {
     setForm(toForm(product));
     setError(null);
     setNotice(null);
+    resetUpload();
     setFormOpen(true);
   };
 
@@ -196,12 +219,52 @@ export function AdminProductsPage() {
     setEditingId(null);
     setForm({ ...emptyForm });
     setError(null);
+    resetUpload();
+  };
+
+  const selectImage = (file: File | null) => {
+    setSelectedImage(file);
+    setUploadedKey(null);
+    setUploadError(
+      file ? validateProductImage(file) : null,
+    );
+  };
+
+  const uploadImage = async () => {
+    if (busy || uploading || !selectedImage) {
+      return;
+    }
+
+    const validationError = validateProductImage(selectedImage);
+
+    if (validationError) {
+      setUploadError(validationError);
+      return;
+    }
+
+    if (!user) {
+      setUploadError("Debes iniciar sesión para subir imágenes.");
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+    setUploadedKey(null);
+
+    try {
+      const result = await uploadProductImage(user, selectedImage);
+      setUploadedKey(result.key);
+    } catch (failure) {
+      setUploadError(getErrorMessage(failure));
+    } finally {
+      setUploading(false);
+    }
   };
 
   const submitForm = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (busy) {
+    if (busy || uploading) {
       return;
     }
 
@@ -242,7 +305,7 @@ export function AdminProductsPage() {
   };
 
   const removeProduct = async (product: Product) => {
-    if (busy) {
+    if (busy || uploading) {
       return;
     }
 
@@ -274,6 +337,8 @@ export function AdminProductsPage() {
     }
   };
 
+  const controlsDisabled = busy || uploading;
+
   return (
     <section
       aria-labelledby="admin-products-title"
@@ -301,7 +366,7 @@ export function AdminProductsPage() {
         <button
           type="button"
           onClick={openCreate}
-          disabled={busy}
+          disabled={controlsDisabled}
           className={`${buttonClass} bg-deep-blue text-cream hover:bg-graphite`}
         >
           Nuevo producto
@@ -309,8 +374,9 @@ export function AdminProductsPage() {
       </div>
 
       <p className="mt-5 text-sm text-muted">
-        La carga de imágenes privadas se implementará en T10.4.
-        Los productos nuevos utilizan una imagen local provisional.
+        La subida de imágenes a S3 está disponible para
+        administradores. Su vinculación permanente con los
+        productos corresponde a T10.4-C.
       </p>
 
       {notice && (
@@ -361,7 +427,7 @@ export function AdminProductsPage() {
                   required
                   maxLength={120}
                   value={form.name}
-                  disabled={busy}
+                  disabled={controlsDisabled}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
@@ -379,7 +445,7 @@ export function AdminProductsPage() {
                   required
                   maxLength={80}
                   value={form.brand}
-                  disabled={busy}
+                  disabled={controlsDisabled}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
@@ -394,7 +460,7 @@ export function AdminProductsPage() {
                 Categoría
                 <select
                   value={form.category}
-                  disabled={busy}
+                  disabled={controlsDisabled}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
@@ -420,7 +486,7 @@ export function AdminProductsPage() {
                   max="1000000"
                   step="0.01"
                   value={form.price}
-                  disabled={busy}
+                  disabled={controlsDisabled}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
@@ -440,7 +506,7 @@ export function AdminProductsPage() {
                   max="1000000"
                   step="1"
                   value={form.stock}
-                  disabled={busy}
+                  disabled={controlsDisabled}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
@@ -458,7 +524,7 @@ export function AdminProductsPage() {
                   rows={4}
                   maxLength={1000}
                   value={form.description}
-                  disabled={busy}
+                  disabled={controlsDisabled}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
@@ -470,11 +536,105 @@ export function AdminProductsPage() {
               </label>
             </div>
 
+            <fieldset className="mt-6 rounded-sm border border-line bg-page p-4 sm:p-5">
+              <legend className="px-2 text-sm font-semibold text-ink">
+                Imagen del producto — AWS S3
+              </legend>
+
+              <p className="text-sm text-muted">
+                Formatos JPEG, PNG y WebP; máximo 5 MiB.
+                La selección no inicia una subida.
+              </p>
+
+              <label
+                htmlFor="admin-product-image"
+                className="mt-4 block text-sm font-semibold text-ink"
+              >
+                Seleccionar imagen
+              </label>
+
+              <input
+                id="admin-product-image"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={controlsDisabled}
+                onChange={(event) =>
+                  selectImage(event.target.files?.[0] ?? null)
+                }
+                className={`${inputClass} file:mr-3 file:rounded-sm file:border-0 file:bg-deep-blue file:px-3 file:py-2 file:text-cream`}
+              />
+
+              {selectedImage && (
+                <p className="mt-3 break-all text-sm text-muted">
+                  Archivo: {selectedImage.name}
+                </p>
+              )}
+
+              <button
+                type="button"
+                disabled={
+                  controlsDisabled ||
+                  !user ||
+                  !selectedImage ||
+                  validateProductImage(selectedImage) !== null
+                }
+                onClick={() => void uploadImage()}
+                className={`${buttonClass} mt-4 border border-line bg-surface text-ink hover:bg-page`}
+              >
+                {uploading
+                  ? "Subiendo imagen…"
+                  : "Subir imagen a S3"}
+              </button>
+
+              {uploading && (
+                <p role="status" className="mt-3 text-sm text-muted">
+                  Subiendo imagen a AWS S3…
+                </p>
+              )}
+
+              {uploadError && (
+                <p
+                  role="alert"
+                  className="mt-3 text-sm text-ink"
+                >
+                  {uploadError}
+                </p>
+              )}
+
+              {uploadedKey && (
+                <div
+                  role="status"
+                  className="mt-4 rounded-sm border border-line bg-surface p-4"
+                >
+                  <p className="text-sm font-semibold text-ink">
+                    Imagen subida correctamente a S3.
+                  </p>
+
+                  <p className="mt-2 break-all font-mono text-xs text-ink">
+                    Clave S3: {uploadedKey}
+                  </p>
+
+                  <p className="mt-3 text-sm text-muted">
+                    La imagen todavía no está asociada al
+                    producto. Guardar el formulario no almacenará
+                    esta clave en Firestore; esa integración
+                    corresponde a T10.4-C.
+                  </p>
+                </div>
+              )}
+
+              <p className="mt-4 text-sm text-muted">
+                Evita subir archivos de prueba innecesarios.
+                Hasta T10.4-C, las imágenes subidas pueden quedar
+                sin una referencia permanente.
+              </p>
+            </fieldset>
+
             <label className="mt-6 flex items-center gap-3 text-sm font-semibold text-ink">
               <input
                 type="checkbox"
                 checked={form.published}
-                disabled={busy}
+                disabled={controlsDisabled}
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
@@ -498,7 +658,7 @@ export function AdminProductsPage() {
             <div className="mt-7 flex flex-wrap gap-3">
               <button
                 type="submit"
-                disabled={busy}
+                disabled={controlsDisabled}
                 className={`${buttonClass} bg-deep-blue text-cream hover:bg-graphite`}
               >
                 {busy
@@ -511,7 +671,7 @@ export function AdminProductsPage() {
               <button
                 type="button"
                 onClick={closeForm}
-                disabled={busy}
+                disabled={controlsDisabled}
                 className={`${buttonClass} border border-line text-ink hover:bg-page`}
               >
                 Cancelar
@@ -533,7 +693,7 @@ export function AdminProductsPage() {
           <button
             type="button"
             onClick={() => setReload((value) => value + 1)}
-            disabled={loading || busy}
+            disabled={loading || controlsDisabled}
             className={`${buttonClass} border border-line text-ink hover:bg-surface`}
           >
             Actualizar
@@ -551,7 +711,7 @@ export function AdminProductsPage() {
             <p>{loadError}</p>
             <button
               type="button"
-              disabled={loading || busy}
+              disabled={loading || controlsDisabled}
               onClick={() => setReload((value) => value + 1)}
               className={`${buttonClass} mt-3 border border-line`}
             >
@@ -602,7 +762,7 @@ export function AdminProductsPage() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    disabled={busy}
+                    disabled={controlsDisabled}
                     onClick={() => openEdit(product)}
                     className={`${buttonClass} border border-line text-ink hover:bg-page`}
                   >
@@ -611,7 +771,7 @@ export function AdminProductsPage() {
 
                   <button
                     type="button"
-                    disabled={busy}
+                    disabled={controlsDisabled}
                     onClick={() => void removeProduct(product)}
                     className={`${buttonClass} border border-line text-ink hover:bg-page`}
                   >
