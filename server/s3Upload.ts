@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import {
+  DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -43,6 +44,13 @@ export class S3UploadConfigurationError extends Error {
   constructor() {
     super('Invalid S3 upload configuration')
     this.name = 'S3UploadConfigurationError'
+  }
+}
+
+export class ProductImageReferencedError extends Error {
+  constructor() {
+    super('Product image is still referenced')
+    this.name = 'ProductImageReferencedError'
   }
 }
 
@@ -198,5 +206,36 @@ export async function createPresignedRead(
   return {
     url,
     expiresIn: IMAGE_GET_URL_EXPIRES_IN,
+  }
+}
+
+export async function deleteUnreferencedProductImage(
+  key: string,
+): Promise<void> {
+  if (!isValidProductImageKey(key)) {
+    throw new Error('Invalid product image key')
+  }
+
+  const snapshot = await getFirebaseAdminFirestore()
+    .collection('products')
+    .where('imageKey', '==', key)
+    .limit(1)
+    .get()
+
+  if (!snapshot.empty) {
+    throw new ProductImageReferencedError()
+  }
+
+  const { client, bucket } = getS3Configuration()
+
+  try {
+    await client.send(
+      new DeleteObjectCommand({
+        Bucket: bucket,
+        Key: key,
+      }),
+    )
+  } finally {
+    client.destroy()
   }
 }

@@ -26,6 +26,7 @@ const {
   updateProductMock,
   deleteProductMock,
   uploadProductImageMock,
+  deleteProductImageMock,
 } = vi.hoisted(() => ({
   useAuthMock: vi.fn(),
   getAdminProductsMock: vi.fn(),
@@ -33,6 +34,7 @@ const {
   updateProductMock: vi.fn(),
   deleteProductMock: vi.fn(),
   uploadProductImageMock: vi.fn(),
+  deleteProductImageMock: vi.fn(),
 }))
 
 vi.mock('../hooks/useAuth', () => ({
@@ -60,6 +62,10 @@ vi.mock(
     }
   },
 )
+
+vi.mock('../services/productImageDeleteService', () => ({
+  deleteProductImage: deleteProductImageMock,
+}))
 
 import { AdminProductsPage } from './AdminProductsPage'
 
@@ -104,6 +110,12 @@ function imageInput(): HTMLInputElement {
 function uploadButton(): HTMLButtonElement {
   return screen.getByRole('button', {
     name: 'Subir imagen a S3',
+  }) as HTMLButtonElement
+}
+
+function deleteImageButton(): HTMLButtonElement {
+  return screen.getByRole('button', {
+    name: 'Eliminar imagen no asociada',
   }) as HTMLButtonElement
 }
 
@@ -171,12 +183,18 @@ beforeEach(() => {
   createProductMock.mockResolvedValue('nuevo-id')
   updateProductMock.mockResolvedValue(undefined)
   deleteProductMock.mockResolvedValue(undefined)
-
   uploadProductImageMock.mockResolvedValue({ key })
+  deleteProductImageMock.mockResolvedValue(undefined)
+
+  vi.stubGlobal(
+    'confirm',
+    vi.fn().mockReturnValue(true),
+  )
 })
 
 afterEach(() => {
   cleanup()
+  vi.unstubAllGlobals()
 })
 
 describe('AdminProductsPage — T10.4-B', () => {
@@ -536,5 +554,333 @@ describe('AdminProductsPage — T10.4-C', () => {
 
     expect(input).not.toHaveProperty('imageKey')
     expect(uploadProductImageMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('AdminProductsPage — T10.4-D', () => {
+  it('no ofrece eliminar una imagen ya asociada', async () => {
+    getAdminProductsMock.mockResolvedValue([
+      {
+        ...existingProduct,
+        imageKey: previousKey,
+      },
+    ])
+
+    await openExistingProduct()
+
+    expect(
+      screen.getByText(`Clave S3: ${previousKey}`),
+    ).toBeTruthy()
+
+    expect(
+      screen.queryByRole('button', {
+        name: 'Eliminar imagen no asociada',
+      }),
+    ).toBeNull()
+
+    expect(deleteProductImageMock).not.toHaveBeenCalled()
+  })
+
+  it('muestra el botón únicamente después de subir', async () => {
+    render(<AdminProductsPage />)
+
+    openCreateForm()
+
+    expect(
+      screen.queryByRole('button', {
+        name: 'Eliminar imagen no asociada',
+      }),
+    ).toBeNull()
+
+    await uploadSelectedImage()
+
+    expect(deleteImageButton()).toBeTruthy()
+    expect(deleteProductImageMock).not.toHaveBeenCalled()
+  })
+
+  it('no reemplaza una subida pendiente al seleccionar otro archivo', async () => {
+    render(<AdminProductsPage />)
+
+    openCreateForm()
+    await uploadSelectedImage()
+
+    expect(imageInput().disabled).toBe(true)
+    expect(uploadButton().disabled).toBe(true)
+
+    selectFile(imageFile('image/png'))
+
+    expect(
+      screen.getByText(`Clave S3: ${key}`),
+    ).toBeTruthy()
+
+    expect(uploadProductImageMock).toHaveBeenCalledTimes(1)
+    expect(deleteProductImageMock).not.toHaveBeenCalled()
+  })
+
+  it('habilita nuevamente la selección tras eliminar la subida pendiente', async () => {
+    render(<AdminProductsPage />)
+
+    openCreateForm()
+    await uploadSelectedImage()
+    fireEvent.click(deleteImageButton())
+
+    await screen.findByText(
+      'Imagen no asociada eliminada correctamente.',
+    )
+
+    expect(imageInput().disabled).toBe(false)
+    expect(uploadButton().disabled).toBe(true)
+
+    selectFile(imageFile('image/png'))
+
+    expect(uploadButton().disabled).toBe(false)
+  })
+
+  it('permite volver a seleccionar el mismo archivo después de eliminarlo', async () => {
+    render(<AdminProductsPage />)
+
+    openCreateForm()
+
+    const file = imageFile()
+
+    selectFile(file)
+
+    expect(imageInput().value).toBe('')
+    expect(uploadButton().disabled).toBe(false)
+
+    fireEvent.click(uploadButton())
+
+    await screen.findByText(`Clave S3: ${key}`)
+
+    expect(uploadProductImageMock).toHaveBeenCalledWith(
+      admin,
+      file,
+    )
+
+    fireEvent.click(deleteImageButton())
+
+    await screen.findByText(
+      'Imagen no asociada eliminada correctamente.',
+    )
+
+    expect(deleteProductImageMock).toHaveBeenCalledWith(
+      admin,
+      key,
+    )
+
+    expect(imageInput().disabled).toBe(false)
+
+    selectFile(file)
+
+    expect(imageInput().value).toBe('')
+    expect(uploadButton().disabled).toBe(false)
+
+    fireEvent.click(uploadButton())
+
+    await waitFor(() => {
+      expect(uploadProductImageMock).toHaveBeenCalledTimes(2)
+    })
+
+    expect(uploadProductImageMock).toHaveBeenLastCalledWith(
+      admin,
+      file,
+    )
+  })
+
+  it('no elimina si el administrador cancela', async () => {
+    vi.mocked(window.confirm).mockReturnValue(false)
+
+    render(<AdminProductsPage />)
+
+    openCreateForm()
+    await uploadSelectedImage()
+
+    fireEvent.click(deleteImageButton())
+
+    expect(deleteProductImageMock).not.toHaveBeenCalled()
+
+    expect(
+      screen.getByText(`Clave S3: ${key}`),
+    ).toBeTruthy()
+  })
+
+  it('elimina la imagen confirmada y limpia su referencia', async () => {
+    render(<AdminProductsPage />)
+
+    openCreateForm()
+    await uploadSelectedImage()
+
+    fireEvent.click(deleteImageButton())
+
+    await waitFor(() => {
+      expect(deleteProductImageMock).toHaveBeenCalledWith(
+        admin,
+        key,
+      )
+    })
+
+    expect(
+      await screen.findByText(
+        'Imagen no asociada eliminada correctamente.',
+      ),
+    ).toBeTruthy()
+
+    expect(
+      screen.queryByText(`Clave S3: ${key}`),
+    ).toBeNull()
+
+    expect(
+      screen.queryByRole('button', {
+        name: 'Eliminar imagen no asociada',
+      }),
+    ).toBeNull()
+
+    expect(createProductMock).not.toHaveBeenCalled()
+    expect(updateProductMock).not.toHaveBeenCalled()
+  })
+
+  it('mantiene la referencia cuando falla la eliminación', async () => {
+    deleteProductImageMock.mockRejectedValue(
+      new Error('La imagen sigue en uso.'),
+    )
+
+    render(<AdminProductsPage />)
+
+    openCreateForm()
+    await uploadSelectedImage()
+
+    fireEvent.click(deleteImageButton())
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('alert').textContent,
+      ).toMatch(/sigue en uso/)
+    })
+
+    expect(
+      screen.getByText(`Clave S3: ${key}`),
+    ).toBeTruthy()
+
+    expect(deleteImageButton()).toBeTruthy()
+  })
+
+  it('bloquea el formulario mientras se elimina', async () => {
+    let finishDelete: () => void = () => {
+      throw new Error('La eliminación simulada no comenzó.')
+    }
+
+    deleteProductImageMock.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishDelete = resolve
+        }),
+    )
+
+    render(<AdminProductsPage />)
+
+    openCreateForm()
+    await uploadSelectedImage()
+
+    fireEvent.click(deleteImageButton())
+
+    expect(
+      await screen.findByRole('button', {
+        name: 'Eliminando imagen…',
+      }),
+    ).toBeTruthy()
+
+    expect(
+      (
+        screen.getByRole('button', {
+          name: 'Cancelar',
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true)
+
+    expect(
+      (
+        screen.getByRole('button', {
+          name: 'Crear producto',
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true)
+
+    expect(uploadButton().disabled).toBe(true)
+    expect(deleteProductImageMock).toHaveBeenCalledTimes(1)
+
+    finishDelete()
+
+    expect(
+      await screen.findByText(
+        'Imagen no asociada eliminada correctamente.',
+      ),
+    ).toBeTruthy()
+  })
+
+  it('conserva la imagen asociada anterior después de borrar una nueva', async () => {
+    getAdminProductsMock.mockResolvedValue([
+      {
+        ...existingProduct,
+        imageKey: previousKey,
+      },
+    ])
+
+    await openExistingProduct()
+    await uploadSelectedImage()
+
+    fireEvent.click(deleteImageButton())
+
+    expect(
+      await screen.findByText(
+        'Imagen no asociada eliminada correctamente.',
+      ),
+    ).toBeTruthy()
+
+    expect(
+      screen.getByText(`Clave S3: ${previousKey}`),
+    ).toBeTruthy()
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Guardar cambios',
+      }),
+    )
+
+    await waitFor(() => {
+      expect(updateProductMock).toHaveBeenCalledWith(
+        'producto-001',
+        expect.objectContaining({
+          imageKey: previousKey,
+        }),
+      )
+    })
+  })
+
+  it('no ofrece eliminar la imagen después de guardar el producto', async () => {
+    render(<AdminProductsPage />)
+
+    openCreateForm()
+    fillRequiredFields()
+    await uploadSelectedImage()
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Crear producto',
+      }),
+    )
+
+    expect(
+      await screen.findByText(
+        'Producto creado correctamente.',
+      ),
+    ).toBeTruthy()
+
+    expect(
+      screen.queryByRole('button', {
+        name: 'Eliminar imagen no asociada',
+      }),
+    ).toBeNull()
+
+    expect(deleteProductImageMock).not.toHaveBeenCalled()
   })
 })

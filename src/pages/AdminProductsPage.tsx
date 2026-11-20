@@ -6,6 +6,7 @@ import {
   getAdminProducts,
   updateProduct,
 } from "../services/productService";
+import { deleteProductImage } from "../services/productImageDeleteService";
 import {
   uploadProductImage,
   validateProductImage,
@@ -164,7 +165,10 @@ export function AdminProductsPage() {
   const [selectedImage, setSelectedImage] =
     useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [deletingImage, setDeletingImage] = useState(false);
   const [uploadError, setUploadError] =
+    useState<string | null>(null);
+  const [imageNotice, setImageNotice] =
     useState<string | null>(null);
   const [uploadedKey, setUploadedKey] =
     useState<string | null>(null);
@@ -203,10 +207,15 @@ export function AdminProductsPage() {
   const resetUpload = () => {
     setSelectedImage(null);
     setUploadError(null);
+    setImageNotice(null);
     setUploadedKey(null);
   };
 
   const openCreate = () => {
+    if (busy || uploading || deletingImage) {
+      return;
+    }
+
     setEditingId(null);
     setForm({ ...emptyForm });
     setError(null);
@@ -216,6 +225,10 @@ export function AdminProductsPage() {
   };
 
   const openEdit = (product: Product) => {
+    if (busy || uploading || deletingImage) {
+      return;
+    }
+
     setEditingId(product.id);
     setForm(toForm(product));
     setError(null);
@@ -225,6 +238,10 @@ export function AdminProductsPage() {
   };
 
   const closeForm = () => {
+    if (busy || uploading || deletingImage) {
+      return;
+    }
+
     setFormOpen(false);
     setEditingId(null);
     setForm({ ...emptyForm });
@@ -233,15 +250,31 @@ export function AdminProductsPage() {
   };
 
   const selectImage = (file: File | null) => {
+    if (
+      busy ||
+      uploading ||
+      deletingImage ||
+      uploadedKey !== null
+    ) {
+      return;
+    }
+
     setSelectedImage(file);
     setUploadedKey(null);
+    setImageNotice(null);
     setUploadError(
       file ? validateProductImage(file) : null,
     );
   };
 
   const uploadImage = async () => {
-    if (busy || uploading || !selectedImage) {
+    if (
+      busy ||
+      uploading ||
+      deletingImage ||
+      uploadedKey !== null ||
+      !selectedImage
+    ) {
       return;
     }
 
@@ -259,6 +292,7 @@ export function AdminProductsPage() {
 
     setUploading(true);
     setUploadError(null);
+    setImageNotice(null);
     setUploadedKey(null);
 
     try {
@@ -271,10 +305,47 @@ export function AdminProductsPage() {
     }
   };
 
+  const removeUploadedImage = async () => {
+    if (
+      busy ||
+      uploading ||
+      deletingImage ||
+      !uploadedKey ||
+      !user
+    ) {
+      return;
+    }
+
+    const key = uploadedKey;
+
+    const confirmed = window.confirm(
+      `¿Eliminar esta imagen de AWS S3?\n\n${key}\n\nLa imagen todavía no se ha asociado al producto mediante este formulario. Esta acción no se puede deshacer.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingImage(true);
+    setUploadError(null);
+    setImageNotice(null);
+
+    try {
+      await deleteProductImage(user, key);
+      setUploadedKey(null);
+      setSelectedImage(null);
+      setImageNotice("Imagen no asociada eliminada correctamente.");
+    } catch (failure) {
+      setUploadError(getErrorMessage(failure));
+    } finally {
+      setDeletingImage(false);
+    }
+  };
+
   const submitForm = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (busy || uploading) {
+    if (busy || uploading || deletingImage) {
       return;
     }
 
@@ -300,7 +371,12 @@ export function AdminProductsPage() {
         await createProduct(input);
       }
 
-      closeForm();
+      setFormOpen(false);
+      setEditingId(null);
+      setForm({ ...emptyForm });
+      setError(null);
+      resetUpload();
+
       setNotice(
         wasEditing
           ? "Producto actualizado correctamente."
@@ -315,7 +391,7 @@ export function AdminProductsPage() {
   };
 
   const removeProduct = async (product: Product) => {
-    if (busy || uploading) {
+    if (busy || uploading || deletingImage) {
       return;
     }
 
@@ -335,7 +411,10 @@ export function AdminProductsPage() {
       await deleteProduct(product.id);
 
       if (editingId === product.id) {
-        closeForm();
+        setFormOpen(false);
+        setEditingId(null);
+        setForm({ ...emptyForm });
+        resetUpload();
       }
 
       setNotice(`Producto "${product.name}" eliminado.`);
@@ -347,7 +426,7 @@ export function AdminProductsPage() {
     }
   };
 
-  const controlsDisabled = busy || uploading;
+  const controlsDisabled = busy || uploading || deletingImage;
 
   return (
     <section
@@ -582,11 +661,13 @@ export function AdminProductsPage() {
                 id="admin-product-image"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
-                disabled={controlsDisabled}
-                onChange={(event) =>
-                  selectImage(event.target.files?.[0] ?? null)
-                }
-                className={`${inputClass} file:mr-3 file:rounded-sm file:border-0 file:bg-deep-blue file:px-3 file:py-2 file:text-cream`}
+                disabled={controlsDisabled || uploadedKey !== null}
+                onChange={(event) => {
+                  const file = event.currentTarget.files?.[0] ?? null;
+                  selectImage(file);
+                  event.currentTarget.value = "";
+                }}
+                className={`${inputClass} file:mr-3 file:rounded-sm file:border-0 file:bg-deep-blue file:px-3 py-2 text-sm text-ink`}
               />
 
               {selectedImage && (
@@ -599,6 +680,7 @@ export function AdminProductsPage() {
                 type="button"
                 disabled={
                   controlsDisabled ||
+                  uploadedKey !== null ||
                   !user ||
                   !selectedImage ||
                   validateProductImage(selectedImage) !== null
@@ -626,12 +708,18 @@ export function AdminProductsPage() {
                 </p>
               )}
 
-              {uploadedKey && (
-                <div
+              {imageNotice && (
+                <p
                   role="status"
-                  className="mt-4 rounded-sm border border-line bg-surface p-4"
+                  className="mt-3 text-sm text-ink"
                 >
-                  <p className="text-sm font-semibold text-ink">
+                  {imageNotice}
+                </p>
+              )}
+
+              {uploadedKey && (
+                <div className="mt-4 rounded-sm border border-line bg-surface p-4">
+                  <p role="status" className="text-sm font-semibold text-ink">
                     Imagen subida correctamente a S3.
                   </p>
 
@@ -644,14 +732,34 @@ export function AdminProductsPage() {
                     cuando guardes el formulario.
                     Si el guardado falla, podrás reintentarlo
                     sin volver a subir el archivo.
+                    Para seleccionar otra imagen, guarda el
+                    producto o elimina esta imagen pendiente.
+                  </p>
+
+                  <button
+                    type="button"
+                    disabled={controlsDisabled || !user}
+                    onClick={() => void removeUploadedImage()}
+                    className={`${buttonClass} mt-4 border border-line bg-page text-ink hover:bg-surface`}
+                  >
+                    {deletingImage
+                      ? "Eliminando imagen…"
+                      : "Eliminar imagen no asociada"}
+                  </button>
+
+                  <p className="mt-2 text-xs text-muted">
+                    Solo se intentará eliminar esta imagen
+                    recién subida. El servidor comprobará
+                    que ningún producto la utilice.
                   </p>
                 </div>
               )}
 
               <p className="mt-4 text-sm text-muted">
-                La imagen actual no se elimina automáticamente
-                al reemplazarla. La eliminación de archivos
-                S3 se gestionará en una etapa posterior.
+                Las imágenes ya asociadas a productos no se
+                eliminan automáticamente al editar o borrar
+                productos. La eliminación manual se limita
+                a imágenes recién subidas y no asociadas.
               </p>
             </fieldset>
 

@@ -713,7 +713,7 @@ IMPLEMENTACIÓN (asistencia desde este chat y edición manual en VS Code):
 - [x] Crear, consultar, editar y eliminar productos.
 - [x] Validar formularios administrativos.
 - [x] Confirmar eliminaciones de productos.
-- [ ] Integrar subida de imágenes mediante URLs prefirmadas.
+- [x] Integrar subida de imágenes mediante URLs prefirmadas.
 
 MANUAL:
 
@@ -726,6 +726,8 @@ El CRUD completo y la carga de imágenes funcionan.
 Las operaciones administrativas están protegidas.
 
 Las órdenes históricas conservan sus detalles.
+
+La implementación de las subtareas T10.4-A a T10.4-D se considera verificada localmente en su alcance automatizado. La comprobación efectiva de AWS S3 y Firebase real, la publicación autorizada de las reglas Firestore y las pruebas visuales y funcionales integrales permanecen pendientes antes del cierre general de T10.
 
 #### T10.1 — Revisión técnica de la base existente
 
@@ -876,7 +878,7 @@ Proyecto ficticio `demo-papelcorpsac`; Authentication Emulator en `127.0.0.1:909
 - Customer recibió «Acceso restringido» al intentar acceder a `/admin` y `/admin/productos`.
 - No se modificaron los productos reales ni los recursos AWS.
 
-**Alcance:** T10.3 no incluye subida de imágenes S3 (T10.4) ni administración de órdenes (T11). La etapa T10 general continúa pendiente hasta completar T10.4. T10.3 fue publicada en la rama `main` mediante el commit `cac3b48`.
+**Alcance:** T10.3 no incluye subida de imágenes S3 (T10.4) ni administración de órdenes (T11). La etapa T10 general continúa pendiente hasta completar la integración real y las comprobaciones finales. T10.3 fue publicada en la rama `main` mediante el commit `cac3b48`.
 
 #### T10.4 — Imágenes privadas AWS S3
 
@@ -903,7 +905,7 @@ Responsable: MIXTO.
 
 **Evidencia y alcance:** el desarrollador reportó 20 pruebas de `server/s3Upload.test.ts` y ocho de `api/product-image-upload-url.test.ts` aprobadas; suite general con 331 aprobadas, ocho omitidas y cero fallidas; `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run typecheck:api` y `git diff --check` correctos. La firma del SDK real produjo `content-length;content-type;host`, `X-Amz-Expires=60` y el parámetro de firma, sin usar credenciales reales ni solicitudes AWS.
 
-**Hallazgo de dependencias:** `npm.cmd audit` continuó informando 12 alertas altas asociadas a `picomatch@4.0.7` y `GHSA-fc5q-39xc-vjpf`, incluso con `--prefer-online` y caché nueva; `npm.cmd audit --omit=dev` informó cero vulnerabilidades. El aviso fue retirado por GitHub el 18 de noviembre de 2026, pero npm continuó reportándolo. Se investigaron versiones, overrides, forks y `npm audit fix --force`; se decidió no degradar Vite o Vitest ni incorporar un fork no verificado. **El desarrollador autorizó una excepción técnica provisional documentada**, con revisión futura; la auditoría general no se declara limpia.
+**Hallazgo de dependencias:** `npm.cmd audit` continuó informando 12 alertas altas asociadas a `picomatch@4.0.7` y `GHSA-fc5q-39xc-vjpf`, incluso con `--prefer-online` y caché nueva; `npm.cmd audit --omit=dev` informó cero vulnerabilidades. El aviso fue retirado por GitHub el 18 de noviembre de 2026, pero el servicio de auditoría del registro npm continuó reportándolo. Se investigaron versiones, overrides, forks y `npm audit fix --force`; se decidió no degradar Vite o Vitest ni incorporar un fork no verificado. **El desarrollador autorizó una excepción técnica provisional documentada**, con revisión futura; la auditoría general no se declara limpia.
 
 **Límites:** no hubo cargas reales, despliegue del backend, modificaciones del frontend o Firestore ni operaciones sobre objetos S3 durante T10.4-A. El comportamiento efectivo del tamaño en S3 y del archivo binario permanece pendiente de comprobación en integración.
 
@@ -951,9 +953,13 @@ Dependencia: T10.4-A completada y publicada.
 
 **Verificación visual e integración parcial:** el desarrollador comprobó el formulario de subida en escritorio y móvil, manteniendo el CRUD existente. Con `npm.cmd run dev`, la llamada a `/api/product-image-upload-url` devolvió HTTP 404 porque Vite por sí solo no ejecuta las funciones de Vercel. Posteriormente, `vercel dev` reconoció la función: una solicitud GET recibió HTTP 405 y `{"error":"Method Not Allowed"}`, comportamiento esperado para el endpoint POST. La interfaz volvió a cargar al iniciar Vercel Dev con las variables temporales `VITE_USE_FIREBASE_EMULATORS=false` y `VITE_FIREBASE_PROJECT_ID=papelcorpsac`.
 
-**Límites históricos de T10.4-B:** durante esa subtarea no se completó una solicitud POST autenticada al backend ni una transferencia PUT efectiva a S3. La clave S3 devuelta se conservaba solamente en el estado del componente. La persistencia de `imageKey` y las URLs GET privadas se implementaron posteriormente en T10.4-C; la eliminación autorizada corresponde a T10.4-D.
+**Límites históricos de T10.4-B:** durante esa subtarea no se completó una solicitud POST autenticada de generación de URL prefirmada ni una transferencia PUT real a S3. La clave S3 devuelta se conservaba solamente en el estado del componente. La persistencia de `imageKey` y las URLs GET privadas se implementaron posteriormente en T10.4-C; la eliminación autorizada corresponde a T10.4-D.
 
-**Decisión autorizada:** el desarrollador decidió posponer las comprobaciones reales de Firebase Admin y AWS S3 hasta la integración final de T10.4, después de implementar las subtareas restantes. Se documentará expresamente esta limitación y se mantendrán las verificaciones de seguridad y funcionamiento efectivo como requisito antes de cerrar T10.
+**Decisión del desarrollador:** posponer las comprobaciones reales de Firebase Admin y AWS S3 hasta la integración final de T10.4, una vez completadas las subtareas de persistencia, visualización y eliminación. Se mantiene la obligación de comprobar los encabezados firmados, la autorización administrativa, las operaciones efectivas con S3 y la seguridad de las reglas antes de considerar T10 cerrada.
+
+Las reglas de Firestore ampliadas durante T10.3 todavía no se han publicado en Firebase real. Su publicación requerirá comparar las reglas locales con las activas en Firebase Console y obtener autorización independiente.
+
+No se instalaron nuevas dependencias, no se modificaron credenciales ni se realizaron operaciones reales sobre objetos S3 durante T10.4-B.
 
 **Estado:** T10.4-B implementada, verificada localmente y publicada en GitHub en `main`, commit `8c55a95`. Integración real AWS/Firebase diferida.
 
@@ -982,8 +988,8 @@ Dependencias: T10.4-A y T10.4-B.
 - [x] Ejecutar la suite general, TypeScript API, ESLint, build y formato Git.
 - [x] Revisar el diff de los archivos modificados y las pruebas principales del código nuevo.
 - [x] Repetir la suite general tras incorporar las dos pruebas adicionales.
-- [ ] Verificar la documentación del cierre.
-- [ ] Autorizar y ejecutar commit y push de T10.4-C.
+- [x] Verificar la documentación del cierre.
+- [x] Revisar los archivos preparados, autorizar y realizar commit y push de T10.4-C.
 
 **Archivos de implementación:** `api/product-image-url.ts`, `server/s3Upload.ts`, `src/components/ProductCard.tsx`, `src/pages/AdminProductsPage.tsx`, `src/services/productImageService.ts`, `src/services/productService.ts`, `src/types/product.ts` y `firestore.rules`.
 
@@ -994,7 +1000,7 @@ Dependencias: T10.4-A y T10.4-B.
 - Suite general final: 408 pruebas aprobadas, 18 omitidas y ninguna fallida.
 - Archivos de pruebas: 22 aprobados y dos omitidos.
 - Endpoint GET: 13 pruebas aprobadas.
-- Servicio GET frontend: 15 pruebas aprobadas.
+- Servicio frontend GET: 15 pruebas aprobadas.
 - Componente `ProductImage`: nueve pruebas aprobadas.
 - Componente administrativo: 14 pruebas aprobadas.
 - Servicio de productos: 25 pruebas aprobadas.
@@ -1005,11 +1011,94 @@ Dependencias: T10.4-A y T10.4-B.
 
 **Seguridad:** las URLs GET se generan en el backend. Para un producto no publicado se verifica el Firebase ID token, incluida su revocación, y se exige rol Admin. Firestore Rules restringe escrituras administrativas y conserva la lectura pública únicamente para productos publicados. Las claves S3 se validan antes de utilizarlas.
 
-**Límites:** no se efectuaron operaciones reales GET/PUT contra AWS S3 ni se publicaron reglas en Firebase Console. La integración real con Firebase Admin y AWS S3 está reservada para la fase final de T10.4. La eliminación autorizada de objetos corresponde a T10.4-D. Las comprobaciones visuales y funcionales integrales se realizarán antes de finalizar T10.
+**Límites:** no se efectuaron operaciones reales GET/PUT contra AWS S3 ni se publicaron reglas en Firebase Console. La integración real con Firebase Admin y AWS S3 está reservada para la fase final de T10. La sustitución de referencias no elimina automáticamente los objetos S3 anteriores; T10.4-D incorpora una eliminación explícita de imágenes no referenciadas. Las comprobaciones visuales y funcionales integrales se realizarán antes de finalizar T10.
 
-**Estado:** T10.4-C implementada y verificada localmente en su alcance automatizado. Pendientes la verificación documental definitiva y la publicación Git.
+**Estado:** T10.4-C implementada, verificada localmente y publicada en la rama `main` mediante el commit `8fd8716`, el 19 de noviembre de 2026. La integración operativa con AWS S3 y Firebase real permanece reservada para la verificación final de T10.
 
-**T10.4-D — Eliminación autorizada de imágenes privadas S3:** pendiente; requiere autorización independiente después del cierre de T10.4-C.
+**T10.4-D — Eliminación autorizada de imágenes privadas S3**
+
+Responsable: MIXTO.
+
+Dependencias: T10.4-A, T10.4-B y T10.4-C.
+
+- [x] Obtener autorización para implementar T10.4-D.
+- [x] Revisar el material docente y contrastar el alcance con PROJECT.md y la arquitectura existente.
+- [x] Incorporar `DeleteObjectCommand` en `server/s3Upload.ts`.
+- [x] Validar las claves S3 mediante el patrón UUID y el prefijo `products/`.
+- [x] Consultar Firestore para comprobar si algún producto utiliza la clave solicitada.
+- [x] Rechazar la eliminación cuando existe una referencia mediante `ProductImageReferencedError`.
+- [x] Implementar `DELETE /api/product-image-delete`.
+- [x] Verificar Firebase ID token y revocación.
+- [x] Exigir rol Admin mediante Firebase Admin.
+- [x] Validar método HTTP, Content-Type y estructura exacta del cuerpo.
+- [x] Responder HTTP 409 cuando la imagen continúa referenciada.
+- [x] Evitar exponer detalles internos de errores AWS o Firebase.
+- [x] Incorporar el servicio frontend `productImageDeleteService.ts`.
+- [x] Integrar confirmación explícita de eliminación en `AdminProductsPage`.
+- [x] Limitar la acción del formulario a imágenes recién subidas y todavía no asociadas.
+- [x] Conservar la referencia pendiente cuando la eliminación falla o se cancela.
+- [x] Bloquear controles durante la eliminación.
+- [x] Evitar sustituir una imagen pendiente mediante otra selección o subida.
+- [x] Simplificar el cierre del formulario después de guardar correctamente.
+- [x] Mantener la posibilidad de reintentar el guardado cuando Firestore falla.
+- [x] Implementar pruebas del servicio S3 y del endpoint DELETE.
+- [x] Implementar pruebas del servicio HTTP frontend.
+- [x] Ampliar las pruebas del componente administrativo.
+- [x] Ejecutar pruebas específicas de la subtarea.
+- [x] Ejecutar la suite general de Vitest.
+- [x] Ejecutar TypeScript API, ESLint y build.
+- [x] Verificar `git diff --check`.
+- [x] Revisar los ajustes de robustez y sus pruebas de regresión.
+- [ ] Incorporar y verificar la actualización documental definitiva.
+- [ ] Revisar el área de preparación de Git.
+- [ ] Autorizar y ejecutar commit y push de T10.4-D.
+
+**Archivos de implementación:**
+
+- `server/s3Upload.ts`.
+- `api/product-image-delete.ts`.
+- `src/services/productImageDeleteService.ts`.
+- `src/pages/AdminProductsPage.tsx`.
+
+**Archivos de pruebas:**
+
+- `server/s3Delete.test.ts`.
+- `api/product-image-delete.test.ts`.
+- `src/services/productImageDeleteService.test.ts`.
+- `src/pages/AdminProductsPage.test.tsx`.
+- `server/s3Upload.test.ts`.
+
+**Evidencia automatizada:**
+
+- `server/s3Delete.test.ts`: diez pruebas aprobadas.
+- `api/product-image-delete.test.ts`: 16 pruebas aprobadas.
+- `src/services/productImageDeleteService.test.ts`: 16 pruebas aprobadas.
+- `src/pages/AdminProductsPage.test.tsx`: 24 pruebas aprobadas, diez relacionadas con T10.4-D.
+- `server/s3Upload.test.ts`: 20 pruebas aprobadas.
+- Suite general: 460 pruebas aprobadas, 18 omitidas y ninguna fallida.
+- 25 archivos de pruebas aprobados y dos omitidos.
+- `npm.cmd run typecheck:api`: satisfactorio.
+- `npm.cmd run lint`: satisfactorio.
+- `npm.cmd run build`: satisfactorio.
+- `git diff --check`: sin errores.
+
+La suite general omitió ocho pruebas de integración de checkout y diez de Firestore Rules. Las diez pruebas de reglas habían sido ejecutadas y aprobadas separadamente durante T10.4-C.
+
+**Seguridad y limitaciones:**
+
+La eliminación requiere un usuario Admin autenticado. El backend valida la clave y consulta `products.imageKey` antes de llamar a AWS S3. Si encuentra una referencia o falla la consulta Firestore, no ejecuta `DeleteObject`.
+
+La consulta y el borrado no son atómicos. Existe un riesgo residual de asociación concurrente entre ambas operaciones.
+
+Cerrar el formulario o abandonar la sesión después de subir una imagen puede dejar un objeto huérfano. No se implementó un sistema de limpieza automática.
+
+No se eliminan automáticamente imágenes asociadas a productos ni al editar o borrar documentos de productos.
+
+No se modificaron reglas Firestore, políticas IAM, credenciales ni dependencias.
+
+**Límites de verificación:** todas las pruebas AWS y Firebase de esta subtarea utilizan mocks. No se realizaron operaciones DELETE reales contra AWS S3, ni se desplegó el endpoint. La integración efectiva con Firebase Admin y AWS S3 se realizará en la verificación final de T10.
+
+**Estado:** T10.4-D implementada y verificada localmente en su alcance automatizado. Actualización documental y publicación Git pendientes.
 
 **Integración y verificación final de T10.4:** pendientes. Incluirán autenticación y autorización del administrador, generación de URLs prefirmadas PUT y GET, subida de archivos, persistencia de referencias, visualización del catálogo, eliminación autorizada y verificación de permisos efectivos. Ninguna prueba unitaria sustituye estas comprobaciones.
 
@@ -1048,7 +1137,7 @@ Responsables:
 - [x] Probar todas las acciones de cartReducer.
 - [ ] Completar pruebas de todos los componentes importantes.
 - [ ] Completar pruebas automatizadas de integración de carrito y checkout.
-- [ ] Mockear Firebase y AWS en los casos correspondientes.
+- [ ] Mockear Firebase y AWS en los escenarios correspondientes.
 - [ ] Evaluar casos límite con ayuda de IA.
 - [ ] Ejecutar tests, lint y build.
 - [ ] Revisar responsive y accesibilidad.
@@ -1073,7 +1162,8 @@ Evidencia acumulada:
 - Auditorías de T10.4-A (18/11/2026): `npm.cmd audit` con 12 alertas altas de `picomatch` documentadas y aceptadas provisionalmente; `npm.cmd audit --omit=dev` con cero vulnerabilidades.
 - Suite de T10.4-A: 331 pruebas generales aprobadas, ocho omitidas; 28 específicas del backend PUT aprobadas.
 - Suite de T10.4-B: 354 pruebas generales aprobadas, ocho omitidas; 23 específicas del frontend de subida aprobadas, lint, build y TypeScript API satisfactorios.
-- Suite final de T10.4-C: 408 pruebas generales aprobadas, 18 omitidas y cero fallidas; diez pruebas de Firestore Rules aprobadas por separado. Nueve pruebas de `ProductImage` aprobadas, incluidas dos pruebas adicionales de robustez.
+- Suite de T10.4-C: 408 pruebas generales aprobadas y 18 omitidas; diez pruebas de Firestore Rules aprobadas por separado. Nueve pruebas de `ProductImage` aprobadas, incluidas dos pruebas adicionales de robustez.
+- Suite de T10.4-D: 460 pruebas generales aprobadas, 18 omitidas y cero fallidas; 24 pruebas del panel administrativo, 16 del endpoint DELETE, 16 del servicio frontend DELETE y diez del servicio de eliminación S3 aprobadas. TypeScript API, ESLint y build satisfactorios.
 
 La revisión integral de T12 continúa pendiente y no se considera sustituida por las pruebas incrementales.
 
@@ -1149,11 +1239,17 @@ README.md continúa siendo la plantilla genérica de Vite. Su documentación del
 
 ## 10. Seguimiento
 
-**Última subtarea implementada y verificada localmente:** T10.4-C — Persistencia de `imageKey` y visualización mediante URLs GET privadas.
+**Última subtarea implementada y verificada localmente:** T10.4-D — Eliminación autorizada de imágenes privadas AWS S3.
+
+**Última subtarea publicada:** T10.4-C — Persistencia de `imageKey` y visualización mediante URLs GET privadas, commit `8fd8716`.
 
 **Última tarea de infraestructura completada:** T09 — Configuración AWS S3.
 
-**Intervención actual:** cierre técnico y documental de T10.4-C. T10.4-A fue publicada en `main` mediante el commit `40f15ed` y T10.4-B mediante el commit `8c55a95`. T10.4-C cuenta con 408 pruebas generales aprobadas y reglas comprobadas en Firebase Emulator, pero todavía no se ha publicado. La integración real con Firebase Admin y AWS S3, la eliminación autorizada T10.4-D y las pruebas visuales y funcionales integrales permanecen pendientes antes de cerrar toda la etapa T10.
+**Intervención actual:** cierre técnico y documental de T10.4-D. T10.4-A fue publicada en `main` mediante el commit `40f15ed`; T10.4-B mediante el commit `8c55a95`; y T10.4-C mediante el commit `8fd8716`.
+
+T10.4-D cuenta con 460 pruebas generales aprobadas y 18 omitidas, TypeScript API, ESLint y build satisfactorios. Su implementación todavía no se ha publicado.
+
+La integración real con Firebase Admin y AWS S3, la comparación y publicación autorizada de las reglas Firestore y las pruebas visuales y funcionales integrales permanecen pendientes antes de cerrar toda la etapa T10.
 
 T00 — Documentación inicial: COMPLETADA.
 
@@ -1205,9 +1301,9 @@ T10.4-A — Backend PUT prefirmado de AWS S3: COMPLETADA, VERIFICADA LOCALMENTE 
 
 T10.4-B — Interfaz administrativa de subida S3: IMPLEMENTADA, VERIFICADA LOCALMENTE Y PUBLICADA. Commit `8c55a95`. Integración real pospuesta.
 
-T10.4-C — Persistencia de `imageKey` y GET privado: IMPLEMENTADA Y VERIFICADA LOCALMENTE; revisión documental definitiva y publicación pendientes.
+T10.4-C — Persistencia de `imageKey` y GET privado: COMPLETADA, VERIFICADA LOCALMENTE Y PUBLICADA. Commit `8fd8716`.
 
-T10.4-D — Eliminación autorizada de imágenes S3: PENDIENTE DE AUTORIZACIÓN E IMPLEMENTACIÓN.
+T10.4-D — Eliminación autorizada de imágenes S3: IMPLEMENTADA Y VERIFICADA LOCALMENTE. 460 pruebas generales aprobadas y 18 omitidas; TypeScript API, ESLint y build satisfactorios. Documentación y publicación Git pendientes.
 
 Integración real AWS/Firebase y pruebas funcionales y visuales integrales de T10: PENDIENTES.
 
@@ -1241,19 +1337,19 @@ Integración real AWS/Firebase y pruebas funcionales y visuales integrales de T1
 | 2026-11-17 | T10.3 | CRUD de productos, ruta protegida, validación y reglas Firestore; 13 pruebas del servicio, 303 generales aprobadas y 8 omitidas; lint y build correctos; 15/15 pruebas de permisos, 4/4 de precios; recorrido CRUD completo y bloqueo Customer verificados en emulador. | Completada y publicada, commit `cac3b48`. | Reglas CRUD de Firestore aún no publicadas en Firebase real. |
 | 2026-11-18 | T10.4-A | Backend de URL PUT con comprobación de Admin, formatos y tamaño declarado; 28 pruebas específicas y 331 generales aprobadas, 8 omitidas; TypeScript API, lint, build, firma real del SDK con credenciales ficticias y `git diff --check` correctos. `npm audit`: 12 alertas altas de `picomatch`; producción: cero. | Implementada, verificada localmente y publicada en `main`, commit `40f15ed`; riesgo de dependencias aceptado provisionalmente. | Prueba real S3 diferida hasta integración final. |
 | 2026-11-19 | T10.4-B | Selector de imágenes, servicio POST/PUT, validaciones JPEG/PNG/WebP y 5 MiB; 14 pruebas del servicio y nueve del componente; suite general de 354 aprobadas y ocho omitidas; lint, build, TypeScript API y diff correctos; interfaz revisada en escritorio y móvil; endpoint accesible mediante Vercel Dev. | Implementada, verificada localmente y publicada, commit `8c55a95`. | Integración real AWS/Firebase diferida. |
-| 2026-11-19 | T10.4-C | Persistencia de `imageKey`, GET prefirmado de 60 segundos, autorización de imágenes no publicadas, servicio frontend y visualización con fallback; suite general final de 408 aprobadas y 18 omitidas; diez pruebas de reglas aprobadas en Firebase Emulator; nueve pruebas de `ProductImage`, incluidas dos de robustez; TypeScript API, ESLint, build y formato Git correctos. | Implementada y verificada localmente; documentación definitiva en revisión. | Verificar documentación, commit y push; integración AWS/Firebase real diferida. |
+| 2026-11-19 | T10.4-C | Persistencia de `imageKey`, GET prefirmado de 60 segundos, autorización de imágenes no publicadas, servicio frontend y visualización con fallback; suite general final de 408 aprobadas y 18 omitidas; diez pruebas de reglas aprobadas en Firebase Emulator; nueve pruebas de `ProductImage`, incluidas dos de robustez; TypeScript API, ESLint, build y formato Git correctos. | Implementada, verificada localmente y publicada en `main`, commit `8fd8716`. | Integración AWS/Firebase real diferida. |
+| 2026-11-20 | T10.4-D | Eliminación S3 protegida mediante Firebase Admin, comprobación de referencias Firestore, servicio HTTP y confirmación administrativa; 24 pruebas del panel, 16 del endpoint DELETE, 16 del servicio frontend DELETE, diez del servicio de eliminación S3 y 20 del servicio S3 existente; suite general de 460 aprobadas y 18 omitidas; TypeScript API, ESLint y build correctos; dos ajustes de robustez en el formulario. | Implementada y verificada localmente; documentación y publicación Git pendientes. | Integración real AWS/Firebase, comprobación de concurrencia, posibles objetos huérfanos y pruebas visuales integrales de T10. |
 
 ### Condiciones para continuar
 
-Antes de T10.4-D:
+Antes de publicar T10.4-D:
 
-- Finalizar la revisión documental y la publicación de T10.4-C.
-- Verificar la sincronización entre `main` y `origin/main`.
-- Mantener la protección administrativa y el bucket AWS S3 privado.
-- Obtener autorización independiente para implementar T10.4-D.
-- Definir un procedimiento seguro de eliminación que evite borrar objetos todavía referenciados.
-- Conservar el seguimiento de la excepción de dependencias sin aplicar actualizaciones forzadas.
-- No ejecutar operaciones reales de eliminación S3 sin autorización expresa.
+- Completar la revisión de los documentos PROJECT.md y TASKS.md.
+- Comprobar que la documentación conserva los resultados reales de las pruebas.
+- Revisar los ocho archivos de implementación y pruebas incluidos en T10.4-D.
+- Verificar que el área de preparación de Git contenga únicamente los cambios autorizados.
+- Obtener autorización expresa para commit y push.
+- Confirmar la sincronización de `main` con `origin/main`.
 
 Antes del cierre integral de T10:
 
@@ -1265,6 +1361,8 @@ Antes del cierre integral de T10:
 - Comparar las reglas locales de Firestore con las publicadas.
 - Obtener autorización antes de publicar reglas o modificar recursos reales.
 - Revisar los objetos de prueba y evitar dejar archivos innecesarios en S3.
+- Evaluar el riesgo de concurrencia entre la consulta de referencias y la eliminación de objetos.
+- Definir el tratamiento de imágenes huérfanas sin introducir limpieza automática no autorizada.
 - Ejecutar las pruebas visuales y funcionales integrales de T10 en escritorio y móvil antes de cerrar la etapa.
 
 Antes del despliegue público en Vercel:
