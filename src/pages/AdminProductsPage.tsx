@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { Fragment, useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "../hooks/useAuth";
 import {
   createProduct,
@@ -18,6 +18,11 @@ import {
   type ProductCategory,
   type ProductInput,
 } from "../types/product";
+
+type CategoryFilter = ProductCategory | "all";
+type PublicationFilter = "all" | "published" | "unpublished";
+
+const PRODUCTS_PER_PAGE = 12;
 
 type ProductForm = {
   name: string;
@@ -150,6 +155,11 @@ function toInput(
 
 export function AdminProductsPage() {
   const { user } = useAuth();
+  const formRef = useRef<HTMLElement>(null);
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+  const [publicationFilter, setPublicationFilter] = useState<PublicationFilter>("all");
+  const [page, setPage] = useState(1);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -203,6 +213,59 @@ export function AdminProductsPage() {
       active = false;
     };
   }, [reload]);
+
+  useEffect(() => {
+    if (formOpen) {
+      formRef.current?.scrollIntoView?.({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [formOpen, editingId]);
+
+  const searchTerm = search.trim().toLocaleLowerCase("es");
+
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch =
+      product.name.toLocaleLowerCase("es").includes(searchTerm) ||
+      (product.brand ?? "").toLocaleLowerCase("es").includes(searchTerm);
+
+    const matchesCategory =
+      categoryFilter === "all" ||
+      product.category === categoryFilter;
+
+    const matchesPublication =
+      publicationFilter === "all" ||
+      product.published === (publicationFilter === "published");
+
+    return matchesSearch && matchesCategory && matchesPublication;
+  });
+
+  const pageCount = Math.max(
+    1,
+    Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE),
+  );
+
+  const currentPage = Math.min(page, pageCount);
+
+  const visibleProducts = filteredProducts.slice(
+    (currentPage - 1) * PRODUCTS_PER_PAGE,
+    currentPage * PRODUCTS_PER_PAGE,
+  );
+
+  const mobilePageNumbers = [
+    ...new Set([1, currentPage, pageCount]),
+  ].sort((first, second) => first - second);
+
+  const firstVisible =
+    filteredProducts.length === 0
+      ? 0
+      : (currentPage - 1) * PRODUCTS_PER_PAGE + 1;
+
+  const lastVisible = Math.min(
+    currentPage * PRODUCTS_PER_PAGE,
+    filteredProducts.length,
+  );
 
   const resetUpload = () => {
     setSelectedImage(null);
@@ -382,6 +445,7 @@ export function AdminProductsPage() {
           ? "Producto actualizado correctamente."
           : "Producto creado correctamente.",
       );
+
       setReload((value) => value + 1);
     } catch (saveError) {
       setError(getErrorMessage(saveError));
@@ -488,6 +552,7 @@ export function AdminProductsPage() {
 
       {formOpen && (
         <section
+          ref={formRef}
           aria-labelledby="admin-product-form-title"
           className="mt-8 rounded-sm border border-line bg-surface p-5 sm:p-8"
         >
@@ -860,59 +925,189 @@ export function AdminProductsPage() {
         )}
 
         {!loading && !loadError && products.length > 0 && (
-          <div className="mt-5 space-y-3">
+          <div className="mt-5 space-y-4">
             <p className="text-sm text-muted">
-              {products.length} productos
+              {products.length} productos registrados
             </p>
 
-            {products.map((product) => (
-              <article
-                key={product.id}
-                className="flex flex-wrap items-start justify-between gap-4 rounded-sm border border-line bg-surface p-5"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-gold-text uppercase">
-                    {PRODUCT_CATEGORY_LABELS[product.category]}
-                  </p>
+            <div className="grid gap-4 rounded-sm border border-line bg-surface p-4 sm:grid-cols-2 lg:grid-cols-3">
+              <label className="block text-sm font-semibold text-ink">
+                Buscar por nombre o marca
+                <input
+                  type="search"
+                  value={search}
+                  placeholder="Buscar producto…"
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    setPage(1);
+                  }}
+                  className={inputClass}
+                />
+              </label>
 
-                  <h3 className="mt-2 font-display text-xl text-ink">
-                    {product.name}
-                  </h3>
+              <label className="block text-sm font-semibold text-ink">
+                Filtrar por categoría
+                <select
+                  value={categoryFilter}
+                  onChange={(event) => {
+                    setCategoryFilter(event.target.value as CategoryFilter);
+                    setPage(1);
+                  }}
+                  className={inputClass}
+                >
+                  <option value="all">Todas las categorías</option>
+                  {PRODUCT_CATEGORIES.map((category) => (
+                    <option key={category} value={category}>
+                      {PRODUCT_CATEGORY_LABELS[category]}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-                  <p className="mt-2 break-all text-xs text-muted">
-                    ID: {product.id}
-                  </p>
+              <label className="block text-sm font-semibold text-ink">
+                Filtrar por publicación
+                <select
+                  value={publicationFilter}
+                  onChange={(event) => {
+                    setPublicationFilter(
+                      event.target.value as PublicationFilter,
+                    );
+                    setPage(1);
+                  }}
+                  className={inputClass}
+                >
+                  <option value="all">Todos</option>
+                  <option value="published">Publicados</option>
+                  <option value="unpublished">No publicados</option>
+                </select>
+              </label>
+            </div>
 
-                  <p className="mt-3 text-sm text-muted">
-                    S/ {product.price.toFixed(2)}
-                    {" · "}
-                    Stock: {product.stock ?? "Sin registrar"}
-                    {" · "}
-                    {product.published ? "Publicado" : "No publicado"}
-                  </p>
-                </div>
+            <p role="status" className="text-sm text-muted">
+              {filteredProducts.length} resultados · Mostrando{" "}
+              {firstVisible}–{lastVisible}
+            </p>
 
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={controlsDisabled}
-                    onClick={() => openEdit(product)}
-                    className={`${buttonClass} border border-line text-ink hover:bg-page`}
+            {filteredProducts.length === 0 ? (
+              <p className="rounded-sm border border-line bg-surface p-5 text-muted">
+                No se encontraron productos con estos filtros.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {visibleProducts.map((product) => (
+                  <article
+                    key={product.id}
+                    className="flex flex-col gap-4 rounded-sm border border-line bg-surface p-5 sm:flex-row sm:items-start sm:justify-between"
                   >
-                    Editar
-                  </button>
+                    <div className="min-w-0 w-full flex-1">
+                      <p className="text-xs font-semibold text-gold-text uppercase">
+                        {PRODUCT_CATEGORY_LABELS[product.category]}
+                      </p>
 
-                  <button
-                    type="button"
-                    disabled={controlsDisabled}
-                    onClick={() => void removeProduct(product)}
-                    className={`${buttonClass} border border-line text-ink hover:bg-page`}
+                      <h3 className="mt-2 font-display text-xl text-ink wrap-break-word">
+                        {product.name}
+                      </h3>
+
+                      <p className="mt-2 break-all text-xs text-muted">
+                        ID: {product.id}
+                      </p>
+
+                      <p className="mt-3 text-sm text-muted">
+                        S/ {product.price.toFixed(2)}
+                        {" · "}
+                        Stock: {product.stock ?? "Sin registrar"}
+                        {" · "}
+                        {product.published ? "Publicado" : "No publicado"}
+                      </p>
+                    </div>
+
+                    <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
+                      <button
+                        type="button"
+                        disabled={controlsDisabled}
+                        onClick={() => openEdit(product)}
+                        className={`${buttonClass} flex-1 border border-line text-ink hover:bg-page sm:flex-none`}
+                      >
+                        Editar
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={controlsDisabled}
+                        onClick={() => void removeProduct(product)}
+                        className={`${buttonClass} flex-1 border border-line text-ink hover:bg-page sm:flex-none`}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </article>
+                ))}
+
+                {pageCount > 1 && (
+                  <nav
+                    aria-label="Paginación de productos administrativos"
+                    className="mt-8 flex flex-wrap items-center justify-center gap-2"
                   >
-                    Eliminar
-                  </button>
-                </div>
-              </article>
-            ))}
+                    <button
+                      type="button"
+                      disabled={currentPage === 1}
+                      onClick={() => setPage(currentPage - 1)}
+                      className={`${buttonClass} border border-line text-ink hover:bg-page`}
+                    >
+                      Anterior
+                    </button>
+
+                    {Array.from({ length: pageCount }, (_, index) => {
+                      const pageNumber = index + 1;
+                      const isCurrent = pageNumber === currentPage;
+                      const isMobile = mobilePageNumbers.includes(pageNumber);
+                      const previousMobile =
+                        mobilePageNumbers[
+                          mobilePageNumbers.indexOf(pageNumber) - 1
+                        ];
+
+                      return (
+                        <Fragment key={pageNumber}>
+                          {isMobile &&
+                            previousMobile !== undefined &&
+                            pageNumber - previousMobile > 1 && (
+                              <span
+                                aria-hidden="true"
+                                className="px-1 text-sm text-muted sm:hidden"
+                              >
+                                …
+                              </span>
+                            )}
+
+                          <button
+                            type="button"
+                            aria-label={`Página ${pageNumber}`}
+                            aria-current={isCurrent ? "page" : undefined}
+                            onClick={() => setPage(pageNumber)}
+                            className={`size-11 rounded-sm border text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-text ${
+                              isCurrent
+                                ? "border-gold-text bg-deep-blue text-cream"
+                                : "border-line bg-page text-ink hover:border-gold/60 hover:bg-surface"
+                            } ${isMobile ? "" : "hidden sm:inline-block"}`}
+                          >
+                            {pageNumber}
+                          </button>
+                        </Fragment>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      disabled={currentPage === pageCount}
+                      onClick={() => setPage(currentPage + 1)}
+                      className={`${buttonClass} border border-line text-ink hover:bg-page`}
+                    >
+                      Siguiente
+                    </button>
+                  </nav>
+                )}
+              </div>
+            )}
           </div>
         )}
       </section>

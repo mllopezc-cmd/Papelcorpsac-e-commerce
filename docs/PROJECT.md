@@ -582,6 +582,27 @@ El build transformó 149 módulos. Se mantiene la advertencia no bloqueante de V
 
 La implementación no incorporó dependencias nuevas ni modificó funcionalidades ajenas a la administración de imágenes.
 
+#### T10 — Verificación real AWS/Firebase y mejoras UX administrativas
+
+**Actualización al 20 de noviembre de 2026.** Este apartado registra los resultados posteriores a las subtareas T10.4-A/B/C/D. Las limitaciones históricas descritas en esas subtareas corresponden al momento en que se ejecutaron y no deben confundirse con el estado actual.
+
+**Integración controlada con servicios reales:** el desarrollador ejecutó Vercel Dev con Firebase real y el bucket privado AWS S3 de Papelcorpsac en `us-east-1`. Se creó exclusivamente un producto temporal no publicado, `PRUEBA T10 - Imagen AWS S3`, asociado a la clave `products/db53e3f9-e534-449e-993d-398238907c53.jpg`.
+
+- Subida real mediante URL PUT prefirmada, con persistencia del `imageKey` en Firestore.
+- Solicitud administrativa de URL GET: HTTP 200; descarga del JPEG desde S3: HTTP 200 y `Content-Type: image/jpeg`.
+- Solicitud anónima de la imagen del producto no publicado: HTTP 404, conforme a la protección implementada.
+- Eliminación del documento de prueba desde `/admin/productos`, con confirmación de la interfaz y retorno a los 60 productos originales.
+- Eliminación de la imagen temporal desde `DELETE /api/product-image-delete` con autenticación administrativa: HTTP 200 y `{ "deleted": true }`.
+- Comprobación posterior mediante AWS Console: el bucket mostró **0 objetos actuales**. La captura verifica la ausencia en el listado actual, no la inexistencia de versiones históricas si se hubiese habilitado el versionado.
+
+Las reglas de productos de T10.3 y la validación de `imageKey` de T10.4-C se publicaron en Firebase Console según la confirmación previa del desarrollador, tras sus pruebas con los emuladores. No se modificaron las reglas para las mejoras UX.
+
+**Mejoras UX autorizadas:** únicamente se actualizaron `src/pages/AdminProductsPage.tsx` y `src/pages/AdminProductsPage.test.tsx`. El panel admite búsqueda por nombre o marca (sin distinguir mayúsculas), filtros combinables por categoría y publicación, resultados vacíos, paginación local de doce productos y retorno a la primera página al cambiar filtros. Se conserva el orden alfabético original. Al pulsar «Editar», el formulario se abre y se solicita desplazamiento automático. Las tarjetas móviles muestran los botones debajo del contenido; el desarrollador comprobó visualmente la corrección a **320 px**. Se descartó el filtro cronológico porque los productos históricos no disponen de `createdAt` fiable. No se alteraron los 60 productos originales ni se incorporaron dependencias o archivos nuevos.
+
+**Evidencia técnica del desarrollador:** 30 pruebas de `AdminProductsPage.test.tsx` aprobadas; suite general repetida después del ajuste responsive con **466 aprobadas, 18 omitidas y 0 fallidas** (25 archivos aprobados y dos omitidos); TypeScript API, ESLint, build y `git diff --check` satisfactorios según las ejecuciones compartidas. Las diez pruebas de reglas de productos omitidas en la suite general se habían aprobado por separado con emuladores; las otras ocho pertenecen a la integración de checkout previamente verificada. La advertencia no bloqueante de Vite por un chunk de unos 580,46 kB continúa documentada.
+
+**Verificación final de Tailwind:** el desarrollador sustituyó manualmente `break-words` por `wrap-break-word` conforme a Tailwind CSS IntelliSense después de esas verificaciones; posteriormente se ejecutaron satisfactoriamente las 466 pruebas, ESLint, build y TypeScript API. El código UX y la documentación de cierre todavía no cuentan con commit y push confirmados. La ausencia de despliegue público, la falta de limpieza automática de objetos huérfanos y el carácter no atómico de la consulta Firestore y el borrado S3 siguen siendo limitaciones conocidas. T11 no está autorizada.
+
 ## 6. Arquitectura y reutilización
 
 Se utiliza una arquitectura sencilla con separación clara de responsabilidades.
@@ -897,7 +918,7 @@ En T10.4-C se añadió la validación opcional de `imageKey` bajo el prefijo `pr
 
 T10.4-D no modifica las reglas de Firestore. La comprobación de referencias a `imageKey` se realiza mediante Firebase Admin en el backend, antes de solicitar la eliminación del objeto S3.
 
-La publicación pendiente de las reglas de T10.3 y T10.4-C se realizará únicamente tras comparar las versiones local y activa, revisar cualquier ajuste necesario por T10.4-D y obtener autorización independiente del desarrollador.
+Actualización posterior de T10 (20/11/2026): el desarrollador confirmó que las reglas de productos de T10.3 y la validación opcional de `imageKey` de T10.4-C se publicaron en Firebase Console después de su verificación en emuladores. La integración real posterior corroboró la lectura administrativa y la protección de imágenes no publicadas. La publicación no fue parte de las subtareas históricas anteriores. Las mejoras UX no modificaron `firestore.rules`.
 
 ### 7.8 Configuración de emuladores en el frontend (T08)
 
@@ -988,17 +1009,17 @@ Commits principales:
 
 ### 8.2 Pruebas automatizadas
 
-Últimos resultados generales reportados por el desarrollador durante T10.4-D:
+Últimos resultados generales reportados por el desarrollador el 20 de noviembre de 2026, después de las mejoras UX y la corrección responsive de T10:
 
 | Verificación | Resultado |
 |---|---|
 | Build TypeScript y Vite | Correcto |
 | ESLint | Correcto |
-| Vitest, suite general final de T10.4-D | 460 pruebas aprobadas |
+| Vitest, suite general posterior a UX | 466 pruebas aprobadas |
 | Pruebas fallidas | 0 |
 | Pruebas omitidas en la suite general | 18 |
 | Archivos de pruebas | 25 aprobados y dos omitidos |
-| Panel administrativo `AdminProductsPage.test.tsx` | 24 pruebas aprobadas |
+| Panel administrativo `AdminProductsPage.test.tsx` | 30 pruebas aprobadas |
 | Endpoint DELETE de imágenes | 16 pruebas aprobadas |
 | Servicio frontend DELETE | 16 pruebas aprobadas |
 | Servicio de eliminación S3 | 10 pruebas aprobadas |
@@ -1009,7 +1030,7 @@ Commits principales:
 | `npm audit --omit=dev` | Última auditoría reportada: cero vulnerabilidades |
 | `git diff --check` | Sin errores de formato |
 
-La suite general final de T10.4-D se ejecutó después de incorporar las pruebas de eliminación y los dos ajustes de robustez del formulario administrativo. Finalizó con 460 pruebas aprobadas, 18 omitidas y ninguna fallida.
+Históricamente, T10.4-D terminó con 460 pruebas aprobadas, 18 omitidas y ninguna fallida. Después se añadieron cinco casos UX y se realizó la corrección responsive; la última suite general compartida terminó con 466 pruebas aprobadas, 18 omitidas y ninguna fallida. El cambio manual posterior de `break-words` a `wrap-break-word` quedó verificado posteriormente mediante lint y build satisfactorios.
 
 Las 18 omitidas corresponden a las diez pruebas de reglas de productos y las ocho de integración transaccional de checkout. Las diez pruebas de reglas fueron ejecutadas y aprobadas por separado mediante Firebase Emulator durante T10.4-C.
 
@@ -1084,9 +1105,7 @@ T10.4-D incorporó el endpoint DELETE protegido, la comprobación de referencias
 
 La consulta de referencias en Firestore y la eliminación en S3 no son atómicas. Un cambio concurrente podría asociar una imagen después de la comprobación y antes de su eliminación. Tampoco existe una limpieza automática de objetos huérfanos.
 
-Todavía no se ha completado una transferencia PUT o GET efectiva contra AWS S3 ni una verificación completa del flujo autenticado con Firebase Admin real. La operación DELETE real también permanece pendiente.
-
-La comparación y publicación autorizada de reglas Firestore, las comprobaciones efectivas de permisos y las pruebas visuales y funcionales integrales son requisitos pendientes antes de cerrar T10.
+Actualización de T10 del 20/11/2026: posteriormente se verificaron PUT, GET y DELETE efectivos contra S3 desde el entorno local con Firebase real. También se confirmó la publicación de las reglas de productos por el desarrollador y se revisaron visualmente las mejoras UX en escritorio y en móvil a 320 px. La ausencia del objeto de prueba se corroboró en el listado actual de AWS Console (cero objetos). Esta evidencia no supone un despliegue público ni elimina el riesgo de concurrencia o de versiones históricas.
 
 ### 8.5 T08 — Historial y detalle de órdenes
 
@@ -1183,7 +1202,7 @@ Requisitos pendientes:
 
 Las pruebas de reducer, servicio, componente y Firestore Emulator implementadas durante T07 forman parte de la cobertura incremental del proyecto.
 
-Las pruebas de subida, persistencia, visualización y eliminación de imágenes de T10.4-A, T10.4-B, T10.4-C y T10.4-D amplían esta cobertura, pero requieren la integración final con los servicios externos reales antes de cerrar T10. La revisión visual y funcional completa de T10 se efectuará antes de cerrar esa etapa.
+Las pruebas de subida, persistencia, visualización y eliminación de imágenes de T10.4-A/B/C/D ampliaron esta cobertura. La integración real con Firebase y AWS S3 y las revisiones visuales administrativas posteriores se registran en el cierre de T10; la comprobación final del ajuste canónico de Tailwind fue satisfactoria; permanecen pendientes la publicación Git y su confirmación. Estas verificaciones no sustituyen T12.
 
 No deben presentarse como sustituto de todos los requisitos de T12.
 

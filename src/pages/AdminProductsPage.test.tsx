@@ -884,3 +884,169 @@ describe('AdminProductsPage — T10.4-D', () => {
     expect(deleteProductImageMock).not.toHaveBeenCalled()
   })
 })
+
+const adminList: Product[] = Array.from({ length: 25 }, (_, index) => ({
+  ...existingProduct,
+  id: `producto-${String(index + 1).padStart(2, '0')}`,
+  name: `Artículo ${String(index + 1).padStart(2, '0')}`,
+  brand: index % 2 === 0 ? 'Papel Corp' : 'Marca Azul',
+  category: index % 2 === 0 ? 'stationery' : 'office-supplies',
+  published: index % 2 === 0,
+}))
+
+describe('AdminProductsPage — mejoras UX de T10', () => {
+  it('pagina doce productos y conserva el orden alfabético existente', async () => {
+    getAdminProductsMock.mockResolvedValue(adminList)
+    render(<AdminProductsPage />)
+
+    await screen.findByText('Artículo 01')
+
+    expect(
+      screen.getAllByRole('button', { name: 'Editar' }),
+    ).toHaveLength(12)
+
+    expect(screen.queryByText('Artículo 13')).toBeNull()
+    expect(screen.getByText(/25 resultados/)).toBeTruthy()
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Página 2' }),
+    )
+
+    expect(screen.getByText('Artículo 13')).toBeTruthy()
+
+    expect(
+      screen.getAllByRole('button', { name: 'Editar' }),
+    ).toHaveLength(12)
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Siguiente' }),
+    )
+
+    expect(screen.getByText('Artículo 25')).toBeTruthy()
+
+    expect(
+      screen.getAllByRole('button', { name: 'Editar' }),
+    ).toHaveLength(1)
+
+    expect(
+      (screen.getByRole('button', {
+        name: 'Siguiente',
+      }) as HTMLButtonElement).disabled,
+    ).toBe(true)
+  })
+
+  it('busca por nombre y marca sin distinguir mayúsculas', async () => {
+    getAdminProductsMock.mockResolvedValue(adminList)
+    render(<AdminProductsPage />)
+
+    await screen.findByText('Artículo 01')
+
+    const search = screen.getByRole('searchbox', {
+      name: 'Buscar por nombre o marca',
+    })
+
+    fireEvent.change(search, {
+      target: { value: 'artículo 03' },
+    })
+
+    expect(screen.getByText('Artículo 03')).toBeTruthy()
+    expect(screen.queryByText('Artículo 01')).toBeNull()
+
+    fireEvent.change(search, {
+      target: { value: 'MARCA AZUL' },
+    })
+
+    expect(screen.getByText('Artículo 02')).toBeTruthy()
+    expect(screen.queryByText('Artículo 01')).toBeNull()
+    expect(screen.getByText(/12 resultados/)).toBeTruthy()
+  })
+
+  it('combina categoría y publicación y muestra el estado sin resultados', async () => {
+    getAdminProductsMock.mockResolvedValue(adminList)
+    render(<AdminProductsPage />)
+
+    await screen.findByText('Artículo 01')
+
+    fireEvent.change(
+      screen.getByLabelText('Filtrar por categoría'),
+      {
+        target: { value: 'office-supplies' },
+      },
+    )
+
+    expect(screen.getByText('Artículo 02')).toBeTruthy()
+    expect(screen.queryByText('Artículo 01')).toBeNull()
+
+    fireEvent.change(
+      screen.getByLabelText('Filtrar por publicación'),
+      {
+        target: { value: 'published' },
+      },
+    )
+
+    expect(
+      screen.getByText(
+        'No se encontraron productos con estos filtros.',
+      ),
+    ).toBeTruthy()
+
+    expect(screen.getByText(/0 resultados/)).toBeTruthy()
+  })
+
+  it('restablece la primera página cuando cambian los filtros', async () => {
+    getAdminProductsMock.mockResolvedValue(adminList)
+    render(<AdminProductsPage />)
+
+    await screen.findByText('Artículo 01')
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Página 2' }),
+    )
+
+    expect(screen.getByText('Artículo 13')).toBeTruthy()
+
+    fireEvent.change(
+      screen.getByLabelText('Filtrar por publicación'),
+      {
+        target: { value: 'published' },
+      },
+    )
+
+    expect(screen.getByText('Artículo 01')).toBeTruthy()
+    expect(screen.queryByText('Artículo 25')).toBeNull()
+    expect(screen.getByText(/Mostrando 1–12/)).toBeTruthy()
+  })
+
+  it('desplaza al formulario al editar sin alterar el producto', async () => {
+    const scroll = vi.fn()
+    const original = HTMLElement.prototype.scrollIntoView
+
+    HTMLElement.prototype.scrollIntoView = scroll
+
+    try {
+      getAdminProductsMock.mockResolvedValue([existingProduct])
+      render(<AdminProductsPage />)
+
+      await screen.findByText('Cuaderno premium')
+
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Editar' }),
+      )
+
+      expect(screen.getByText('Editar producto')).toBeTruthy()
+
+      expect(
+        (screen.getByLabelText('Nombre') as HTMLInputElement).value,
+      ).toBe('Cuaderno premium')
+
+      expect(scroll).toHaveBeenCalledWith({
+        behavior: 'smooth',
+        block: 'start',
+      })
+
+      expect(updateProductMock).not.toHaveBeenCalled()
+    } finally {
+      HTMLElement.prototype.scrollIntoView = original
+    }
+  })
+})
