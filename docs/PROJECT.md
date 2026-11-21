@@ -601,7 +601,254 @@ Las reglas de productos de T10.3 y la validación de `imageKey` de T10.4-C se pu
 
 **Evidencia técnica del desarrollador:** 30 pruebas de `AdminProductsPage.test.tsx` aprobadas; suite general repetida después del ajuste responsive con **466 aprobadas, 18 omitidas y 0 fallidas** (25 archivos aprobados y dos omitidos); TypeScript API, ESLint, build y `git diff --check` satisfactorios según las ejecuciones compartidas. Las diez pruebas de reglas de productos omitidas en la suite general se habían aprobado por separado con emuladores; las otras ocho pertenecen a la integración de checkout previamente verificada. La advertencia no bloqueante de Vite por un chunk de unos 580,46 kB continúa documentada.
 
-**Verificación final de Tailwind:** el desarrollador sustituyó manualmente `break-words` por `wrap-break-word` conforme a Tailwind CSS IntelliSense después de esas verificaciones; posteriormente se ejecutaron satisfactoriamente las 466 pruebas, ESLint, build y TypeScript API. El código UX y la documentación de cierre todavía no cuentan con commit y push confirmados. La ausencia de despliegue público, la falta de limpieza automática de objetos huérfanos y el carácter no atómico de la consulta Firestore y el borrado S3 siguen siendo limitaciones conocidas. T11 no está autorizada.
+**Verificación final de Tailwind:** el desarrollador sustituyó manualmente `break-words` por `wrap-break-word` conforme a Tailwind CSS IntelliSense después de esas verificaciones; posteriormente se ejecutaron satisfactoriamente las 466 pruebas, ESLint, build y TypeScript API. El código UX y la documentación de cierre todavía no cuentan con commit y push confirmados. La ausencia de despliegue público, la falta de limpieza automática de objetos huérfanos y el carácter no atómico de la consulta Firestore y el borrado S3 siguen siendo limitaciones conocidas. Al finalizar esta verificación histórica de T10, T11 todavía no estaba autorizada; posteriormente se autorizó, implementó y verificó.
+
+#### T11 — Administración de órdenes
+
+**Estado:** implementación y verificación local completadas durante el
+20 y 21 de noviembre de 2026. Las reglas administrativas y el código
+de T11.2 y T11.3 están publicados en la rama `main`. El cierre
+documental de T11 se consolida posteriormente.
+
+##### T11.1 — Revisión técnica
+
+Se revisaron los modelos, las consultas de órdenes, las rutas,
+los componentes de autenticación, la protección de roles,
+las reglas Firestore y el backend transaccional.
+
+Se decidió reutilizar `src/services/orderService.ts` y
+`src/types/order.ts`, conservar la creación de órdenes
+exclusivamente en el backend y autorizar la administración
+mediante Firestore Rules.
+
+La revisión fue de solo lectura.
+
+##### T11.2 — Consultas y autorización administrativa
+
+Se incorporaron las funciones:
+
+- `getAdminOrders()`: consulta global de órdenes para Admin.
+- `updateAdminOrderStatus(orderId, status)`: actualización
+  exclusivamente del estado administrativo.
+
+Los estados permitidos son `pending`, `processing`,
+`completed` y `cancelled`.
+
+El SDK cliente no puede crear ni eliminar órdenes.
+El cliente Customer solamente puede consultar sus órdenes.
+El rol Admin puede consultar todas las órdenes y modificar
+únicamente `status`.
+
+Los importes, artículos, propietario y demás campos
+comerciales permanecen protegidos.
+
+Archivos principales:
+
+- `firestore.rules`.
+- `src/services/orderService.ts`.
+- `src/services/orderService.test.ts`.
+- `src/services/adminOrderRules.integration.test.ts`.
+
+Evidencia histórica de implementación:
+
+- 24 pruebas del servicio de órdenes aprobadas.
+- 15 pruebas administrativas de Firestore aprobadas con emuladores.
+- 479 pruebas generales aprobadas y 33 omitidas
+  en la ejecución incremental correspondiente.
+- ESLint, TypeScript API, build y formato Git satisfactorios.
+
+Posteriormente se confirmó la publicación de las reglas
+administrativas en Firebase Console, sin modificar órdenes reales.
+
+Código publicado en GitHub mediante el commit
+`9fb31e857eec65033dde7c417b4e5ed2f4011ee4`.
+
+##### T11.3 — Interfaz de gestión de órdenes
+
+Se implementó la ruta protegida `/admin/ordenes`.
+
+Archivos principales:
+
+- `src/pages/AdminOrdersPage.tsx`.
+- `src/pages/AdminOrdersPage.test.tsx`.
+- `src/layouts/AdminLayout.tsx`.
+- `src/layouts/AdminLayout.test.tsx`.
+- `src/App.tsx`.
+
+La interfaz permite:
+
+- Consultar todas las órdenes como administrador.
+- Filtrar por los cuatro estados autorizados.
+- Consultar identificador, fecha, cliente, artículos y total.
+- Seleccionar un nuevo estado.
+- Confirmar expresamente el cambio.
+- Guardar el estado mediante Firestore.
+- Actualizar el listado.
+- Visualizar estados de carga, ausencia de datos y error.
+- Reintentar consultas fallidas.
+
+Los importes y artículos son de solo lectura.
+Guardar un estado sin cambios no está permitido.
+
+La ruta conserva `ProtectedRoute requireAdmin`.
+No se añadieron dependencias.
+
+Se aprobaron 12 pruebas de `AdminOrdersPage` y
+la prueba de `AdminLayout`. La suite general reportó
+516 aprobadas, 8 omitidas y cero fallidas.
+
+También se comprobaron visualmente los modos claro y oscuro
+y el diseño responsive, incluido el ancho de 320 píxeles.
+
+La implementación se publicó mediante el commit
+`13634fcff364cabc81d07450b65fe24494c8a7f8`.
+
+##### T11.4 — Verificación funcional integrada
+
+Se utilizaron exclusivamente Firebase Authentication Emulator
+y Firestore Emulator con el proyecto ficticio
+`demo-papelcorpsac`.
+
+Se verificó visualmente:
+
+- Inicio de sesión administrativo con usuario ficticio.
+- Acceso del administrador a `/admin/ordenes`.
+- Rechazo del cliente en rutas administrativas.
+- Estado vacío de órdenes en ambas vistas.
+- Lectura administrativa de una orden ficticia.
+- Filtros por estado.
+- Confirmación de cambio `pending` a `processing`.
+- Persistencia de `processing` en Firestore Emulator.
+- Lectura de la orden por su propietario.
+- Detalle, artículos, cantidad y total del cliente.
+- Consulta de órdenes filtrada por el UID del propietario.
+- Corrección de una asociación de UID incorrecta en los datos
+  ficticios de prueba antes de validar el historial del cliente.
+
+Inicialmente se creó una orden de prueba manual para
+comprobar la interfaz y la actualización administrativa.
+
+Posteriormente se verificó el backend real de checkout
+contra los emuladores, sin crear órdenes en Firebase real.
+
+Debido a una incompatibilidad de configuración del frontend
+al iniciar `vercel dev` directamente, la comprobación se
+realizó con servicios locales separados:
+
+- Vite: puerto 3000, frontend de Papelcorpsac.
+- Vercel Dev: puerto 3001, API de checkout.
+- Authentication Emulator: puerto 9099.
+- Firestore Emulator: puerto 8080.
+
+La disponibilidad del endpoint se verificó previamente
+mediante GET, con respuesta esperada HTTP 405 y `Allow: POST`.
+
+La compra se ejecutó mediante POST autenticado directamente
+contra `/api/checkout`, usando un token del Authentication
+Emulator y no una solicitud originada en el formulario
+React de checkout.
+
+Producto ficticio:
+
+- Identificador: `producto-checkout-t114-001`.
+- Precio: S/ 25.90.
+- Stock inicial: 5 unidades.
+- Cantidad solicitada: 1 unidad.
+
+Resultado del backend:
+
+- HTTP 201.
+- `success: true`.
+- `replayed: false`.
+- Estado inicial: `pending`.
+- Moneda: `PEN`.
+- Total: 2590 céntimos.
+
+Orden generada:
+
+`b60b02d40be51c059ebfa86e7b4c2dd319d28a8cad0f01842b1dd50542e5f2df`
+
+Se verificó que el stock disminuyó de cinco a cuatro
+unidades en Firestore Emulator y que el catálogo mostró
+la nueva disponibilidad.
+
+El cliente consultó la nueva compra desde `/mis-ordenes`.
+El administrador consultó ambas órdenes desde
+`/admin/ordenes`.
+
+Esta evidencia confirma el funcionamiento del backend
+transaccional y la lectura posterior de la orden desde
+la aplicación. No constituye una prueba de que el
+formulario React haya enviado la solicitud al backend
+durante esta ejecución específica.
+
+No hubo pagos, escrituras sobre Firebase real ni cambios
+de código durante T11.4.
+
+##### T11.5 — Verificación técnica final
+
+El desarrollador ejecutó las verificaciones finales
+sobre la rama `main`.
+
+Resultados:
+
+- `npm.cmd run lint`: satisfactorio.
+- `npm.cmd run typecheck:api`: satisfactorio.
+- `npm.cmd run test`: 516 pruebas aprobadas,
+  8 omitidas y ninguna fallida.
+- `npm.cmd run build`: satisfactorio en la repetición final.
+- `git diff --check`: sin errores reportados.
+- `git status -sb`: rama sincronizada antes de
+  la actualización documental.
+
+Las 15 pruebas administrativas de Firestore y las
+10 pruebas de reglas de imágenes S3 se ejecutaron
+satisfactoriamente en la suite general con emuladores.
+
+Los mensajes `PERMISSION_DENIED` de pruebas negativas
+fueron esperados y no implicaron fallos de la suite.
+
+Las ocho pruebas omitidas corresponden a la suite de
+integración transaccional del checkout. Esa suite había
+sido ejecutada separadamente y aprobada en etapas
+anteriores. T11.4 añadió evidencia manual HTTP integrada.
+
+Durante T11.5 se detectó un fallo reproducible de build
+con el mensaje `MISSING_EXPORT` de `auth`.
+
+La exportación existía correctamente en
+`src/lib/firebase.ts`. El fallo desapareció tras retirar
+el archivo temporal `.env.local` utilizado durante el
+diagnóstico de Vercel Dev.
+
+La compilación posterior fue satisfactoria y no requirió
+modificar código ni dependencias.
+
+Permanece la advertencia no bloqueante de Vite por un
+chunk de aproximadamente 580,46 kB. Su optimización
+no forma parte de T11.
+
+##### Alcance y límites
+
+T11 queda funcional y técnicamente verificada en el
+entorno local, con las restricciones descritas.
+
+No se afirma:
+
+- Despliegue público de la aplicación.
+- Checkout operativo contra Firestore real en producción.
+- Integración de pagos reales.
+- Validación integral de la interfaz y el backend
+  desplegados en Vercel Production.
+- Ejecución de una nueva prueba completa de idempotencia
+  durante T11.4.
+
+Las validaciones del proyecto completo desplegado
+se realizarán en T14. T15 se reservará a la documentación
+académica, README, bitácora y presentación.
+
+La actualización de este documento no constituye
+por sí misma un commit ni un despliegue.
 
 ## 6. Arquitectura y reutilización
 
@@ -926,11 +1173,11 @@ Actualización posterior de T10 (20/11/2026): el desarrollador confirmó que las
 
 La nueva versión local de `firestore.rules` permite al rol Admin consultar todas las órdenes y modificar únicamente el campo `status`, restringido a `pending`, `processing`, `completed` y `cancelled`. El SDK cliente continúa sin permisos para crear o eliminar órdenes. Los clientes conservan la lectura limitada a sus propias órdenes y no pueden modificarlas. No se habilitaron modificaciones de artículos, propietario, importes ni otros campos.
 
-Se añadieron `getAdminOrders` y `updateAdminOrderStatus` a `src/services/orderService.ts`, reutilizando las validaciones y los tipos existentes. Estas funciones todavía no están conectadas a una nueva interfaz administrativa, que corresponde a una subtarea posterior.
+Se añadieron `getAdminOrders` y `updateAdminOrderStatus` a `src/services/orderService.ts`, reutilizando las validaciones y los tipos existentes. Durante T11.2 estas funciones todavía no estaban conectadas a una interfaz administrativa. La conexión se implementó posteriormente en T11.3.
 
 **Evidencia aportada:** suite general con 479 pruebas aprobadas, 33 omitidas y ninguna fallida; 24 pruebas del servicio de órdenes aprobadas. Las 15 pruebas nuevas de permisos administrativos se ejecutaron y aprobaron por separado con Firebase Authentication Emulator y Firestore Emulator mediante `demo-papelcorpsac`. La ejecución inicial tuvo un fallo de preparación de datos debido al uso de un Timestamp de Firebase Admin con el SDK cliente; la prueba se corrigió y posteriormente aprobaron los 15 casos. ESLint, build, TypeScript API y `git diff --check` resultaron satisfactorios.
 
-**Estado:** T11.2 implementada y verificada localmente. Las reglas nuevas no están publicadas en Firebase Console; faltan revisión final del diff, comparación con las reglas activas, autorización independiente para publicarlas y commit/push. No se implementó la interfaz de T11.3.
+**Estado histórico de T11.2:** implementada y verificada localmente. Posteriormente se publicaron las reglas administrativas en Firebase Console y el código en GitHub mediante el commit `9fb31e8`. La interfaz de T11.3 también fue implementada y publicada mediante `13634fc`.
 
 ### 7.8 Configuración de emuladores en el frontend (T08)
 
@@ -944,6 +1191,22 @@ El cliente utiliza `VITE_USE_FIREBASE_EMULATORS` para conectar Firebase Authenti
 - No se deben habilitar emuladores en Preview ni Production.
 
 Durante el diagnóstico de T10.4-B, `vercel dev` mostró un error de configuración al cargar la interfaz con emuladores. La página volvió a funcionar cuando se inició Vercel Dev con el indicador de emuladores desactivado y el proyecto Firebase real mediante variables temporales de proceso. Esto confirmó la carga visual del frontend, pero no la autenticación efectiva de Firebase Admin ni una subida real a S3.
+
+**Actualización T11.4–T11.5:** Vite funcionó con el proyecto
+ficticio durante las verificaciones visuales. El frontend
+iniciado directamente mediante Vercel Dev mostró un conflicto
+de configuración que provocó una pantalla blanca.
+
+Para completar la integración se utilizó Vite en el puerto
+3000 y Vercel Dev para la API en el puerto 3001. Ambos
+trabajaron con Authentication Emulator y Firestore Emulator.
+
+Un archivo temporal `.env.local` con indicadores de emuladores
+interfirió posteriormente con la compilación de producción.
+Tras retirarlo, `npm.cmd run build` finalizó correctamente.
+
+La protección que impide activar emuladores en producción
+se mantuvo intacta.
 
 ### 7.9 Auditoría de dependencias
 
@@ -1060,6 +1323,24 @@ Las auditorías históricas de T07 habían reportado cero vulnerabilidades; dura
 
 **Verificación incremental T11.2:** el desarrollador reportó 479 pruebas aprobadas, 33 omitidas y cero fallidas en la suite general. De las 33 omitidas, 15 corresponden a las pruebas nuevas de reglas administrativas, que posteriormente aprobaron en una ejecución independiente con emuladores locales (15/15). Las otras 18 son las suites de integración conocidas de checkout y reglas de productos. Las comprobaciones de lint, build y TypeScript API fueron satisfactorias. Las cifras anteriores de T10 se conservan como historial.
 
+**Verificación final de T11 (20–21/11/2026):**
+
+| Verificación | Resultado |
+|---|---|
+| Vitest general | 516 aprobadas, 8 omitidas, 0 fallidas |
+| Archivos de pruebas | 28 aprobados, 1 omitido |
+| Reglas administrativas de órdenes | 15/15 aprobadas |
+| Reglas de imágenes privadas | 10/10 aprobadas |
+| Panel administrativo de órdenes | 12 pruebas aprobadas |
+| ESLint | Correcto |
+| TypeScript API | Correcto |
+| Build TypeScript y Vite | Correcto tras limpiar `.env.local` temporal |
+| `git diff --check` | Sin errores reportados |
+
+Las ocho pruebas omitidas pertenecen a la suite de integración
+transaccional del checkout. La revisión integral de T12
+continúa pendiente.
+
 ### 8.3 Pruebas de integración HTTP
 
 Se verificó manualmente el recorrido mediante Vercel local y Firebase Emulators.
@@ -1112,7 +1393,7 @@ No equivalen a:
 - Despliegue de funciones en Vercel Production.
 - Prueba comercial de checkout con Firebase real.
 - Integración con una pasarela de pagos.
-- Implementación del panel de administración de órdenes (T11).
+- Validación de la aplicación desplegada públicamente, prevista para T14.
 - Revisión integral de calidad de T12.
 
 T10.4-A, T10.4-B y T10.4-C incorporaron pruebas automatizadas de generación PUT, subida desde el frontend, persistencia de referencias, generación GET y visualización de imágenes privadas.
@@ -1198,6 +1479,8 @@ Antes de desplegar:
 - Obtener autorización expresa del desarrollador.
 
 La verificación local no constituye autorización de despliegue.
+
+**Plan acordado:** la validación funcional del proyecto completo desplegado en Vercel corresponde a T14. T15 se reserva para documentación académica, README, bitácora y presentación. El checkout en el entorno ficticio no demuestra su disponibilidad comercial en Firebase real.
 
 ## 10. Testing y revisión integral
 

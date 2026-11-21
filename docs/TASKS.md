@@ -1150,64 +1150,178 @@ Objeto temporal eliminado: `products/db53e3f9-e534-449e-993d-398238907c53.jpg`. 
 
 **Limitaciones:** la consulta de referencias Firestore y la eliminación S3 no son atómicas; no existe limpieza automática de huérfanos. Las pruebas con servicios reales se efectuaron localmente, sin despliegue público. No se verificaron versiones históricas del bucket.
 
-**Estado:** integración real y mejoras UX verificadas en el alcance descrito; publicación del cierre pendiente. T11 no autorizada.
+**Estado histórico al finalizar T10.5:** integración real y mejoras UX verificadas. Posteriormente se publicó T10.5 mediante el commit `edd3669` y se autorizó y ejecutó T11.
 
 ### T11 — Administrar órdenes
 
 Responsable: MIXTO
 
-Dependencias: T08, T10
+Dependencias: T08 y T10, completadas.
 
-- [ ] Consultar todas las órdenes como admin.
-- [ ] Filtrar por estado.
-- [ ] Actualizar estados autorizados.
-- [ ] Mostrar carga y errores.
-- [ ] Verificar restricciones de permisos.
+- [x] Consultar todas las órdenes como Admin.
+- [x] Filtrar por estado.
+- [x] Actualizar estados autorizados.
+- [x] Mostrar estados de carga, ausencia de datos y errores.
+- [x] Verificar las restricciones de permisos.
+- [x] Verificar el comportamiento funcional con emuladores.
+- [x] Ejecutar la verificación técnica final.
 
-Aceptación:
+**Aceptación:** cumplida en el entorno local de pruebas.
 
-El administrador puede consultar todas las órdenes como admin, filtrarlas por estado y actualizar sus estados.
+Admin puede listar todas las órdenes, filtrarlas y modificar
+exclusivamente el estado permitido.
 
-Los clientes no pueden realizar estas operaciones.
+Customer conserva el acceso únicamente a sus órdenes
+y no puede ingresar al panel administrativo.
+
+La creación de órdenes sigue reservada al backend.
+
+**Alcance:** la implementación y verificación de T11
+están completadas. La publicación del cierre documental
+en GitHub se realizará mediante un commit independiente
+y autorizado. La validación en producción se reserva a T14.
 
 #### T11.1 — Revisión técnica de solo lectura
 
 - [x] Revisar modelos, servicios, rutas y páginas de órdenes.
-- [x] Revisar las reglas de Firestore y el backend de checkout.
-- [x] Contrastar los requisitos con la guía del docente.
-- [x] Identificar los archivos reutilizables y las restricciones de seguridad.
+- [x] Revisar reglas Firestore y backend de checkout.
+- [x] Contrastar requisitos y dependencias.
+- [x] Identificar componentes reutilizables.
+- [x] Definir límites de seguridad.
 
-**Resultado:** se decidió conservar el checkout protegido por Firebase Admin, reutilizar los servicios de órdenes y aplicar la autorización administrativa mediante Firestore Rules. La revisión fue de solo lectura.
+**Resultado:** revisión completada sin modificaciones.
 
-#### T11.2 — Consultas y permisos administrativos de órdenes
+#### T11.2 — Consultas y permisos administrativos
 
-Responsable: MIXTO. Dependencias: T08, T10 y revisión T11.1 completadas.
+- [x] Incorporar `getAdminOrders()`.
+- [x] Incorporar `updateAdminOrderStatus()`.
+- [x] Conservar validaciones del modelo de órdenes.
+- [x] Restringir creación de órdenes al backend.
+- [x] Proteger importes, artículos y propietario.
+- [x] Añadir pruebas de servicio y permisos.
+- [x] Aprobar 15 pruebas de reglas con Firebase Emulator.
+- [x] Revisar y publicar reglas en Firebase Console.
+- [x] Publicar implementación en GitHub.
 
-**Implementación autorizada:**
+**Archivos:** `firestore.rules`,
+`src/services/orderService.ts`,
+`src/services/orderService.test.ts` y
+`src/services/adminOrderRules.integration.test.ts`.
 
-- [x] Incorporar consulta global de órdenes para Admin.
-- [x] Incorporar actualización del campo `status` con los cuatro estados definidos.
-- [x] Conservar validaciones y lectura de órdenes de clientes.
-- [x] Mantener creación de órdenes reservada al backend.
-- [x] Denegar borrados y modificaciones de datos comerciales desde el cliente.
-- [x] Incorporar pruebas unitarias y de integración de permisos.
-- [x] Verificar lint, build, TypeScript API y formato Git.
-- [x] Ejecutar las 15 pruebas de reglas mediante emuladores locales.
-- [x] Revisar que el área de preparación contenga únicamente los cuatro archivos de implementación autorizados.
-- [ ] Comparar las nuevas reglas con las activas en Firebase real.
-- [ ] Obtener autorización y publicar las reglas en Firebase real.
-- [ ] Verificar la publicación sin alterar órdenes existentes.
-- [ ] Obtener autorización para commit y push y confirmar su sincronización.
+**Evidencia:** 24 pruebas de servicio; 15/15 pruebas
+administrativas de reglas. Suite general histórica:
+479 aprobadas, 33 omitidas y cero fallidas.
 
-**Archivos de implementación:** `firestore.rules`, `src/services/orderService.ts`, `src/services/orderService.test.ts` y `src/services/adminOrderRules.integration.test.ts` (nuevo).
+La publicación de reglas en Firebase real fue confirmada
+por el desarrollador. No se utilizaron órdenes reales
+durante las verificaciones de T11.
 
-**Evidencia:** 479 pruebas aprobadas, 33 omitidas y cero fallidas en la suite general. Servicio de órdenes: 24 pruebas aprobadas. Reglas administrativas: 15 pruebas aprobadas por separado mediante Firebase Emulator, después de corregir un Timestamp incompatible en una prueba. ESLint, build, TypeScript API y `git diff --check` satisfactorios. Advertencia de Vite por un chunk de aproximadamente 580,46 kB, conocida y no bloqueante.
+**Commit publicado:**
+`9fb31e857eec65033dde7c417b4e5ed2f4011ee4`.
 
-Los mensajes `PERMISSION_DENIED` de las pruebas negativas son esperados. Se verificaron lecturas administrativas, lectura por propietario, rechazos de lectura y escritura no autorizadas, validación de estados, protección de importes y propietario, y prohibición de crear o eliminar órdenes directamente desde el cliente.
+#### T11.3 — Interfaz administrativa de órdenes
 
-**Límites:** la implementación no incluye la página administrativa, filtros visuales ni transiciones de estado adicionales. No se publicaron reglas en Firebase real ni se ejecutaron operaciones sobre órdenes de producción.
+- [x] Crear `src/pages/AdminOrdersPage.tsx`.
+- [x] Añadir pruebas del componente.
+- [x] Incorporar navegación administrativa.
+- [x] Incorporar ruta protegida `/admin/ordenes`.
+- [x] Mostrar listado y filtros.
+- [x] Implementar selección y confirmación de estado.
+- [x] Mostrar errores, carga y estados vacíos.
+- [x] Comprobar diseño responsive y modos visuales.
+- [x] Verificar y publicar la implementación.
 
-**Estado:** implementada y verificada localmente. Pendientes publicación autorizada de reglas y cierre Git. T11.3 no iniciada.
+**Archivos:** `src/pages/AdminOrdersPage.tsx`,
+`src/pages/AdminOrdersPage.test.tsx`,
+`src/layouts/AdminLayout.tsx`,
+`src/layouts/AdminLayout.test.tsx` y `src/App.tsx`.
+
+**Evidencia:** 12 pruebas del panel administrativo
+aprobadas, prueba del layout aprobada, revisión visual
+en escritorio y ancho móvil de 320 px.
+
+Suite general reportada: 516 aprobadas, 8 omitidas
+y cero fallidas. Lint, build y TypeScript API correctos.
+
+**Commit publicado:**
+`13634fcff364cabc81d07450b65fe24494c8a7f8`.
+
+#### T11.4 — Verificación funcional integrada
+
+- [x] Comprobar acceso administrativo en Firebase Emulator.
+- [x] Comprobar acceso restringido para Customer.
+- [x] Comprobar estados sin órdenes.
+- [x] Mostrar una orden ficticia en administración.
+- [x] Verificar filtros por estado.
+- [x] Cambiar `pending` a `processing`.
+- [x] Comprobar persistencia del cambio.
+- [x] Verificar historial y detalle del propietario.
+- [x] Ejecutar checkout autenticado contra API local.
+- [x] Comprobar creación de orden y descuento de stock.
+- [x] Verificar la orden generada en ambas interfaces.
+
+**Entorno:** proyecto ficticio `demo-papelcorpsac`;
+Vite puerto 3000; Vercel Dev puerto 3001;
+Authentication Emulator puerto 9099 y Firestore Emulator
+puerto 8080.
+
+**Evidencia principal:** POST autenticado a
+`/api/checkout` con HTTP 201, `success: true`,
+`replayed: false`, estado `pending`, moneda `PEN`
+y total de 2590 céntimos.
+
+Orden generada:
+
+`b60b02d40be51c059ebfa86e7b4c2dd319d28a8cad0f01842b1dd50542e5f2df`
+
+Se comprobó la reducción de stock de 5 a 4 unidades
+y su visualización posterior en el catálogo.
+
+La nueva orden apareció en `/mis-ordenes`
+y en `/admin/ordenes` junto con la orden
+administrativa de prueba anterior.
+
+**Límite:** el POST de checkout se ejecutó directamente
+contra la API mediante una solicitud autenticada,
+no desde el formulario React. No se realizaron
+pagos reales ni operaciones sobre Firestore real.
+
+**Estado:** verificación funcional completada
+en Firebase Emulator. Sin cambios de código,
+commits ni despliegues.
+
+#### T11.5 — Revisión y cierre técnico
+
+- [x] Ejecutar ESLint.
+- [x] Ejecutar TypeScript API.
+- [x] Ejecutar suite general de pruebas.
+- [x] Confirmar 516 pruebas aprobadas y 8 omitidas.
+- [x] Comprobar pruebas de reglas con emuladores.
+- [x] Investigar fallo reproducible de compilación.
+- [x] Retirar configuración temporal `.env.local`.
+- [x] Repetir build de producción satisfactoriamente.
+- [x] Comprobar sincronización de `main`.
+- [ ] Consolidar y revisar documentación de cierre.
+- [ ] Revisar diff y estado de Git después de documentar.
+- [ ] Obtener autorización para commit y push documental.
+
+**Resultado técnico:** lint, TypeScript API y build
+satisfactorios; 516 pruebas aprobadas,
+8 omitidas y cero fallidas.
+
+El build volvió a funcionar tras retirar la configuración
+temporal de emuladores. No se modificaron archivos de código.
+
+**Advertencia conocida:** chunk de Vite de 580,46 kB,
+no bloqueante y fuera del alcance de T11.
+
+**Estado de T11:** implementación y verificación local
+completadas; formalización documental y publicación de
+este cierre pendientes de revisión y autorización.
+
+Las verificaciones del despliegue completo se realizarán
+en T14. T15 se dedicará a la documentación académica.
+
 
 ## 9. Calidad y despliegue
 
@@ -1330,15 +1444,37 @@ README.md continúa siendo la plantilla genérica de Vite. Su documentación del
 
 ## 10. Seguimiento
 
-**Última subtarea publicada:** T10.5 — Integración real AWS/Firebase y mejoras UX administrativas, commit `edd3669` en `main`.
+**Última implementación publicada:** T11.3 — Interfaz
+administrativa de órdenes, commit `13634fc` en `main`.
 
-**Intervención actual:** T11.2 — Consultas y permisos administrativos de órdenes; implementación y pruebas locales satisfactorias, publicación de reglas y commit/push pendientes.
+**Intervención actual:** T11.5 — consolidación documental
+y cierre formal de T11.
 
-**Evidencia más reciente (T11.2):** 479 pruebas generales aprobadas, 33 omitidas y ninguna fallida; 24 pruebas del servicio de órdenes aprobadas y 15 pruebas de reglas administrativas aprobadas por separado en Firebase Emulator. ESLint, build, TypeScript API y `git diff --check` satisfactorios. La evidencia de T10 permanece registrada en su apartado histórico.
+**Estado técnico:** T11.1–T11.5 implementadas
+y verificadas en su alcance. T11.4 se completó mediante
+Firebase Emulator y API local; no representa
+un despliegue público.
 
-**Integración real:** PUT, GET y DELETE verificados sobre AWS S3 privado desde Vercel Dev con Firebase real; producto temporal eliminado, 60 productos originales visibles y bucket con cero objetos actuales. Reglas de productos publicadas en Firebase Console según confirmación previa del desarrollador.
+**Última evidencia automatizada:**
+516 pruebas aprobadas, 8 omitidas y ninguna fallida.
+ESLint, build TypeScript/Vite y TypeScript API correctos.
 
-**T11:** autorizada y en desarrollo por subtareas. T11.1 completada; T11.2 verificada localmente; T11.3 pendiente de autorización. El proyecto no está desplegado públicamente.
+**Reglas de T11.2:** publicación en Firebase Console
+confirmada por el desarrollador; commit `9fb31e8`.
+
+**Integración T11.4:** checkout autenticado con HTTP 201,
+creación de orden `pending` por S/ 25.90,
+stock reducido de 5 a 4 y lectura posterior por
+Customer y Admin.
+
+**Integración T10:** PUT, GET y DELETE verificados sobre
+AWS S3 privado desde Vercel Dev con Firebase real, según
+la evidencia histórica registrada.
+
+**Despliegue público:** pendiente. Validaciones finales
+del proyecto desplegado en T14; documentación académica
+en T15.
+
 
 T00 — Documentación inicial: COMPLETADA.
 
@@ -1398,7 +1534,13 @@ T10.5 — Integración real AWS/Firebase y mejoras UX: COMPLETADA Y PUBLICADA. C
 
 T11.1 — Revisión técnica de administración de órdenes: COMPLETADA (solo lectura).
 
-T11.2 — Consultas y permisos administrativos de órdenes: IMPLEMENTADA Y VERIFICADA LOCALMENTE. Suite general: 479 aprobadas y 33 omitidas; integración específica: 15/15 aprobadas en emuladores. Publicación de reglas y Git pendientes.
+T11.2 — Consultas y permisos administrativos: COMPLETADA, REGLAS PUBLICADAS Y CÓDIGO PUBLICADO. Commit `9fb31e8`.
+
+T11.3 — Interfaz administrativa: COMPLETADA, VERIFICADA Y PUBLICADA. Commit `13634fc`.
+
+T11.4 — Verificación integrada: COMPLETADA EN FIREBASE EMULATOR. Checkout HTTP 201 y descuento de stock comprobados; interfaz administrativa y consulta del cliente verificadas.
+
+T11.5 — Verificación técnica: COMPLETADA. 516 pruebas aprobadas, 8 omitidas, lint, TypeScript API y build correctos. Cierre documental y commit pendientes.
 
 ### Registro de avances
 
@@ -1434,9 +1576,30 @@ T11.2 — Consultas y permisos administrativos de órdenes: IMPLEMENTADA Y VERIF
 | 2026-11-20 | T10.4-D | Eliminación S3 protegida mediante Firebase Admin, comprobación de referencias Firestore, servicio HTTP y confirmación administrativa; 24 pruebas del panel, 16 del endpoint DELETE, 16 del servicio frontend DELETE, diez del servicio de eliminación S3 y 20 del servicio S3 existente; suite general de 460 aprobadas y 18 omitidas; TypeScript API, ESLint y build correctos; dos ajustes de robustez en el formulario. | Implementada, verificada localmente y publicada en `main` (`f68bba6`). | Integración real y UX verificadas posteriormente en T10.5; persisten las limitaciones documentadas de concurrencia y huérfanos. |
 | 2026-11-20 | T10.5 | PUT/GET/DELETE reales AWS S3 y Firebase; producto temporal retirado, 60 productos originales y 0 objetos S3 actuales; búsqueda, filtros, paginación de 12 y responsive a 320 px; suite general de 466 aprobadas y 18 omitidas; panel 30 aprobadas. | Integración real y mejoras UX verificadas en el alcance documentado. | Lint/build posteriores al ajuste Tailwind y revisión documental satisfactorios; autorizar commit/push. |
 
-| 2026-11-20 | T11.2 | Consultas y permisos administrativos de órdenes; suite general de 479 aprobadas y 33 omitidas; 24 pruebas del servicio; 15/15 de reglas aprobadas en emuladores; lint, build y TypeScript API correctos; auditorías npm con cero vulnerabilidades. | Implementada y verificada localmente. | Comparación y publicación autorizada de reglas, revisión final y commit/push. |
+| 2026-11-20 | T11.2 | Servicios de órdenes, reglas administrativas, 24 pruebas de servicio, 15/15 de reglas, autorización y publicación en Firebase Console; commit `9fb31e8`. | Implementada, verificada y publicada. | Ninguno funcional. |
+| 2026-11-20 | T11.3 | Panel `/admin/ordenes`, filtros, cambios de estado, pruebas del componente y layout, responsive; commit `13634fc`. | Implementada, verificada y publicada. | Verificación integrada posterior. |
+| 2026-11-20–21 | T11.4 | Autenticación y roles en emuladores; orden administrativa de prueba; cambio `pending` a `processing`; checkout HTTP 201, orden nueva por S/ 25.90 y stock 5 a 4; consulta de Admin y Customer. | Verificación integrada local completada. | Validación del despliegue real en T14. |
+| 2026-11-21 | T11.5 | 516 pruebas aprobadas y 8 omitidas; lint, TypeScript API y build correctos tras retirar `.env.local` temporal; Git sincronizado antes de documentar. | Cierre técnico verificado. | Revisión documental y autorización de commit/push pendientes. |
 
-### Condiciones para continuar
+### Condiciones actuales para cerrar T11
+
+- [x] Implementación y verificación funcional de T11.
+- [x] Publicación de reglas administrativas en Firebase Console.
+- [x] Publicación de T11.2 y T11.3 en GitHub.
+- [x] Checkout integrado verificado en Firebase Emulator.
+- [x] Lint, build, TypeScript API y pruebas satisfactorios.
+- [ ] Revisar los cambios documentales de PROJECT.md y TASKS.md.
+- [ ] Ejecutar `git diff --check` y comprobar el estado de Git.
+- [ ] Autorizar commit y push exclusivos del cierre documental.
+
+T12 permanece pendiente y es la siguiente etapa después
+del cierre documental autorizado de T11.
+
+T14 concentrará las comprobaciones del proyecto completo
+tras desplegarlo en Vercel. T15 se reservará para README,
+bitácora, documentación académica y presentación.
+
+### Antecedentes del cierre T10.5
 
 Condiciones históricas del cierre T10.5, publicado mediante `edd3669`:
 
