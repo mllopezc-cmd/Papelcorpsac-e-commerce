@@ -40,6 +40,10 @@ export function AdminLayout() {
               Productos
             </NavLink>
 
+            <NavLink to="/admin/ordenes" className={adminLinkClass}>
+              Órdenes
+            </NavLink>
+
             <NavLink to="/catalogo" className={adminLinkClass}>
               Ver tienda
             </NavLink>

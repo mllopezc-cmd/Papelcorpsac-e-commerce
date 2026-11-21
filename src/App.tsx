@@ -76,6 +76,12 @@ const AdminProductsPage = lazy(() =>
   })),
 );
 
+const AdminOrdersPage = lazy(() =>
+  import("./pages/AdminOrdersPage").then(({ AdminOrdersPage }) => ({
+    default: AdminOrdersPage,
+  })),
+);
+
 const pageLoadingFallback = (
   <div
     role="status"
@@ -287,6 +293,15 @@ function App() {
             element={
               <Suspense fallback={pageLoadingFallback}>
                 <AdminProductsPage />
+              </Suspense>
+            }
+          />
+
+          <Route
+            path="ordenes"
+            element={
+              <Suspense fallback={pageLoadingFallback}>
+                <AdminOrdersPage />
               </Suspense>
             }
           />

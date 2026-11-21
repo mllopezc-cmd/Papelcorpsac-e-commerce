@@ -56,6 +56,18 @@ describe("AdminLayout", () => {
 
     expect(
       screen.getByRole("link", {
+        name: "Productos",
+      }).getAttribute("href"),
+    ).toBe("/admin/productos");
+
+    expect(
+      screen.getByRole("link", {
+        name: "Órdenes",
+      }).getAttribute("href"),
+    ).toBe("/admin/ordenes");
+
+    expect(
+      screen.getByRole("link", {
         name: "Ver tienda",
       }).getAttribute("href"),
     ).toBe("/catalogo");
