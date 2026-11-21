@@ -1170,6 +1170,45 @@ El administrador puede consultar todas las órdenes como admin, filtrarlas por e
 
 Los clientes no pueden realizar estas operaciones.
 
+#### T11.1 — Revisión técnica de solo lectura
+
+- [x] Revisar modelos, servicios, rutas y páginas de órdenes.
+- [x] Revisar las reglas de Firestore y el backend de checkout.
+- [x] Contrastar los requisitos con la guía del docente.
+- [x] Identificar los archivos reutilizables y las restricciones de seguridad.
+
+**Resultado:** se decidió conservar el checkout protegido por Firebase Admin, reutilizar los servicios de órdenes y aplicar la autorización administrativa mediante Firestore Rules. La revisión fue de solo lectura.
+
+#### T11.2 — Consultas y permisos administrativos de órdenes
+
+Responsable: MIXTO. Dependencias: T08, T10 y revisión T11.1 completadas.
+
+**Implementación autorizada:**
+
+- [x] Incorporar consulta global de órdenes para Admin.
+- [x] Incorporar actualización del campo `status` con los cuatro estados definidos.
+- [x] Conservar validaciones y lectura de órdenes de clientes.
+- [x] Mantener creación de órdenes reservada al backend.
+- [x] Denegar borrados y modificaciones de datos comerciales desde el cliente.
+- [x] Incorporar pruebas unitarias y de integración de permisos.
+- [x] Verificar lint, build, TypeScript API y formato Git.
+- [x] Ejecutar las 15 pruebas de reglas mediante emuladores locales.
+- [x] Revisar que el área de preparación contenga únicamente los cuatro archivos de implementación autorizados.
+- [ ] Comparar las nuevas reglas con las activas en Firebase real.
+- [ ] Obtener autorización y publicar las reglas en Firebase real.
+- [ ] Verificar la publicación sin alterar órdenes existentes.
+- [ ] Obtener autorización para commit y push y confirmar su sincronización.
+
+**Archivos de implementación:** `firestore.rules`, `src/services/orderService.ts`, `src/services/orderService.test.ts` y `src/services/adminOrderRules.integration.test.ts` (nuevo).
+
+**Evidencia:** 479 pruebas aprobadas, 33 omitidas y cero fallidas en la suite general. Servicio de órdenes: 24 pruebas aprobadas. Reglas administrativas: 15 pruebas aprobadas por separado mediante Firebase Emulator, después de corregir un Timestamp incompatible en una prueba. ESLint, build, TypeScript API y `git diff --check` satisfactorios. Advertencia de Vite por un chunk de aproximadamente 580,46 kB, conocida y no bloqueante.
+
+Los mensajes `PERMISSION_DENIED` de las pruebas negativas son esperados. Se verificaron lecturas administrativas, lectura por propietario, rechazos de lectura y escritura no autorizadas, validación de estados, protección de importes y propietario, y prohibición de crear o eliminar órdenes directamente desde el cliente.
+
+**Límites:** la implementación no incluye la página administrativa, filtros visuales ni transiciones de estado adicionales. No se publicaron reglas en Firebase real ni se ejecutaron operaciones sobre órdenes de producción.
+
+**Estado:** implementada y verificada localmente. Pendientes publicación autorizada de reglas y cierre Git. T11.3 no iniciada.
+
 ## 9. Calidad y despliegue
 
 ### T12 — Testing y revisión integral
@@ -1208,11 +1247,14 @@ Evidencia acumulada:
 - `npm.cmd run lint`: satisfactorio.
 - Auditorías históricas de T07: `npm.cmd audit` y `npm.cmd audit --omit=dev`, ambas con cero vulnerabilidades.
 - Auditorías de T10.4-A (18/11/2026): `npm.cmd audit` con 12 alertas altas de `picomatch` documentadas y aceptadas provisionalmente; `npm.cmd audit --omit=dev` con cero vulnerabilidades.
+- Seguimiento del 20/11/2026: `npm.cmd audit` y `npm.cmd audit --omit=dev` reportaron cero vulnerabilidades. `picomatch@4.0.7` permanece instalado. No se actualizaron dependencias; el hallazgo anterior se conserva como antecedente histórico.
 - Suite de T10.4-A: 331 pruebas generales aprobadas, ocho omitidas; 28 específicas del backend PUT aprobadas.
 - Suite de T10.4-B: 354 pruebas generales aprobadas, ocho omitidas; 23 específicas del frontend de subida aprobadas, lint, build y TypeScript API satisfactorios.
 - Suite de T10.4-C: 408 pruebas generales aprobadas y 18 omitidas; diez pruebas de Firestore Rules aprobadas por separado. Nueve pruebas de `ProductImage` aprobadas, incluidas dos pruebas adicionales de robustez.
 - Suite de T10.4-D: 460 pruebas generales aprobadas, 18 omitidas y cero fallidas; 24 pruebas del panel administrativo, 16 del endpoint DELETE, 16 del servicio frontend DELETE y diez del servicio de eliminación S3 aprobadas. TypeScript API, ESLint y build satisfactorios.
 - Suite posterior a T10.5: 466 pruebas generales aprobadas, 18 omitidas, cero fallidas; 30 pruebas del panel administrativo aprobadas. Último cambio canónico de Tailwind verificado posteriormente con lint y build satisfactorios.
+
+- Suite de T11.2: 479 pruebas generales aprobadas, 33 omitidas y cero fallidas; 24 pruebas del servicio de órdenes aprobadas. Las 15 pruebas nuevas de reglas se ejecutaron por separado y aprobaron con Firebase Emulator. Lint, build, TypeScript API y formato Git satisfactorios.
 
 La revisión integral de T12 continúa pendiente y no se considera sustituida por las pruebas incrementales.
 
@@ -1288,15 +1330,15 @@ README.md continúa siendo la plantilla genérica de Vite. Su documentación del
 
 ## 10. Seguimiento
 
-**Última subtarea publicada:** T10.4-D — Eliminación protegida de imágenes privadas S3, commit `f68bba6` en `main`.
+**Última subtarea publicada:** T10.5 — Integración real AWS/Firebase y mejoras UX administrativas, commit `edd3669` en `main`.
 
-**Intervención actual:** T10.5 — Integración real AWS/Firebase, mejoras UX administrativas y documentación final; commit y push del cierre pendientes.
+**Intervención actual:** T11.2 — Consultas y permisos administrativos de órdenes; implementación y pruebas locales satisfactorias, publicación de reglas y commit/push pendientes.
 
-**Evidencia más reciente:** 466 pruebas generales aprobadas, 18 omitidas y ninguna fallida; 30 pruebas del panel aprobadas; lint, build, TypeScript API y `git diff --check` correctos en las ejecuciones compartidas. Lint y build se repitieron satisfactoriamente después del último cambio manual de Tailwind.
+**Evidencia más reciente (T11.2):** 479 pruebas generales aprobadas, 33 omitidas y ninguna fallida; 24 pruebas del servicio de órdenes aprobadas y 15 pruebas de reglas administrativas aprobadas por separado en Firebase Emulator. ESLint, build, TypeScript API y `git diff --check` satisfactorios. La evidencia de T10 permanece registrada en su apartado histórico.
 
 **Integración real:** PUT, GET y DELETE verificados sobre AWS S3 privado desde Vercel Dev con Firebase real; producto temporal eliminado, 60 productos originales visibles y bucket con cero objetos actuales. Reglas de productos publicadas en Firebase Console según confirmación previa del desarrollador.
 
-**T11:** no autorizada; el proyecto no está desplegado públicamente.
+**T11:** autorizada y en desarrollo por subtareas. T11.1 completada; T11.2 verificada localmente; T11.3 pendiente de autorización. El proyecto no está desplegado públicamente.
 
 T00 — Documentación inicial: COMPLETADA.
 
@@ -1352,7 +1394,11 @@ T10.4-C — Persistencia de `imageKey` y GET privado: COMPLETADA, VERIFICADA LOC
 
 T10.4-D — Eliminación autorizada de imágenes S3: COMPLETADA Y PUBLICADA. Commit `f68bba6`; evidencia histórica de 460 pruebas aprobadas y 18 omitidas.
 
-T10.5 — Integración real AWS/Firebase y mejoras UX: VERIFICADA EN EL ALCANCE DOCUMENTADO. Suite más reciente: 466 pruebas aprobadas y 18 omitidas. Ajuste Tailwind y revisión documental verificados; commit/push pendientes.
+T10.5 — Integración real AWS/Firebase y mejoras UX: COMPLETADA Y PUBLICADA. Commit `edd3669` en `main`; evidencia histórica de 466 pruebas aprobadas y 18 omitidas.
+
+T11.1 — Revisión técnica de administración de órdenes: COMPLETADA (solo lectura).
+
+T11.2 — Consultas y permisos administrativos de órdenes: IMPLEMENTADA Y VERIFICADA LOCALMENTE. Suite general: 479 aprobadas y 33 omitidas; integración específica: 15/15 aprobadas en emuladores. Publicación de reglas y Git pendientes.
 
 ### Registro de avances
 
@@ -1388,9 +1434,11 @@ T10.5 — Integración real AWS/Firebase y mejoras UX: VERIFICADA EN EL ALCANCE 
 | 2026-11-20 | T10.4-D | Eliminación S3 protegida mediante Firebase Admin, comprobación de referencias Firestore, servicio HTTP y confirmación administrativa; 24 pruebas del panel, 16 del endpoint DELETE, 16 del servicio frontend DELETE, diez del servicio de eliminación S3 y 20 del servicio S3 existente; suite general de 460 aprobadas y 18 omitidas; TypeScript API, ESLint y build correctos; dos ajustes de robustez en el formulario. | Implementada, verificada localmente y publicada en `main` (`f68bba6`). | Integración real y UX verificadas posteriormente en T10.5; persisten las limitaciones documentadas de concurrencia y huérfanos. |
 | 2026-11-20 | T10.5 | PUT/GET/DELETE reales AWS S3 y Firebase; producto temporal retirado, 60 productos originales y 0 objetos S3 actuales; búsqueda, filtros, paginación de 12 y responsive a 320 px; suite general de 466 aprobadas y 18 omitidas; panel 30 aprobadas. | Integración real y mejoras UX verificadas en el alcance documentado. | Lint/build posteriores al ajuste Tailwind y revisión documental satisfactorios; autorizar commit/push. |
 
+| 2026-11-20 | T11.2 | Consultas y permisos administrativos de órdenes; suite general de 479 aprobadas y 33 omitidas; 24 pruebas del servicio; 15/15 de reglas aprobadas en emuladores; lint, build y TypeScript API correctos; auditorías npm con cero vulnerabilidades. | Implementada y verificada localmente. | Comparación y publicación autorizada de reglas, revisión final y commit/push. |
+
 ### Condiciones para continuar
 
-Antes de publicar el cierre UX y documental de T10.5:
+Condiciones históricas del cierre T10.5, publicado mediante `edd3669`:
 
 - [x] Lint, build y `git diff --check` satisfactorios después de la sustitución canónica de Tailwind.
 - Comprobar que `docs/PROJECT.md` y `docs/TASKS.md` conservan la evidencia histórica y describen correctamente el estado actual.

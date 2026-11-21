@@ -29,6 +29,7 @@ const { loadFirestoreMock, firestoreMock } = vi.hoisted(() => {
       getDocs: vi.fn(),
       doc: vi.fn(),
       getDoc: vi.fn(),
+      updateDoc: vi.fn(),
     },
   }
 })
@@ -38,8 +39,10 @@ vi.mock('../lib/firebase', () => ({
 }))
 
 import {
+  getAdminOrders,
   getUserOrderById,
   getUserOrders,
+  updateAdminOrderStatus,
 } from './orderService'
 
 const dbMock = {}
@@ -88,6 +91,7 @@ beforeEach(() => {
   firestoreMock.where.mockReturnValue('owner-filter')
   firestoreMock.query.mockReturnValue('orders-query')
   firestoreMock.doc.mockReturnValue('order-reference')
+  firestoreMock.updateDoc.mockResolvedValue(undefined)
 })
 
 describe('getUserOrders', () => {
@@ -314,5 +318,176 @@ describe('getUserOrderById', () => {
     ).rejects.toThrow(
       'La orden contiene datos inválidos.',
     )
+  })
+})
+
+describe('getAdminOrders', () => {
+  it('consulta todas las órdenes sin filtro de propietario', async () => {
+    firestoreMock.getDocs.mockResolvedValue({
+      docs: [
+        orderDocument('order-001', orderData()),
+        orderDocument(
+          'order-002',
+          orderData({ userId: 'customer-002' }),
+        ),
+      ],
+    })
+
+    const orders = await getAdminOrders()
+
+    expect(orders).toHaveLength(2)
+
+    expect(
+      orders.map((order) => order.userId),
+    ).toEqual(['customer-001', 'customer-002'])
+
+    expect(firestoreMock.collection).toHaveBeenCalledWith(
+      dbMock,
+      'orders',
+    )
+
+    expect(firestoreMock.getDocs).toHaveBeenCalledWith(
+      'orders-collection',
+    )
+
+    expect(firestoreMock.where).not.toHaveBeenCalled()
+  })
+
+  it('ordena las órdenes por fecha descendente', async () => {
+    firestoreMock.getDocs.mockResolvedValue({
+      docs: [
+        orderDocument(
+          'old',
+          orderData({
+            createdAt: new firestoreMock.Timestamp(1000),
+          }),
+        ),
+        orderDocument(
+          'new',
+          orderData({
+            createdAt: new firestoreMock.Timestamp(3000),
+          }),
+        ),
+      ],
+    })
+
+    const orders = await getAdminOrders()
+
+    expect(orders.map((order) => order.id)).toEqual([
+      'new',
+      'old',
+    ])
+  })
+
+  it('devuelve un arreglo vacío cuando no existen órdenes', async () => {
+    firestoreMock.getDocs.mockResolvedValue({
+      docs: [],
+    })
+
+    await expect(getAdminOrders()).resolves.toEqual([])
+  })
+
+  it('rechaza una orden administrativa con datos inválidos', async () => {
+    firestoreMock.getDocs.mockResolvedValue({
+      docs: [
+        orderDocument(
+          'invalid',
+          orderData({ totalCents: 9999 }),
+        ),
+      ],
+    })
+
+    await expect(getAdminOrders()).rejects.toThrow(
+      'El importe de la orden no es válido.',
+    )
+  })
+
+  it('propaga errores de permisos de Firestore', async () => {
+    firestoreMock.getDocs.mockRejectedValue(
+      new Error('permission-denied'),
+    )
+
+    await expect(getAdminOrders()).rejects.toThrow(
+      'permission-denied',
+    )
+  })
+})
+
+describe('updateAdminOrderStatus', () => {
+  it('actualiza exclusivamente el estado de la orden', async () => {
+    await updateAdminOrderStatus(
+      'order-001',
+      'processing',
+    )
+
+    expect(firestoreMock.doc).toHaveBeenCalledWith(
+      dbMock,
+      'orders',
+      'order-001',
+    )
+
+    expect(firestoreMock.updateDoc).toHaveBeenCalledWith(
+      'order-reference',
+      { status: 'processing' },
+    )
+  })
+
+  it.each([
+    'pending',
+    'processing',
+    'completed',
+    'cancelled',
+  ] as const)(
+    'admite el estado %s',
+    async (status) => {
+      await updateAdminOrderStatus('order-001', status)
+
+      expect(firestoreMock.updateDoc).toHaveBeenCalledWith(
+        'order-reference',
+        { status },
+      )
+    },
+  )
+
+  it('rechaza estados desconocidos antes de consultar Firestore', async () => {
+    await expect(
+      updateAdminOrderStatus(
+        'order-001',
+        'refunded' as never,
+      ),
+    ).rejects.toThrow(
+      'Los datos de actualización de la orden no son válidos.',
+    )
+
+    expect(loadFirestoreMock).not.toHaveBeenCalled()
+  })
+
+  it('rechaza identificadores inválidos', async () => {
+    await expect(
+      updateAdminOrderStatus('', 'completed'),
+    ).rejects.toThrow(
+      'Los datos de actualización de la orden no son válidos.',
+    )
+
+    await expect(
+      updateAdminOrderStatus(
+        'orders/order-001',
+        'completed',
+      ),
+    ).rejects.toThrow(
+      'Los datos de actualización de la orden no son válidos.',
+    )
+
+    expect(loadFirestoreMock).not.toHaveBeenCalled()
+  })
+
+  it('propaga un error de permisos al actualizar', async () => {
+    firestoreMock.updateDoc.mockRejectedValue(
+      new Error('permission-denied'),
+    )
+
+    await expect(
+      updateAdminOrderStatus('order-001', 'completed'),
+    ).rejects.toThrow('permission-denied')
   })
 })

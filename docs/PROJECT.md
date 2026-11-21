@@ -883,7 +883,7 @@ No se realizan operaciones de limpieza incondicional después de cualquier respu
 
 Las reglas de Firestore mantienen las órdenes protegidas por propietario y reservan las escrituras comerciales al backend.
 
-La regla publicada para `orders` es:
+La regla publicada durante T08 para `orders` era:
 
 ```javascript
 match /orders/{orderId} {
@@ -919,6 +919,18 @@ En T10.4-C se añadió la validación opcional de `imageKey` bajo el prefijo `pr
 T10.4-D no modifica las reglas de Firestore. La comprobación de referencias a `imageKey` se realiza mediante Firebase Admin en el backend, antes de solicitar la eliminación del objeto S3.
 
 Actualización posterior de T10 (20/11/2026): el desarrollador confirmó que las reglas de productos de T10.3 y la validación opcional de `imageKey` de T10.4-C se publicaron en Firebase Console después de su verificación en emuladores. La integración real posterior corroboró la lectura administrativa y la protección de imágenes no publicadas. La publicación no fue parte de las subtareas históricas anteriores. Las mejoras UX no modificaron `firestore.rules`.
+
+#### Actualización T11.2 — Permisos administrativos de órdenes
+
+**Actualización del 20 de noviembre de 2026.** La regla histórica de T08 mostrada anteriormente se amplió localmente durante T11.2, sin alterar la creación de órdenes mediante Firebase Admin en el backend.
+
+La nueva versión local de `firestore.rules` permite al rol Admin consultar todas las órdenes y modificar únicamente el campo `status`, restringido a `pending`, `processing`, `completed` y `cancelled`. El SDK cliente continúa sin permisos para crear o eliminar órdenes. Los clientes conservan la lectura limitada a sus propias órdenes y no pueden modificarlas. No se habilitaron modificaciones de artículos, propietario, importes ni otros campos.
+
+Se añadieron `getAdminOrders` y `updateAdminOrderStatus` a `src/services/orderService.ts`, reutilizando las validaciones y los tipos existentes. Estas funciones todavía no están conectadas a una nueva interfaz administrativa, que corresponde a una subtarea posterior.
+
+**Evidencia aportada:** suite general con 479 pruebas aprobadas, 33 omitidas y ninguna fallida; 24 pruebas del servicio de órdenes aprobadas. Las 15 pruebas nuevas de permisos administrativos se ejecutaron y aprobaron por separado con Firebase Authentication Emulator y Firestore Emulator mediante `demo-papelcorpsac`. La ejecución inicial tuvo un fallo de preparación de datos debido al uso de un Timestamp de Firebase Admin con el SDK cliente; la prueba se corrigió y posteriormente aprobaron los 15 casos. ESLint, build, TypeScript API y `git diff --check` resultaron satisfactorios.
+
+**Estado:** T11.2 implementada y verificada localmente. Las reglas nuevas no están publicadas en Firebase Console; faltan revisión final del diff, comparación con las reglas activas, autorización independiente para publicarlas y commit/push. No se implementó la interfaz de T11.3.
 
 ### 7.8 Configuración de emuladores en el frontend (T08)
 
@@ -959,6 +971,8 @@ Se reprodujo la alerta con `--prefer-online` y una caché nueva. El 18 de noviem
 Se evaluaron la versión oficial, overrides, forks y la recomendación de `npm audit fix --force`. No se acreditó una versión oficial corregida compatible; forzar la instalación proponía degradar Vite o Vitest y podía romper el proyecto. No se introdujo un fork no verificado ni un override ficticio. Permanecen los overrides históricos `minimatch: 11.0.3` y `@firebase/firestore@4.19.1` → `@grpc/grpc-js: 1.13.7`.
 
 **Decisión autorizada:** el desarrollador acepta provisionalmente este hallazgo residual del entorno de desarrollo, documentado de forma explícita, para el cierre de T10.4-A. Las pruebas funcionales, el build y el análisis de tipos fueron satisfactorios; la auditoría de producción permanece en cero según los resultados aportados. Se realizará seguimiento de fuentes oficiales para aplicar una corrección compatible cuando exista, previa evaluación, autorización y nuevas pruebas. Esta excepción no autoriza publicar secretos, desactivar controles ni desplegar sin una revisión de seguridad posterior.
+
+**Seguimiento posterior del 20 de noviembre de 2026:** el desarrollador volvió a ejecutar `npm.cmd audit` y `npm.cmd audit --omit=dev`. Ambos comandos reportaron **cero vulnerabilidades**. `npm.cmd ls picomatch` confirmó que continúa instalado `picomatch@4.0.7` como dependencia transitiva de las herramientas de desarrollo. No se modificaron dependencias ni se aplicaron overrides o actualizaciones forzadas para obtener este resultado. Las 12 alertas de T10.4-A quedan conservadas como evidencia histórica, pero ya no corresponden a la última auditoría reportada. La excepción provisional asociada al aviso retirado no presenta alertas vigentes en esa ejecución; deberán mantenerse las auditorías periódicas.
 
 Las auditorías deberán repetirse cuando cambien las dependencias y antes del despliegue. No se utilizarán overrides ni actualizaciones forzadas sin justificación y autorización.
 
@@ -1026,8 +1040,8 @@ Commits principales:
 | Servicio S3 existente | 20 pruebas aprobadas |
 | Reglas Firestore de T10.4-C | 10 pruebas de integración aprobadas por separado |
 | TypeScript API | Correcto |
-| `npm audit` | Última auditoría reportada: 12 alertas altas asociadas al aviso retirado de `picomatch` (excepción documentada en 7.9) |
-| `npm audit --omit=dev` | Última auditoría reportada: cero vulnerabilidades |
+| `npm audit` | Última ejecución reportada, 20/11/2026: cero vulnerabilidades; antecedente de 12 alertas documentado en 7.9 |
+| `npm audit --omit=dev` | Última ejecución reportada, 20/11/2026: cero vulnerabilidades |
 | `git diff --check` | Sin errores de formato |
 
 Históricamente, T10.4-D terminó con 460 pruebas aprobadas, 18 omitidas y ninguna fallida. Después se añadieron cinco casos UX y se realizó la corrección responsive; la última suite general compartida terminó con 466 pruebas aprobadas, 18 omitidas y ninguna fallida. El cambio manual posterior de `break-words` a `wrap-break-word` quedó verificado posteriormente mediante lint y build satisfactorios.
@@ -1043,6 +1057,8 @@ Evidencia histórica de T07:
 - Total histórico considerando ambas ejecuciones: 272 aprobadas.
 
 Las auditorías históricas de T07 habían reportado cero vulnerabilidades; durante T10.4-A se detectó y documentó el aviso `picomatch`, con 12 alertas generales y cero de producción. Estas pruebas no sustituyen la revisión integral de T12.
+
+**Verificación incremental T11.2:** el desarrollador reportó 479 pruebas aprobadas, 33 omitidas y cero fallidas en la suite general. De las 33 omitidas, 15 corresponden a las pruebas nuevas de reglas administrativas, que posteriormente aprobaron en una ejecución independiente con emuladores locales (15/15). Las otras 18 son las suites de integración conocidas de checkout y reglas de productos. Las comprobaciones de lint, build y TypeScript API fueron satisfactorias. Las cifras anteriores de T10 se conservan como historial.
 
 ### 8.3 Pruebas de integración HTTP
 

@@ -110,6 +110,24 @@ function isValidUid(uid: string): boolean {
   )
 }
 
+function isValidOrderId(orderId: string): boolean {
+  return (
+    typeof orderId === 'string' &&
+    orderId.length > 0 &&
+    orderId.length <= 1500 &&
+    orderId.trim() === orderId &&
+    !orderId.includes('/')
+  )
+}
+
+function sortOrders(orders: Order[]): Order[] {
+  return orders.sort(
+    (first, second) =>
+      second.createdAt.toMillis() - first.createdAt.toMillis() ||
+      first.id.localeCompare(second.id),
+  )
+}
+
 export async function getUserOrders(uid: string): Promise<Order[]> {
   if (!isValidUid(uid)) {
     throw new Error('El usuario no es válido.')
@@ -128,25 +146,14 @@ export async function getUserOrders(uid: string): Promise<Order[]> {
     toOrder(document.id, document.data(), firestore.Timestamp),
   )
 
-  return orders.sort(
-    (first, second) =>
-      second.createdAt.toMillis() - first.createdAt.toMillis() ||
-      first.id.localeCompare(second.id),
-  )
+  return sortOrders(orders)
 }
 
 export async function getUserOrderById(
   uid: string,
   orderId: string,
 ): Promise<Order | null> {
-  if (
-    !isValidUid(uid) ||
-    typeof orderId !== 'string' ||
-    orderId.length === 0 ||
-    orderId.length > 1500 ||
-    orderId.trim() !== orderId ||
-    orderId.includes('/')
-  ) {
+  if (!isValidUid(uid) || !isValidOrderId(orderId)) {
     throw new Error('Los datos de consulta de la orden no son válidos.')
   }
 
@@ -170,4 +177,34 @@ export async function getUserOrderById(
   }
 
   return order
+}
+
+export async function getAdminOrders(): Promise<Order[]> {
+  const { db, firestore } = await loadFirestore()
+
+  const snapshot = await firestore.getDocs(
+    firestore.collection(db, 'orders'),
+  )
+
+  const orders = snapshot.docs.map((document) =>
+    toOrder(document.id, document.data(), firestore.Timestamp),
+  )
+
+  return sortOrders(orders)
+}
+
+export async function updateAdminOrderStatus(
+  orderId: string,
+  status: OrderStatus,
+): Promise<void> {
+  if (!isValidOrderId(orderId) || !isOrderStatus(status)) {
+    throw new Error('Los datos de actualización de la orden no son válidos.')
+  }
+
+  const { db, firestore } = await loadFirestore()
+
+  await firestore.updateDoc(
+    firestore.doc(db, 'orders', orderId),
+    { status },
+  )
 }
