@@ -216,8 +216,13 @@ export function AdminProductsPage() {
 
   useEffect(() => {
     if (formOpen) {
+      const prefersReducedMotion =
+        window.matchMedia?.(
+          "(prefers-reduced-motion: reduce)",
+        ).matches ?? false;
+
       formRef.current?.scrollIntoView?.({
-        behavior: "smooth",
+        behavior: prefersReducedMotion ? "auto" : "smooth",
         block: "start",
       });
     }
@@ -1024,6 +1029,7 @@ export function AdminProductsPage() {
                     <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
                       <button
                         type="button"
+                        aria-label={`Editar ${product.name}`}
                         disabled={controlsDisabled}
                         onClick={() => openEdit(product)}
                         className={`${buttonClass} flex-1 border border-line text-ink hover:bg-page sm:flex-none`}
@@ -1033,6 +1039,7 @@ export function AdminProductsPage() {
 
                       <button
                         type="button"
+                        aria-label={`Eliminar ${product.name}`}
                         disabled={controlsDisabled}
                         onClick={() => void removeProduct(product)}
                         className={`${buttonClass} flex-1 border border-line text-ink hover:bg-page sm:flex-none`}

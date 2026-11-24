@@ -140,6 +140,7 @@ export function CartPage() {
 
                         <button
                           type="button"
+                          aria-label={`Eliminar ${product.name} del carrito`}
                           onClick={() => removeItem(product.id)}
                           className="min-h-11 rounded-sm px-3 py-2 text-sm font-semibold text-gold-text underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-text"
                         >

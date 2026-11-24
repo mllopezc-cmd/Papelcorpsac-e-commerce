@@ -169,7 +169,7 @@ async function openExistingProduct() {
 
   fireEvent.click(
     screen.getByRole('button', {
-      name: 'Editar',
+      name: 'Editar Cuaderno premium',
     }),
   )
 }
@@ -352,7 +352,7 @@ describe('AdminProductsPage — T10.4-B', () => {
 
     fireEvent.click(
       screen.getByRole('button', {
-        name: 'Editar',
+        name: 'Editar Cuaderno premium',
       }),
     )
 
@@ -902,7 +902,7 @@ describe('AdminProductsPage — mejoras UX de T10', () => {
     await screen.findByText('Artículo 01')
 
     expect(
-      screen.getAllByRole('button', { name: 'Editar' }),
+      screen.getAllByRole('button', { name: /^Editar / }),
     ).toHaveLength(12)
 
     expect(screen.queryByText('Artículo 13')).toBeNull()
@@ -915,7 +915,7 @@ describe('AdminProductsPage — mejoras UX de T10', () => {
     expect(screen.getByText('Artículo 13')).toBeTruthy()
 
     expect(
-      screen.getAllByRole('button', { name: 'Editar' }),
+      screen.getAllByRole('button', { name: /^Editar / }),
     ).toHaveLength(12)
 
     fireEvent.click(
@@ -925,7 +925,7 @@ describe('AdminProductsPage — mejoras UX de T10', () => {
     expect(screen.getByText('Artículo 25')).toBeTruthy()
 
     expect(
-      screen.getAllByRole('button', { name: 'Editar' }),
+      screen.getAllByRole('button', { name: /^Editar / }),
     ).toHaveLength(1)
 
     expect(
@@ -1030,7 +1030,9 @@ describe('AdminProductsPage — mejoras UX de T10', () => {
       await screen.findByText('Cuaderno premium')
 
       fireEvent.click(
-        screen.getByRole('button', { name: 'Editar' }),
+        screen.getByRole('button', {
+          name: 'Editar Cuaderno premium',
+        }),
       )
 
       expect(screen.getByText('Editar producto')).toBeTruthy()
@@ -1048,5 +1050,54 @@ describe('AdminProductsPage — mejoras UX de T10', () => {
     } finally {
       HTMLElement.prototype.scrollIntoView = original
     }
+  })
+
+  it('respeta movimiento reducido al abrir el formulario', async () => {
+    const scroll = vi.fn()
+    const original = HTMLElement.prototype.scrollIntoView
+
+    HTMLElement.prototype.scrollIntoView = scroll
+
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({
+      matches: true,
+    }))
+
+    try {
+      getAdminProductsMock.mockResolvedValue([existingProduct])
+      render(<AdminProductsPage />)
+
+      await screen.findByText('Cuaderno premium')
+
+      fireEvent.click(
+        screen.getByRole('button', {
+          name: 'Editar Cuaderno premium',
+        }),
+      )
+
+      expect(scroll).toHaveBeenCalledWith({
+        behavior: 'auto',
+        block: 'start',
+      })
+    } finally {
+      HTMLElement.prototype.scrollIntoView = original
+    }
+  })
+
+  it('identifica las acciones administrativas por producto', async () => {
+    getAdminProductsMock.mockResolvedValue([existingProduct])
+    render(<AdminProductsPage />)
+
+    await screen.findByText('Cuaderno premium')
+
+    const editButton = screen.getByRole('button', {
+      name: 'Editar Cuaderno premium',
+    })
+
+    const deleteButton = screen.getByRole('button', {
+      name: 'Eliminar Cuaderno premium',
+    })
+
+    expect(editButton.textContent).toBe('Editar')
+    expect(deleteButton.textContent).toBe('Eliminar')
   })
 })

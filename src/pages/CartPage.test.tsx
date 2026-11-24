@@ -210,17 +210,13 @@ describe('CartPage — T12.3-B', () => {
 
     renderCartPage()
 
-    const firstItem = screen
-      .getByText('Cuaderno premium')
-      .closest('li')
+    const removeButton = screen.getByRole('button', {
+      name: 'Eliminar Cuaderno premium del carrito',
+    })
 
-    expect(firstItem).not.toBeNull()
+    expect(removeButton.textContent).toBe('Eliminar')
 
-    const removeButton = firstItem?.querySelector('button:last-child')
-
-    expect(removeButton?.textContent).toBe('Eliminar')
-
-    fireEvent.click(removeButton!)
+    fireEvent.click(removeButton)
 
     await waitFor(() => {
       expect(
