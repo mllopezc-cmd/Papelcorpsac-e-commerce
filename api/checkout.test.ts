@@ -105,11 +105,31 @@ function createResponse() {
   }
 }
 
+function setProductionEnvironment(): void {
+  vi.stubEnv('PAPELCORPSAC_ENABLE_CHECKOUT_EMULATOR', '')
+  vi.stubEnv('PAPELCORPSAC_USE_AUTH_EMULATOR', '')
+  vi.stubEnv('FIRESTORE_EMULATOR_HOST', undefined)
+  vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', undefined)
+  vi.stubEnv('VERCEL', '1')
+  vi.stubEnv('VERCEL_ENV', 'production')
+  vi.stubEnv('NODE_ENV', 'production')
+
+  resolveFirebaseAdminConfigurationMock.mockReturnValue({
+    projectId: 'papelcorpsac',
+    emulatorEnabled: false,
+  })
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
 
   vi.stubEnv('PAPELCORPSAC_ENABLE_CHECKOUT_EMULATOR', 'true')
+  vi.stubEnv('PAPELCORPSAC_USE_AUTH_EMULATOR', 'true')
   vi.stubEnv('FIRESTORE_EMULATOR_HOST', '127.0.0.1:8080')
+  vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099')
+  vi.stubEnv('VERCEL', '')
+  vi.stubEnv('VERCEL_ENV', '')
+  vi.stubEnv('NODE_ENV', 'test')
 
   verifyBearerRequestMock.mockResolvedValue({
     uid: 'customer-1',
@@ -369,7 +389,7 @@ describe('POST /api/checkout', () => {
     expect(createCheckoutOrderMock).not.toHaveBeenCalled()
   })
 
-  it('no ejecuta compras cuando falta la habilitación explícita', async () => {
+  it('no ejecuta compras si falta el opt-in del emulador local', async () => {
     vi.stubEnv('PAPELCORPSAC_ENABLE_CHECKOUT_EMULATOR', '')
 
     const { response, result } = createResponse()
@@ -397,9 +417,9 @@ describe('POST /api/checkout', () => {
     expect(createCheckoutOrderMock).not.toHaveBeenCalled()
   })
 
-  it('rechaza un proyecto distinto al de demostración', async () => {
+  it('rechaza un proyecto real en modo emulador', async () => {
     resolveFirebaseAdminConfigurationMock.mockReturnValue({
-      projectId: 'proyecto-real',
+      projectId: 'papelcorpsac',
       emulatorEnabled: false,
     })
 
@@ -498,5 +518,132 @@ describe('POST /api/checkout', () => {
 
     expect(result.statusCode).toBe(201)
     expect(JSON.stringify(result.body)).not.toContain('customer-1')
+  })
+})
+
+describe('POST /api/checkout — Vercel Production', () => {
+  it('permite el checkout con Firestore real en Production', async () => {
+    setProductionEnvironment()
+
+    const { response, result } = createResponse()
+    const request = createRequest()
+
+    await handler(request, response)
+
+    expect(result.statusCode).toBe(201)
+    expect(verifyBearerRequestMock).toHaveBeenCalledWith(
+      request,
+      { checkRevoked: true },
+    )
+    expect(getFirebaseAdminFirestoreMock).toHaveBeenCalledTimes(1)
+    expect(createCheckoutOrderMock).toHaveBeenCalledWith(
+      mockFirestore,
+      'customer-1',
+      validRequest(),
+    )
+  })
+
+  it('conserva la idempotencia en Production', async () => {
+    setProductionEnvironment()
+
+    createCheckoutOrderMock.mockResolvedValue({
+      success: true,
+      order: {
+        id: 'order-001',
+        status: 'pending',
+        currency: 'PEN',
+        totalCents: 2500,
+      },
+      replayed: true,
+    })
+
+    const { response, result } = createResponse()
+
+    await handler(createRequest(), response)
+
+    expect(result.statusCode).toBe(200)
+    expect(result.body).toMatchObject({
+      success: true,
+      replayed: true,
+    })
+  })
+
+  it('no permite compras reales desde Preview', async () => {
+    setProductionEnvironment()
+    vi.stubEnv('VERCEL_ENV', 'preview')
+
+    const { response, result } = createResponse()
+
+    await handler(createRequest(), response)
+
+    expect(result.statusCode).toBe(503)
+    expect(createCheckoutOrderMock).not.toHaveBeenCalled()
+  })
+
+  it('no permite compras reales en desarrollo local', async () => {
+    setProductionEnvironment()
+    vi.stubEnv('VERCEL', '')
+    vi.stubEnv('VERCEL_ENV', '')
+    vi.stubEnv('NODE_ENV', 'development')
+
+    const { response, result } = createResponse()
+
+    await handler(createRequest(), response)
+
+    expect(result.statusCode).toBe(503)
+    expect(createCheckoutOrderMock).not.toHaveBeenCalled()
+  })
+
+  it('no permite activar emuladores en Production', async () => {
+    setProductionEnvironment()
+    vi.stubEnv('PAPELCORPSAC_ENABLE_CHECKOUT_EMULATOR', 'true')
+
+    const { response, result } = createResponse()
+
+    await handler(createRequest(), response)
+
+    expect(result.statusCode).toBe(503)
+    expect(getFirebaseAdminFirestoreMock).not.toHaveBeenCalled()
+    expect(createCheckoutOrderMock).not.toHaveBeenCalled()
+  })
+
+  it('rechaza el host de Firestore Emulator en Production', async () => {
+    setProductionEnvironment()
+    vi.stubEnv('FIRESTORE_EMULATOR_HOST', '127.0.0.1:8080')
+
+    const { response, result } = createResponse()
+
+    await handler(createRequest(), response)
+
+    expect(result.statusCode).toBe(503)
+    expect(getFirebaseAdminFirestoreMock).not.toHaveBeenCalled()
+    expect(createCheckoutOrderMock).not.toHaveBeenCalled()
+  })
+
+  it('rechaza el host de Authentication Emulator en Production', async () => {
+    setProductionEnvironment()
+    vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099')
+
+    const { response, result } = createResponse()
+
+    await handler(createRequest(), response)
+
+    expect(result.statusCode).toBe(503)
+    expect(getFirebaseAdminFirestoreMock).not.toHaveBeenCalled()
+    expect(createCheckoutOrderMock).not.toHaveBeenCalled()
+  })
+
+  it('rechaza un token inválido también en Production', async () => {
+    setProductionEnvironment()
+    verifyBearerRequestMock.mockRejectedValue(
+      new AuthRequestError('unauthorized'),
+    )
+
+    const { response, result } = createResponse()
+
+    await handler(createRequest(), response)
+
+    expect(result.statusCode).toBe(401)
+    expect(createCheckoutOrderMock).not.toHaveBeenCalled()
   })
 })

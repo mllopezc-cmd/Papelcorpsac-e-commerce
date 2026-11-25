@@ -47,19 +47,29 @@ function isJsonRequest(request: CheckoutHttpRequest): boolean {
   )
 }
 
-function isCheckoutEmulatorEnabled(): boolean {
-  if (
-    process.env.PAPELCORPSAC_ENABLE_CHECKOUT_EMULATOR !== 'true' ||
-    process.env.FIRESTORE_EMULATOR_HOST !== '127.0.0.1:8080'
-  ) {
-    return false
-  }
-
+function isCheckoutEnvironmentAllowed(): boolean {
   const configuration = resolveFirebaseAdminConfiguration()
 
+  if (configuration.emulatorEnabled) {
+    return (
+      configuration.projectId === 'demo-papelcorpsac' &&
+      process.env.PAPELCORPSAC_ENABLE_CHECKOUT_EMULATOR === 'true' &&
+      process.env.FIRESTORE_EMULATOR_HOST === '127.0.0.1:8080' &&
+      process.env.NODE_ENV !== 'production' &&
+      process.env.VERCEL_ENV !== 'preview' &&
+      process.env.VERCEL_ENV !== 'production'
+    )
+  }
+
   return (
-    configuration.emulatorEnabled &&
-    configuration.projectId === 'demo-papelcorpsac'
+    configuration.projectId !== 'demo-papelcorpsac' &&
+    process.env.VERCEL === '1' &&
+    process.env.VERCEL_ENV === 'production' &&
+    process.env.NODE_ENV === 'production' &&
+    process.env.PAPELCORPSAC_ENABLE_CHECKOUT_EMULATOR !== 'true' &&
+    process.env.PAPELCORPSAC_USE_AUTH_EMULATOR !== 'true' &&
+    process.env.FIREBASE_AUTH_EMULATOR_HOST === undefined &&
+    process.env.FIRESTORE_EMULATOR_HOST === undefined
   )
 }
 
@@ -114,7 +124,7 @@ export default async function handler(
   }
 
   try {
-    if (!isCheckoutEmulatorEnabled()) {
+    if (!isCheckoutEnvironmentAllowed()) {
       sendError(response, 503, 'Service Unavailable')
       return
     }
