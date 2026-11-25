@@ -609,7 +609,6 @@ Las reglas de productos de T10.3 y la validación de `imageKey` de T10.4-C se pu
 20 y 21 de noviembre de 2026. Las reglas administrativas y el código
 de T11.2 y T11.3 están publicados en la rama `main`. El cierre
 documental de T11 se consolida posteriormente.
-
 ##### T11.1 — Revisión técnica
 
 Se revisaron los modelos, las consultas de órdenes, las rutas,
@@ -1239,13 +1238,30 @@ Se evaluaron la versión oficial, overrides, forks y la recomendación de `npm a
 
 Las auditorías deberán repetirse cuando cambien las dependencias y antes del despliegue. No se utilizarán overrides ni actualizaciones forzadas sin justificación y autorización.
 
-### 7.10 Advertencia de compilación
+### 7.10 Advertencia de compilación — diagnóstico T12.6
 
-Vite continúa mostrando una advertencia no bloqueante relacionada con el tamaño de un chunk JavaScript superior a 500 kB minificados.
+**Estado:** diagnóstico completado el 24 de noviembre de 2026, sin modificar código ni dependencias. Advertencia no bloqueante.
 
-El build termina correctamente.
+Durante el build de producción, Vite informó de un chunk JavaScript superior a 500 kB minificados. Se identificó `index.esm-BaXGouFi.js`, con **580,46 kB minificados** y aproximadamente **172,75 kB gzip**, asociado principalmente con Firebase Firestore. La inspección de los recursos compilados identificó `Firestore`, `WebChannel`, `IndexedDB`, `onSnapshot` y `runTransaction`.
 
-La optimización se pospone para una revisión posterior, sin introducir división de código innecesaria durante T07.
+La referencia desde el archivo principal `index-Dd3rbn4-.js` utiliza `import("./index.esm-BaXGouFi.js")`, es decir, una **importación dinámica**, consistente con `loadFirestore()` en `src/lib/firebase.ts`. Las páginas también emplean `React.lazy`. Que la importación sea dinámica no significa que siempre ocurra tarde: una sesión autenticada puede requerir Firestore durante la inicialización.
+
+**Mediciones locales:** Chrome DevTools en Vite Preview (`localhost:4173`), caché deshabilitada y sin limitación artificial de red.
+
+| Indicador | Visitante | Usuario autenticado |
+|---|---:|---:|
+| Solicitudes | 19 | 29 |
+| Datos transferidos | 667 kB | 841 kB |
+| Recursos totales | 1,3 MB | 1,9 MB |
+| DOMContentLoaded | 220 ms | 1,45 s |
+| Load | 627 ms | 1,95 s |
+| Finish | 1,26 s | 6,04 s |
+
+El chunk de Firestore no apareció entre las solicitudes registradas del visitante; sí apareció durante la sesión autenticada, con aproximadamente **171 kB transferidos**. Son observaciones puntuales en un equipo local, no mediciones estadísticas ni evidencia de rendimiento de producción.
+
+**Interpretación:** el build termina satisfactoriamente. El aviso no implica por sí mismo una vulnerabilidad ni demuestra un problema funcional. El tamaño minificado no equivale a la transferencia comprimida. Dividir artificialmente el SDK en chunks más pequeños no garantiza reducir la cantidad total descargada; elevar el umbral de Vite únicamente ocultaría la advertencia.
+
+**Decisión:** mantener la arquitectura y la configuración actual, sin instalar dependencias, imponer divisiones manuales ni modificar el límite informativo de Vite. Durante **T14** se evaluará el despliegue público con Lighthouse y condiciones de red móvil, diferenciando visitantes y usuarios autenticados. El diagnóstico no bloquea el cierre local de T12.
 
 ## 8. Estado de implementación y testing
 
@@ -1338,8 +1354,8 @@ Las auditorías históricas de T07 habían reportado cero vulnerabilidades; dura
 | `git diff --check` | Sin errores reportados |
 
 Las ocho pruebas omitidas pertenecen a la suite de integración
-transaccional del checkout. La revisión integral de T12
-continúa pendiente.
+transaccional del checkout. En el momento del cierre de T11, la revisión integral de T12
+estaba pendiente; se completó posteriormente y se documenta en la sección 10.
 
 ### 8.3 Pruebas de integración HTTP
 
@@ -1445,7 +1461,7 @@ Verificación final reportada por el desarrollador el 11 de noviembre de 2026:
 - `npm.cmd run test`: 12 archivos aprobados, 1 archivo omitido; 284 pruebas aprobadas y 8 omitidas (292 en total). El archivo omitido corresponde a las pruebas de integración de checkout que requieren Firestore Emulator; esas ocho pruebas habían sido aprobadas separadamente durante T07.
 - `git diff --check`: sin errores de whitespace. Git mostró una advertencia no bloqueante de conversión LF/CRLF para `src/App.tsx`.
 
-La publicación de reglas en Firestore Console fue confirmada por el desarrollador. No se desplegó la aplicación ni el backend en Vercel Production. T08 no sustituye la revisión integral pendiente de T12 ni habilita la administración de órdenes de T11.
+La publicación de reglas en Firestore Console fue confirmada por el desarrollador. No se desplegó la aplicación ni el backend en Vercel Production. T08 no sustituía la revisión integral de T12 ni habilitaba en aquel momento la administración de órdenes, implementada posteriormente en T11.
 
 ## 9. Despliegue
 
@@ -1484,26 +1500,48 @@ La verificación local no constituye autorización de despliegue.
 
 ## 10. Testing y revisión integral
 
-La revisión integral corresponde a T12.
+**T12 — COMPLETADA Y VERIFICADA LOCALMENTE el 24 de noviembre de 2026.** La publicación de la presente actualización documental en GitHub todavía requiere revisión, autorización, commit y push.
 
-Requisitos pendientes:
+La revisión integral consolidó las pruebas incrementales de etapas anteriores y agregó verificaciones de hooks, contextos, servicios, rutas y páginas principales. Los recuentos históricos de T07–T11 permanecen documentados en las secciones anteriores y no deben confundirse con el resultado final de T12.
 
-- Preparar renderWithProviders.
-- Probar useAuth mediante renderHook.
-- Probar useCart mediante renderHook.
-- Completar pruebas de componentes importantes.
-- Completar pruebas automatizadas de integración del carrito y checkout.
-- Mockear Firebase y AWS en los escenarios correspondientes.
-- Evaluar casos límite.
-- Revisar responsive y accesibilidad.
-- Ejecutar tests, lint y build como revisión integral.
-- Mantener auditorías de dependencias actualizadas.
+### 10.1 Resultados finales
 
-Las pruebas de reducer, servicio, componente y Firestore Emulator implementadas durante T07 forman parte de la cobertura incremental del proyecto.
+| Indicador | Resultado |
+|---|---:|
+| Pruebas aprobadas en la suite general | **634** |
+| Pruebas omitidas en la suite general | 33 |
+| Pruebas fallidas | 0 |
+| Archivos de pruebas aprobados | 41 |
+| Archivos de integración omitidos | 3 |
+| Pruebas de Firebase Emulator aprobadas por separado | **33** |
+| Cobertura de instrucciones (V8) | 86,08 % |
+| Cobertura de ramas | 86,11 % |
+| Cobertura de funciones | 84,41 % |
+| Cobertura de líneas | **86,35 %** |
 
-Las pruebas de subida, persistencia, visualización y eliminación de imágenes de T10.4-A/B/C/D ampliaron esta cobertura. La integración real con Firebase y AWS S3 y las revisiones visuales administrativas posteriores se registran en el cierre de T10; la comprobación final del ajuste canónico de Tailwind fue satisfactoria; permanecen pendientes la publicación Git y su confirmación. Estas verificaciones no sustituyen T12.
+Las 33 pruebas omitidas en la ejecución general se aprobaron en sesiones separadas con Firebase Emulator: **8** de checkout transaccional, **10** de reglas de productos/imágenes y **15** de reglas administrativas de órdenes. No se afirma que las 667 pruebas aprobaran en una única ejecución.
 
-No deben presentarse como sustituto de todos los requisitos de T12.
+La cobertura V8 considera código de producción de `src`, `server` y `api`, con exclusiones del comando de cobertura utilizado. Ni `PROJECT.md` ni `TASKS.md` establecieron previamente un umbral mínimo obligatorio. La cifra no significa cobertura total ni garantiza ausencia de errores.
+
+### 10.2 Alcance de pruebas y calidad
+
+Se verificaron autenticación, registro, roles, rutas protegidas, catálogo, búsqueda, filtros, paginación, detalle de producto, favoritos, carrito y su persistencia, checkout, idempotencia, control de stock, órdenes, administración y servicios de imágenes privadas. También se probaron estados vacíos, errores y operaciones asíncronas mediante mocks o emuladores según correspondía.
+
+El desarrollador reportó resultados satisfactorios para la suite general de Vitest, **ESLint**, `npm.cmd run typecheck:api` y el **build TypeScript/Vite**. El build conserva el aviso no bloqueante analizado en la sección 7.10.
+
+T12.4 incorporó verificaciones y mejoras puntuales de accesibilidad y preferencia de movimiento reducido. Esto no se presenta como certificación integral de accesibilidad ni como prueba en todos los dispositivos.
+
+**Evidencia publicada de T12:** `e42e7e6` (accesibilidad), `3b32f9c` (rutas, hooks y favoritos) y `d8136fa` (pruebas de cinco páginas principales).
+
+### 10.3 T12.6 — Diagnóstico de carga JavaScript
+
+Se identificó el chunk de Firestore de 580,46 kB, se confirmó su importación dinámica y se compararon capturas locales de red en Vite Preview como visitante y usuario autenticado. No se modificó código de producción. Las cifras completas, interpretación y decisión se encuentran en la sección 7.10.
+
+### 10.4 Limitaciones y continuidad
+
+Algunos módulos auxiliares y rutas de inicialización mantienen cobertura parcial o nula. La cobertura automatizada y las pruebas con mocks o emuladores no sustituyen la validación de un despliegue público. Las mediciones en localhost no son evidencia de rendimiento real en red móvil.
+
+La **integración continua corresponde a T13**; el **despliegue público y las mediciones con Lighthouse corresponden a T14**; el **README, la bitácora de IA y la presentación académica corresponden a T15**. Estas etapas permanecen pendientes y no se consideran iniciadas por este cierre documental.
 
 ## 11. Uso de IA y responsabilidades
 

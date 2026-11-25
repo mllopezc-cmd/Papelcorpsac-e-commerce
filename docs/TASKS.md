@@ -1327,28 +1327,56 @@ en T14. T15 se dedicará a la documentación académica.
 
 ### T12 — Testing y revisión integral
 
+**Estado:** COMPLETADA Y VERIFICADA LOCALMENTE el 24/11/2026. **Publicación documental pendiente de revisión, autorización, commit y push.**
+
 Responsables:
 
-- MIXTO: implementación y ejecución progresiva de verificaciones.
-- Revisión técnica: desde T08 se realiza en este chat, en modo de solo lectura; no se utiliza Copilot Reviewer.
+- MIXTO: implementación y verificación progresiva de pruebas.
+- Revisión técnica: realizada en este chat, en modo de solo lectura, conforme a la decisión vigente desde T08.
 
-- [ ] Preparar renderWithProviders.
-- [ ] Probar useAuth mediante renderHook.
-- [ ] Probar useCart mediante renderHook.
-- [x] Probar todas las acciones de cartReducer.
-- [ ] Completar pruebas de todos los componentes importantes.
-- [ ] Completar pruebas automatizadas de integración de carrito y checkout.
-- [ ] Mockear Firebase y AWS en los escenarios correspondientes.
-- [ ] Evaluar casos límite con ayuda de IA.
-- [ ] Ejecutar tests, lint y build.
-- [ ] Revisar responsive y accesibilidad.
-- [x] Revisar vulnerabilidades de dependencias durante T07.
+#### Criterios de verificación
 
-Aceptación:
+- [x] Preparar y probar `renderWithProviders`.
+- [x] Verificar autenticación y hooks relacionados.
+- [x] Verificar `useCart`, `CartContext` y persistencia del carrito.
+- [x] Probar las acciones de `cartReducer`.
+- [x] Incorporar pruebas de los componentes y páginas principales.
+- [x] Verificar integración de carrito y checkout.
+- [x] Utilizar mocks de Firebase y AWS en los escenarios correspondientes.
+- [x] Ejecutar por separado las suites de Firebase Emulator.
+- [x] Evaluar casos límite, errores y operaciones asíncronas.
+- [x] Ejecutar suite de tests, lint, TypeScript API y build.
+- [x] Revisar accesibilidad y movimiento reducido en T12.4.
+- [x] Revisar los antecedentes documentados de seguridad de dependencias.
+- [x] Medir la cobertura global V8.
+- [x] Completar el diagnóstico no bloqueante de Vite en T12.6.
 
-Las pruebas obligatorias están implementadas y ejecutadas con resultados satisfactorios.
+#### Evidencia final — 24/11/2026
 
-Los tests se crean progresivamente durante las tareas anteriores; esta fase corresponde a la revisión integral.
+| Indicador | Resultado |
+|---|---:|
+| Pruebas generales aprobadas | **634** |
+| Pruebas omitidas en la ejecución general | 33 |
+| Pruebas fallidas | 0 |
+| Archivos de pruebas aprobados | 41 |
+| Archivos omitidos por requerir emuladores | 3 |
+| Pruebas aprobadas por separado con Firebase Emulator | **33** |
+| Cobertura de instrucciones | 86,08 % |
+| Cobertura de ramas | 86,11 % |
+| Cobertura de funciones | 84,41 % |
+| Cobertura de líneas | **86,35 %** |
+
+Las 33 pruebas de emuladores corresponden a **8 de checkout, 10 de reglas de productos/imágenes y 15 de reglas administrativas de órdenes**. Se aprobaron por separado; no constituyen una ejecución conjunta de 667 casos.
+
+La cobertura incluye código de producción de `src`, `server` y `api`, con exclusiones explícitas en el comando utilizado. No se estableció una cobertura mínima obligatoria en los documentos de referencia. No se declara cobertura total.
+
+**Áreas principales verificadas:** autenticación, roles, rutas protegidas, catálogo, búsqueda, filtros, paginación, detalle, favoritos, carrito, persistencia, checkout, idempotencia, stock, órdenes, administración, servicios de imágenes privadas, errores y casos límite.
+
+**Calidad reportada:** suite general de Vitest, ESLint, `npm.cmd run typecheck:api` y build satisfactorios. La advertencia de Vite queda documentada y no bloquea la compilación.
+
+**Commits de evidencia:** `e42e7e6` (accesibilidad y movimiento reducido), `3b32f9c` (rutas, hooks y favoritos), `d8136fa` (pruebas de cinco páginas principales).
+
+#### Evidencia incremental histórica de T07–T11
 
 Evidencia acumulada:
 
@@ -1370,7 +1398,38 @@ Evidencia acumulada:
 
 - Suite de T11.2: 479 pruebas generales aprobadas, 33 omitidas y cero fallidas; 24 pruebas del servicio de órdenes aprobadas. Las 15 pruebas nuevas de reglas se ejecutaron por separado y aprobaron con Firebase Emulator. Lint, build, TypeScript API y formato Git satisfactorios.
 
-La revisión integral de T12 continúa pendiente y no se considera sustituida por las pruebas incrementales.
+Las cifras anteriores corresponden a ejecuciones históricas y no sustituyen el resultado final de T12.
+
+#### T12.6 — Diagnóstico del bundle JavaScript
+
+**Estado:** completado el 24/11/2026, sin modificar código de producción ni dependencias.
+
+Se identificó el chunk `index.esm-BaXGouFi.js` de **580,46 kB minificados** y aproximadamente **172,75 kB gzip**, asociado con Firestore. El archivo principal utiliza `import()` dinámico, coherente con `loadFirestore()` en `src/lib/firebase.ts`.
+
+**Mediciones en Vite Preview (`localhost:4173`), Chrome DevTools, caché deshabilitada y sin limitación artificial de red:**
+
+| Indicador | Visitante | Autenticado |
+|---|---:|---:|
+| Solicitudes | 19 | 29 |
+| Transferencia | 667 kB | 841 kB |
+| Recursos | 1,3 MB | 1,9 MB |
+| DOMContentLoaded | 220 ms | 1,45 s |
+| Load | 627 ms | 1,95 s |
+| Finish | 1,26 s | 6,04 s |
+
+El chunk de Firestore no apareció entre las solicitudes registradas del visitante, pero sí durante la sesión autenticada, con aproximadamente 171 kB transferidos. Se trata de mediciones locales puntuales, no resultados de producción.
+
+**Decisión:** conservar la arquitectura actual y no dividir artificialmente el SDK ni aumentar el umbral informativo de Vite. La advertencia no bloquea T12. La evaluación del despliegue público y Lighthouse corresponde a T14. Detalles adicionales en `docs/PROJECT.md`, sección 7.10.
+
+#### Limitaciones y seguimiento
+
+- La cobertura no garantiza ausencia de errores, vulnerabilidades o defectos visuales.
+- Los mocks y emuladores no sustituyen el entorno público.
+- Las verificaciones de accesibilidad no equivalen a una auditoría integral.
+- Algunos módulos auxiliares y rutas de inicialización conservan cobertura parcial o nula.
+- T13 comprende integración continua; T14, despliegue y rendimiento; T15, documentación académica.
+
+**Aceptación:** revisión integral automatizada de T12 completada satisfactoriamente en su alcance local. La publicación documental requiere comprobación de diferencias y autorización independientes.
 
 ### T13 — GitHub e integración continua
 
@@ -1444,20 +1503,17 @@ README.md continúa siendo la plantilla genérica de Vite. Su documentación del
 
 ## 10. Seguimiento
 
-**Última implementación publicada:** T11.3 — Interfaz
-administrativa de órdenes, commit `13634fc` en `main`.
+**Última implementación publicada:** T12.5-D, commit `d8136fa` en `main`.
 
-**Intervención actual:** T11.5 — consolidación documental
-y cierre formal de T11.
+**Intervención actual:** cierre documental de T12 y diagnóstico complementario T12.6.
 
-**Estado técnico:** T11.1–T11.5 implementadas
-y verificadas en su alcance. T11.4 se completó mediante
-Firebase Emulator y API local; no representa
-un despliegue público.
+**Estado técnico actual:** T12 completada localmente; 634 pruebas generales aprobadas, 33 pruebas con Firebase Emulator aprobadas en ejecuciones separadas y cero fallidas. Cobertura de líneas: 86,35 % (instrucciones 86,08 %, ramas 86,11 % y funciones 84,41 %).
 
-**Última evidencia automatizada:**
-516 pruebas aprobadas, 8 omitidas y ninguna fallida.
-ESLint, build TypeScript/Vite y TypeScript API correctos.
+**Calidad:** ESLint, TypeScript API y build satisfactorios; advertencia de Firestore de 580,46 kB analizada y no bloqueante. Las auditorías de `npm` reportadas el 20/11/2026 fueron de cero vulnerabilidades, conservando el antecedente histórico de `picomatch`.
+
+**Publicación de estos documentos:** pendiente de revisión, autorización, commit y push.
+
+**Próxima etapa:** T13, aún no iniciada ni autorizada.
 
 **Reglas de T11.2:** publicación en Firebase Console
 confirmada por el desarrollador; commit `9fb31e8`.
@@ -1542,6 +1598,10 @@ T11.4 — Verificación integrada: COMPLETADA EN FIREBASE EMULATOR. Checkout HTT
 
 T11.5 — Verificación técnica: COMPLETADA. 516 pruebas aprobadas, 8 omitidas, lint, TypeScript API y build correctos. Cierre documental y commit pendientes.
 
+T12 — Testing y revisión integral: COMPLETADA Y VERIFICADA LOCALMENTE. 634 pruebas generales aprobadas, 33 de emuladores aprobadas por separado, cobertura global de líneas del 86,35 %. Publicación documental pendiente.
+
+T12.6 — Diagnóstico de bundle: COMPLETADO. Advertencia conocida y no bloqueante de Firestore, importación dinámica confirmada. Rendimiento público pendiente de T14.
+
 ### Registro de avances
 
 | Fecha | Tarea | Evidencia | Resultado | Pendiente |
@@ -1580,8 +1640,10 @@ T11.5 — Verificación técnica: COMPLETADA. 516 pruebas aprobadas, 8 omitidas,
 | 2026-11-20 | T11.3 | Panel `/admin/ordenes`, filtros, cambios de estado, pruebas del componente y layout, responsive; commit `13634fc`. | Implementada, verificada y publicada. | Verificación integrada posterior. |
 | 2026-11-20–21 | T11.4 | Autenticación y roles en emuladores; orden administrativa de prueba; cambio `pending` a `processing`; checkout HTTP 201, orden nueva por S/ 25.90 y stock 5 a 4; consulta de Admin y Customer. | Verificación integrada local completada. | Validación del despliegue real en T14. |
 | 2026-11-21 | T11.5 | 516 pruebas aprobadas y 8 omitidas; lint, TypeScript API y build correctos tras retirar `.env.local` temporal; Git sincronizado antes de documentar. | Cierre técnico verificado. | Revisión documental y autorización de commit/push pendientes. |
+| 2026-11-24 | T12 | 634 pruebas generales aprobadas, 33 de emuladores aprobadas por separado, cobertura de líneas 86,35 %, lint, TypeScript API y build satisfactorios. Commits `e42e7e6`, `3b32f9c` y `d8136fa`. | Completada y verificada localmente. | Revisión y publicación documental. |
+| 2026-11-24 | T12.6 | Chunk de Firestore de 580,46 kB; importación dinámica y mediciones en Vite Preview confirmadas. | Diagnóstico completado sin cambios de código. | Lighthouse y rendimiento público en T14. |
 
-### Condiciones actuales para cerrar T11
+### Condiciones históricas del cierre de T11
 
 - [x] Implementación y verificación funcional de T11.
 - [x] Publicación de reglas administrativas en Firebase Console.
@@ -1592,8 +1654,7 @@ T11.5 — Verificación técnica: COMPLETADA. 516 pruebas aprobadas, 8 omitidas,
 - [ ] Ejecutar `git diff --check` y comprobar el estado de Git.
 - [ ] Autorizar commit y push exclusivos del cierre documental.
 
-T12 permanece pendiente y es la siguiente etapa después
-del cierre documental autorizado de T11.
+En aquel momento, T12 permanecía pendiente. Posteriormente se completó y verificó localmente con los resultados indicados en la sección T12. Su publicación documental requiere todavía verificación, commit y push.
 
 T14 concentrará las comprobaciones del proyecto completo
 tras desplegarlo en Vercel. T15 se reservará para README,
