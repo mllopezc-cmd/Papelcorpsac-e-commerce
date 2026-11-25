@@ -1433,20 +1433,46 @@ El chunk de Firestore no apareció entre las solicitudes registradas del visitan
 
 ### T13 — GitHub e integración continua
 
+**Estado:** IMPLEMENTADA, PUBLICADA Y VERIFICADA. Cierre documental pendiente de revisión, commit y push.
+
 Responsable: MIXTO
 
 - [x] Crear repositorio del proyecto.
-- [x] Revisar .gitignore.
-- [ ] Verificar que no existan secretos versionados en todo el historial.
-- [ ] Configurar GitHub Actions.
-- [ ] Ejecutar npm ci en CI.
-- [ ] Automatizar tests, lint y build.
-- [ ] Incluir revisión de seguridad de dependencias.
-- [ ] Comprobar resultados del workflow.
+- [x] Revisar `.gitignore`.
+- [x] Revisar de forma preliminar archivos versionados e historial Git en busca de patrones de secretos (sin coincidencias inesperadas; no equivale a una auditoría exhaustiva).
+- [x] Configurar GitHub Actions.
+- [x] Ejecutar `npm ci` en CI.
+- [x] Automatizar tests, lint y build.
+- [x] Incluir revisión de seguridad de dependencias.
+- [x] Comprobar resultados del workflow.
 
-Aceptación:
+#### T13.1 — Preparación y revisión preliminar de seguridad
 
-La integración continua funciona y señala fallos de pruebas, build, lint y vulnerabilidades que superen el umbral de seguridad configurado.
+Se comprobó que `main` estaba limpia y sincronizada, se revisaron `.gitignore` y `.env.example`, y se examinaron nombres de archivos versionados e históricos potencialmente sensibles. Una búsqueda de patrones de claves AWS, claves privadas y tokens de GitHub sobre el historial accesible no devolvió coincidencias. No se utilizó un detector especializado: no se afirma que el historial esté libre de todo tipo de secreto.
+
+#### T13.2 — Configuración y ejecución de GitHub Actions
+
+Se creó `.github/workflows/ci.yml` con un único job `quality`, activado por push y pull request hacia `main`. Utiliza Node.js 24, permisos `contents: read`, valores ficticios de Firebase y los comandos `npm ci`, `npm run lint`, `npm run typecheck:api`, `npm test`, `npm run build` y `npm audit --audit-level=high`. No hay despliegue ni credenciales privadas.
+
+**Commit `01281fe`:** publicación inicial. CI #1 completó sus pasos: 634 pruebas aprobadas, 33 omitidas, cero fallidas, 41 archivos de pruebas aprobados y tres omitidos; ESLint, tipos API, build y `npm ci` satisfactorios; auditoría con cero vulnerabilidades reportadas. Duración: 46 segundos.
+
+Se detectó una advertencia sobre el runtime interno Node.js 20 de `actions/checkout@v4` y `actions/setup-node@v4`.
+
+**Commit `f4828ed`:** actualización de esas dos acciones a `v7`, sin otras modificaciones. CI #2 finalizó satisfactoriamente en 38 segundos y mostró todos los pasos completados; la advertencia anterior no apareció en la captura revisada.
+
+#### T13.3 — Verificación y cierre documental
+
+- [x] Verificar publicación de `.github/workflows/ci.yml` en `main`.
+- [x] Revisar resultados de CI #1.
+- [x] Revisar resultados de CI #2 después de actualizar las acciones.
+- [x] Comprobar el estado limpio y sincronizado de Git después del commit `f4828ed`.
+- [x] Registrar que las 33 pruebas con Firebase Emulator no se ejecutan en CI.
+- [ ] Revisar el diff de `docs/PROJECT.md` y `docs/TASKS.md`.
+- [ ] Autorizar commit y push de cierre documental.
+
+**Aceptación técnica:** cumplida para el workflow implementado, que ejecuta lint, tipos API, tests, build y auditoría con umbral alto/crítico. No se ejecutó una prueba intencionadamente fallida de cada control; su capacidad de bloquear esos errores corresponde a la configuración de sus comandos y códigos de salida.
+
+**Limitaciones:** las 33 pruebas de Firebase Emulator se verificaron por separado en etapas anteriores y no forman parte de CI. La búsqueda histórica de secretos fue preliminar. La CI no sustituye el despliegue ni las verificaciones públicas de T14.
 
 ### T14 — Desplegar en Vercel
 
@@ -1503,17 +1529,17 @@ README.md continúa siendo la plantilla genérica de Vite. Su documentación del
 
 ## 10. Seguimiento
 
-**Última implementación publicada:** T12.5-D, commit `d8136fa` en `main`.
+**Última implementación publicada:** T13 — GitHub Actions, commits `01281fe` y `f4828ed` en `main`.
 
-**Intervención actual:** cierre documental de T12 y diagnóstico complementario T12.6.
+**Intervención actual:** T13.3 — cierre documental de integración continua.
 
-**Estado técnico actual:** T12 completada localmente; 634 pruebas generales aprobadas, 33 pruebas con Firebase Emulator aprobadas en ejecuciones separadas y cero fallidas. Cobertura de líneas: 86,35 % (instrucciones 86,08 %, ramas 86,11 % y funciones 84,41 %).
+**Estado técnico actual:** T13 implementada y verificada mediante dos ejecuciones satisfactorias de GitHub Actions. T12 permanece completada, con 634 pruebas generales aprobadas, 33 pruebas de Firebase Emulator aprobadas por separado y cobertura de líneas del 86,35 % (instrucciones 86,08 %, ramas 86,11 % y funciones 84,41 %).
 
 **Calidad:** ESLint, TypeScript API y build satisfactorios; advertencia de Firestore de 580,46 kB analizada y no bloqueante. Las auditorías de `npm` reportadas el 20/11/2026 fueron de cero vulnerabilidades, conservando el antecedente histórico de `picomatch`.
 
 **Publicación de estos documentos:** pendiente de revisión, autorización, commit y push.
 
-**Próxima etapa:** T13, aún no iniciada ni autorizada.
+**Próxima etapa:** T14 — despliegue en Vercel, pendiente y sin autorización de implementación.
 
 **Reglas de T11.2:** publicación en Firebase Console
 confirmada por el desarrollador; commit `9fb31e8`.
@@ -1602,6 +1628,8 @@ T12 — Testing y revisión integral: COMPLETADA Y VERIFICADA LOCALMENTE. 634 pr
 
 T12.6 — Diagnóstico de bundle: COMPLETADO. Advertencia conocida y no bloqueante de Firestore, importación dinámica confirmada. Rendimiento público pendiente de T14.
 
+T13 — GitHub e integración continua: IMPLEMENTADA, PUBLICADA Y VERIFICADA mediante los commits `01281fe` y `f4828ed`, con dos ejecuciones satisfactorias. Cierre documental pendiente de publicación.
+
 ### Registro de avances
 
 | Fecha | Tarea | Evidencia | Resultado | Pendiente |
@@ -1642,6 +1670,7 @@ T12.6 — Diagnóstico de bundle: COMPLETADO. Advertencia conocida y no bloquean
 | 2026-11-21 | T11.5 | 516 pruebas aprobadas y 8 omitidas; lint, TypeScript API y build correctos tras retirar `.env.local` temporal; Git sincronizado antes de documentar. | Cierre técnico verificado. | Revisión documental y autorización de commit/push pendientes. |
 | 2026-11-24 | T12 | 634 pruebas generales aprobadas, 33 de emuladores aprobadas por separado, cobertura de líneas 86,35 %, lint, TypeScript API y build satisfactorios. Commits `e42e7e6`, `3b32f9c` y `d8136fa`. | Completada y verificada localmente. | Revisión y publicación documental. |
 | 2026-11-24 | T12.6 | Chunk de Firestore de 580,46 kB; importación dinámica y mediciones en Vite Preview confirmadas. | Diagnóstico completado sin cambios de código. | Lighthouse y rendimiento público en T14. |
+| 2026-11-24 | T13 | GitHub Actions con un job, `npm ci`, ESLint, tipos API, 634 pruebas aprobadas y 33 omitidas en CI #1, build y auditoría con 0 vulnerabilidades. Actualización de acciones a v7; CI #2 satisfactoria. Commits `01281fe` y `f4828ed`. | Integración continua implementada, publicada y verificada. | Cierre documental; despliegue T14. |
 
 ### Condiciones históricas del cierre de T11
 

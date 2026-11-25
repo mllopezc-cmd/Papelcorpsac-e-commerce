@@ -65,7 +65,7 @@ Las mejoras propias se incorporarán cuando aporten valor sin sustituir requisit
 ### Control de versiones y despliegue
 
 - Git y GitHub.
-- Integración continua pendiente.
+- GitHub Actions: integración continua implementada y verificada durante T13.
 - Vercel.
 
 ### Política de versiones
@@ -1541,7 +1541,61 @@ Se identificó el chunk de Firestore de 580,46 kB, se confirmó su importación 
 
 Algunos módulos auxiliares y rutas de inicialización mantienen cobertura parcial o nula. La cobertura automatizada y las pruebas con mocks o emuladores no sustituyen la validación de un despliegue público. Las mediciones en localhost no son evidencia de rendimiento real en red móvil.
 
-La **integración continua corresponde a T13**; el **despliegue público y las mediciones con Lighthouse corresponden a T14**; el **README, la bitácora de IA y la presentación académica corresponden a T15**. Estas etapas permanecen pendientes y no se consideran iniciadas por este cierre documental.
+Al finalizar T12, la integración continua permanecía pendiente de T13. Posteriormente, T13 se implementó y verificó mediante GitHub Actions, según se documenta en el apartado 10.5. El despliegue público y las mediciones con Lighthouse corresponden a T14; el README, la bitácora de IA y la presentación académica corresponden a T15. Estas dos últimas etapas permanecen pendientes.
+
+### 10.5 Integración continua — T13
+
+**Estado:** implementada, publicada y verificada mediante GitHub Actions durante T13. El cierre documental de esta etapa requiere una publicación independiente.
+
+### Configuración
+
+Se incorporó `.github/workflows/ci.yml` con un único job `quality` (`Verify application`), ejecutado sobre Ubuntu con Node.js 24. Se activa con push a `main` y pull requests dirigidos a `main`. Los permisos del token se limitan a `contents: read`.
+
+Las comprobaciones automatizadas son:
+
+1. `actions/checkout` para obtener el repositorio.
+2. `actions/setup-node` para preparar Node.js 24 y caché de npm.
+3. `npm ci` para instalar las dependencias del lockfile.
+4. `npm run lint` para ESLint.
+5. `npm run typecheck:api` para comprobar tipos de la API.
+6. `npm test` para la suite general de Vitest.
+7. `npm run build` para TypeScript y Vite.
+8. `npm audit --audit-level=high` para auditar dependencias, bloqueando alertas altas o críticas.
+
+Se utilizan exclusivamente valores ficticios de configuración Firebase, sin credenciales privadas de AWS ni Firebase. La CI no despliega la aplicación. No se añadieron dependencias ni jobs adicionales.
+
+### Evidencia de GitHub Actions
+
+**Commit `01281fe`:** creación inicial del workflow. La ejecución CI #1 finalizó correctamente. Evidencia compartida de sus registros:
+
+| Verificación | Resultado |
+|---|---|
+| Instalación con `npm ci` | Correcta |
+| ESLint | Correcto |
+| Tipos de API | Correcto |
+| Vitest | 634 aprobadas, 33 omitidas, 0 fallidas |
+| Archivos de pruebas | 41 aprobados, 3 omitidos |
+| Build TypeScript/Vite | Correcto |
+| `npm audit --audit-level=high` | 0 vulnerabilidades reportadas |
+| Duración del job | 46 segundos |
+
+La primera ejecución registró una advertencia por el runtime Node.js 20 utilizado internamente en `actions/checkout@v4` y `actions/setup-node@v4`.
+
+**Commit `f4828ed`:** se cambiaron exclusivamente ambas referencias a `actions/checkout@v7` y `actions/setup-node@v7`. CI #2 terminó satisfactoriamente en **38 segundos**: instalación, lint, tipos API, tests, build y auditoría aparecen completados. La advertencia anterior no se observó en la captura de la segunda ejecución. Las capturas no detallaron de nuevo los recuentos de Vitest ni el texto del resultado de auditoría de CI #2; los recuentos y el cero de vulnerabilidades citados arriba provienen de CI #1.
+
+### Revisión preliminar de seguridad
+
+Durante T13.1 se revisaron `.gitignore`, `.env.example`, los nombres de archivos versionados y nombres históricos potencialmente sensibles. También se buscaron determinados patrones de claves AWS, claves privadas y tokens GitHub en el historial Git accesible. No aparecieron coincidencias inesperadas. Estas comprobaciones **no constituyen un análisis exhaustivo de secretos** ni demuestran ausencia absoluta de credenciales en todo el historial.
+
+La auditoría automatizada de dependencias reportó cero vulnerabilidades en CI #1. No se ejecutaron actualizaciones forzadas ni cambios de dependencias.
+
+### Alcance y limitaciones
+
+El workflow ejecuta la suite general: sus **33 pruebas omitidas** necesitan Firebase Emulator. Las ocho pruebas de checkout, diez de reglas de productos/imágenes y quince de reglas administrativas se aprobaron por separado durante las etapas anteriores, **pero no se ejecutaron dentro de CI**.
+
+Se mantiene la advertencia no bloqueante de Vite por el chunk de Firestore de aproximadamente 580,46 kB, documentada en 7.10; no impidió el build.
+
+La CI no equivale a validar Firebase, AWS S3 o Vercel en producción. **T14 sigue pendiente** e incluirá conexión GitHub–Vercel, entorno, despliegue y pruebas públicas de los dos roles. **T15 sigue pendiente** y corresponde al README, bitácora de IA y presentación académica.
 
 ## 11. Uso de IA y responsabilidades
 
