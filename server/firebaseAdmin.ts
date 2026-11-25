@@ -1,4 +1,10 @@
-import { getApp, getApps, initializeApp } from 'firebase-admin/app'
+import {
+  cert,
+  getApp,
+  getApps,
+  initializeApp,
+  type AppOptions,
+} from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { getFirestore } from 'firebase-admin/firestore'
 
@@ -77,17 +83,63 @@ export function resolveFirebaseAdminConfiguration(
   return { projectId, emulatorEnabled: true }
 }
 
+function getAdminOptions(
+  env: NodeJS.ProcessEnv,
+  configuration: FirebaseAdminConfiguration,
+): AppOptions {
+  const { projectId, emulatorEnabled } = configuration
+
+  if (emulatorEnabled) {
+    return { projectId }
+  }
+
+  const clientEmail = env.FIREBASE_CLIENT_EMAIL?.trim()
+  const privateKey = env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n').trim()
+
+  const isVercelDeployment =
+    env.VERCEL_ENV === 'preview' ||
+    env.VERCEL_ENV === 'production'
+
+  if (!clientEmail && !privateKey) {
+    if (isVercelDeployment) {
+      throw new FirebaseAdminConfigurationError()
+    }
+
+    return { projectId }
+  }
+
+  if (!clientEmail || !privateKey) {
+    throw new FirebaseAdminConfigurationError()
+  }
+
+  try {
+    return {
+      projectId,
+      credential: cert({
+        projectId,
+        clientEmail,
+        privateKey,
+      }),
+    }
+  } catch {
+    throw new FirebaseAdminConfigurationError()
+  }
+}
+
 function getFirebaseAdminApp(
   env: NodeJS.ProcessEnv = process.env,
 ) {
-  const { projectId } = resolveFirebaseAdminConfiguration(env)
-  const appExists = getApps().some((app) => app.name === ADMIN_APP_NAME)
+  const configuration = resolveFirebaseAdminConfiguration(env)
+  const options = getAdminOptions(env, configuration)
+  const appExists = getApps().some(
+    (app) => app.name === ADMIN_APP_NAME,
+  )
 
   const app = appExists
     ? getApp(ADMIN_APP_NAME)
-    : initializeApp({ projectId }, ADMIN_APP_NAME)
+    : initializeApp(options, ADMIN_APP_NAME)
 
-  if (app.options.projectId !== projectId) {
+  if (app.options.projectId !== configuration.projectId) {
     throw new FirebaseAdminConfigurationError()
   }
 
