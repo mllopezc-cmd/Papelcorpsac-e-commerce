@@ -476,6 +476,7 @@ describe('useAuth y AuthProvider — T12.2-A', () => {
       await result.current.signInWithGoogle()
     })
 
+    expect(setPersistenceMock).toHaveBeenCalledTimes(1)
     expect(signInWithPopupMock).toHaveBeenCalledTimes(1)
     expect(signInWithPopupMock.mock.calls[0][0]).toEqual({
       name: 'mock-auth',

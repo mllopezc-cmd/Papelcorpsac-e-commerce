@@ -273,7 +273,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     clearError()
 
     try {
-      await setPersistence(auth, browserLocalPersistence)
       await signInWithPopup(auth, new GoogleAuthProvider())
     } catch (error) {
       const message = getErrorMessage(error)
