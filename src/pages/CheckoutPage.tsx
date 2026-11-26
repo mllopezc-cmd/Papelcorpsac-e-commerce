@@ -425,13 +425,15 @@ export function CheckoutPage() {
 
             <div className="mt-6 border-y border-line py-5">
               <p className="text-sm font-semibold text-ink">
-                Entorno de demostración
+                Qué sucede al confirmar
               </p>
 
               <p className="mt-2 text-sm leading-6 text-muted">
-                La operación depende de un servidor de pruebas
-                autorizado. Las compras comerciales permanecen
-                deshabilitadas.
+                El pago es simulado y no se realizará ningún cargo.
+                Si confirmas correctamente el pedido, se registrará
+                una orden y se descontará inventario en la base de
+                datos configurada. En Production, estos cambios
+                afectan a datos reales.
               </p>
             </div>
 
