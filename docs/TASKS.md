@@ -1432,7 +1432,7 @@ El chunk de Firestore no apareció entre las solicitudes registradas del visitan
 
 ### T13 — GitHub e integración continua
 
-**Estado:** IMPLEMENTADA, PUBLICADA Y VERIFICADA. Cierre documental pendiente de revisión, commit y push.
+**Estado:** IMPLEMENTADA, PUBLICADA Y VERIFICADA. El cierre documental previo fue revisado y publicado mediante `ed610ab`; la nueva actualización posterior a las pruebas de Production de T14 requiere revisión y publicación separadas.
 
 Responsable: MIXTO
 
@@ -1466,8 +1466,8 @@ Se detectó una advertencia sobre el runtime interno Node.js 20 de `actions/chec
 - [x] Revisar resultados de CI #2 después de actualizar las acciones.
 - [x] Comprobar el estado limpio y sincronizado de Git después del commit `f4828ed`.
 - [x] Registrar que las 33 pruebas con Firebase Emulator no se ejecutan en CI.
-- [ ] Revisar el diff **en el repositorio local** de `docs/PROJECT.md` y `docs/TASKS.md` antes de publicar el cierre documental actualizado.
-- [ ] Autorizar commit y push de esta actualización documental (acción manual pendiente).
+- [x] Revisar el diff **en el repositorio local** de `docs/PROJECT.md` y `docs/TASKS.md` antes de publicar el cierre documental actualizado; `git diff --check`, inspección del diff y comprobaciones del área preparada satisfactorias.
+- [x] Autorizar y publicar la actualización documental mediante `ed610ab` en `main`; Git limpio y sincronizado, CI #11 `Success` y Vercel Production `Ready` confirmados el 27/11/2026.
 
 **Aceptación técnica:** cumplida para el workflow implementado, que ejecuta lint, tipos API, tests, build y auditoría con umbral alto/crítico. No se ejecutó una prueba intencionadamente fallida de cada control; su capacidad de bloquear esos errores corresponde a la configuración de sus comandos y códigos de salida.
 
@@ -1479,12 +1479,12 @@ Responsable: MANUAL
 
 Dependencia: T13
 
-**Estado al 27/11/2026:** aplicación desplegada y accesible en Production; correcciones funcionales y SEO publicadas, CI satisfactoria y Lighthouse ejecutado. **La aceptación integral de T14 sigue parcialmente pendiente** porque no se ha documentado el recorrido completo en Production del carrito, checkout, historial y operaciones reales S3. No confundir estos pendientes de aceptación con un fallo de despliegue.
+**Estado al 27/11/2026:** despliegue, correcciones, CI, SEO y Lighthouse verificados; **recorridos comerciales principales de Customer y Admin y operaciones S3 PUT/GET/DELETE comprobados en Production** con registros temporales y limpieza posterior. T14 se da por **verificada en su alcance funcional principal**. Las comprobaciones exhaustivas de seguridad, inventario de variables, respuestas HTTP concretas y algunas variantes de interacción permanecen identificadas como pendientes; no se presentan como fallos observados.
 
 #### Despliegue y configuración
 
 - [x] Conectar el repositorio GitHub a Vercel y confirmar despliegues desde `main`.
-- [x] Publicar la aplicación en `https://papelcorpsac.vercel.app/` y comprobar el estado `Ready` del commit `7f8878a`.
+- [x] Publicar la aplicación en `https://papelcorpsac.vercel.app/` y comprobar `Ready` para `7f8878a` y, posteriormente, para el commit documental `ed610ab` (27/11/2026).
 - [x] Comprobar navegación SPA y carga directa de `/catalogo`; `vercel.json` conserva el rewrite a `index.html`.
 - [x] Confirmar configuración Firebase suficiente para mostrar catálogo real y sesión Customer en Production.
 - [ ] Revisar de manera explícita **todas** las variables por entorno (incluidas las privadas del backend AWS/Firebase Admin), sus ámbitos y permisos, sin revelar valores; las capturas no documentan el inventario completo.
@@ -1496,16 +1496,25 @@ Dependencia: T13
 - [x] Comprobar las pantallas de catálogo en vista móvil de 320 px y escritorio; las pruebas automatizadas cubren búsqueda, filtros, paginación y favoritos.
 - [x] Publicar y verificar las correcciones de reglas de productos de T14 para documentos históricos con `id` opcional coherente con el ID del documento; reglas publicadas en Firebase Console según evidencia del desarrollador.
 - [x] Verificar la interfaz de los diálogos de confirmación en claro/oscuro, 320 px, Cancelar, Escape y navegación por teclado, según los recorridos compartidos.
-- [ ] Completar evidencia de registro, login, logout y permisos por ambos roles en Production; la sesión Customer observada no cubre todas esas variantes.
-- [ ] Verificar en Production agregar, modificar y retirar productos del carrito mediante un recorrido real (el indicador `Carrito (0)` y los tests locales no lo sustituyen).
-- [ ] Verificar checkout y consulta posterior del historial/detalle en Production **con una operación controlada y autorizada**, evitando afectar el inventario real de los 60 productos.
-- [ ] Verificar completamente el flujo Admin de productos y órdenes en Production, sin realizar escrituras o eliminaciones no autorizadas sobre datos reales.
-- [ ] Comprobar PUT/GET/DELETE de S3 desde endpoints desplegados, usando exclusivamente objetos temporales autorizados; las pruebas reales de T10.5 fueron locales con Vercel Dev.
+- [x] Comprobar sesiones activas Admin y Customer, navegación por rol y catálogo de visitante; evidencias visuales del 27/11/2026. El flujo completo de registro/logout no se verificó de forma específica.
+- [ ] Completar **variantes no comprobadas en Production**: registro de una cuenta nueva, logout como prueba individual y pruebas negativas sistemáticas de permisos por rol; existen pruebas locales/de emulador, pero no se extrapolan al despliegue público.
+- [x] Agregar al carrito una unidad de un producto temporal publicado y comprobar cantidad, subtotal y total S/ 1.00 en `/carrito`.
+- [ ] Verificar manualmente en Production todas las variantes del carrito (incrementar, decrementar, retirar producto y vaciar); no se ejecutaron durante el recorrido de compra documentado.
+- [x] Completar checkout simulado en Production: orden `pending` por S/ 1.00, carrito vacío y stock del producto temporal de 3 a 2 en Firestore; consultar posteriormente `/mis-ordenes` y el detalle con ID coincidente.
+- [x] Comprobar como Admin la creación, edición/publicación y eliminación controladas del producto temporal, así como la lectura de la misma orden en `/admin/ordenes`; catálogo restaurado a 60 productos.
+- [ ] Ejecutar una transición de estado de orden desde Admin **en Production**; el selector y las opciones se observaron, pero no se guardó un cambio durante la prueba para preservar el alcance acordado.
+- [x] Verificar **PUT S3 real** desde Vercel Production y persistencia de `imageKey` en Firestore en un producto temporal no publicado.
+- [x] Verificar visualización funcional **GET S3** de la fotografía asociada en catálogo como Admin, visitante y Customer, y en el detalle como Customer; no se inspeccionaron la URL firmada ni el HTTP GET en DevTools.
+- [x] Verificar **DELETE S3** de imagen temporal **no asociada** desde el panel Admin; validar en AWS Console la desaparición del objeto.
+- [x] Eliminar manualmente desde AWS Console la imagen que había estado asociada al segundo producto de prueba, **después** de borrar el producto de Firestore; comprobar bucket sin objetos actuales, catálogo de 60 y colección `orders` vacía.
+- [ ] Comprobar explícitamente en Production mediante HTTP los rechazos esperados de GET para un producto **no publicado** cuando accede un visitante y el comportamiento temporal de la URL GET; localmente existen pruebas y comprobaciones anteriores.
 
 #### Calidad y rendimiento en Production
 
 - [x] Confirmar commit `bf4e4da` y CI #9 satisfactorio: 654 tests aprobados, 39 omitidos y cero fallidos; 31 pruebas de reglas en emuladores aprobadas por separado.
 - [x] Confirmar commit `7f8878a` y CI #10 satisfactorio: 659 tests aprobados, 39 omitidos y cero fallidos, despliegue Vercel `Ready` y repositorio sincronizado según el desarrollador.
+- [x] Publicar cierre documental previo `ed610ab` (solo `docs/PROJECT.md` y `docs/TASKS.md`), con `git diff --cached --check` correcto, árbol limpio, CI #11 `Success` (659 aprobadas, 39 omitidas) y Vercel Production `Ready` para ese mismo commit.
+- [ ] Revisar, aprobar y publicar **esta nueva actualización documental posterior** a las pruebas reales de checkout/S3; no forma parte del commit `ed610ab`.
 - [x] Verificar en navegador que `https://papelcorpsac.vercel.app/robots.txt` entrega `User-agent: *` y `Allow: /`; comprobar también la corrección de la descripción HTML y el SEO 100/100 en Lighthouse.
 - [x] Ejecutar Lighthouse sobre `/catalogo` en Mobile y Desktop, como visitante y Customer autenticado, con throttling simulado.
 - [x] Registrar advertencias y oportunidades de rendimiento sin alterar el chunk de Firestore ni introducir cambios sin una nueva autorización.
@@ -1527,7 +1536,7 @@ Lighthouse indicó en las cuatro mediciones posteriores que la página tardó de
 
 **Seguridad de productos — commit `bf4e4da`:** `firestore.rules` admite de forma opcional el campo histórico `id` si coincide con el ID del documento; conserva los demás controles de escritura, lectura y roles. Se reutilizó la suite de reglas de productos y se incorporó `ConfirmDialog.tsx` para confirmaciones de borrado de producto, imagen temporal y cambio de estado administrativo. La publicación de reglas en Firebase Console fue confirmada por el desarrollador el 27/11/2026. No se efectuaron operaciones masivas sobre el catálogo real.
 
-**Aceptación de T14:** despliegue público, catálogo, sesión Customer, interfaz responsive, CI, SEO y auditorías Lighthouse **comprobados**. El criterio original «ambos roles pueden completar sus recorridos» **no se considera demostrado íntegramente en Production** por las verificaciones pendientes descritas. Se mantiene el desarrollo en estado operativo, con ajustes de rendimiento no bloqueantes y sin cambios adicionales de código aprobados para esta actualización documental.
+**Aceptación funcional principal de T14: CUMPLIDA.** Se ejecutaron en Production los recorridos esenciales de Customer (catálogo, carrito, checkout simulado, descuento de stock, historial y detalle) y Admin (crear/editar/publicar/eliminar producto de prueba y consultar órdenes), y el ciclo S3 PUT/GET/DELETE. Todos los registros temporales se limpiaron; los 60 productos originales permanecen. **No se afirma certificación exhaustiva**: faltan variantes de registro y permisos, acciones individuales del carrito, cambio real de estado de órdenes, respuestas HTTP negativas de S3 y revisión global de configuración privada. Estas comprobaciones pueden mantenerse como controles complementarios sin invalidar la evidencia funcional obtenida. Rendimiento Mobile/CLS sigue como mejora no bloqueante.
 
 ### T15 — README, bitácora y presentación
 
@@ -1556,17 +1565,17 @@ README.md continúa siendo la plantilla genérica de Vite. Su documentación del
 
 **Corte documental:** 27 de noviembre de 2026. Estas notas reemplazan los estados que permanecieron congelados al cierre de T13; los registros anteriores se conservan como historial, no como situación actual.
 
-**Última implementación publicada:** `7f8878a` — `perf: improve catalog loading and SEO`, después de `bf4e4da` — corrección de validación de productos históricos y diálogos de confirmación. Ambos están en `main` según los comandos y capturas compartidos. GitHub Actions CI #9 y #10: `Success`; Vercel Production: `Ready` para `7f8878a`.
+**Último commit confirmado en GitHub y Production:** `ed610ab` — `docs: update project progress and T14 verification`; commit exclusivamente documental posterior a las implementaciones `7f8878a` (SEO/catálogo) y `bf4e4da` (reglas/diálogos). CI #9, #10 y **#11**: `Success`; Vercel Production `Ready` para `ed610ab`. Las pruebas funcionales reales de T14 descritas aquí se ejecutaron **después** de ese commit, por lo que esta actualización nueva aún debe publicarse.
 
 **Despliegue:** `https://papelcorpsac.vercel.app/` accesible; Firebase real y catálogo de 60 productos visibles; reglas corregidas publicadas según Firebase Console; `/robots.txt` sirve instrucciones de rastreo válidas.
 
-**Pruebas automatizadas más recientes:** CI #10 reportó **659 aprobadas, 39 omitidas y 0 fallidas**. Las 39 omitidas corresponden a suites dependientes de emuladores que no se ejecutan en CI: 8 de checkout y 31 de reglas. Las 31 de reglas se aprobaron en ejecución separada durante T14; las 8 de checkout cuentan con antecedentes de ejecución separada en etapas previas. No sumar ejecuciones como si fueran un único lote.
+**Pruebas automatizadas más recientes:** CI #11 (`ed610ab`) reportó **659 aprobadas, 39 omitidas y 0 fallidas** (también registradas en CI #10). Las 39 omitidas corresponden a suites dependientes de emuladores que no se ejecutan en CI: 8 de checkout y 31 de reglas. Las 31 de reglas se aprobaron en ejecución separada durante T14; las 8 de checkout cuentan con antecedentes de ejecución separada en etapas previas. No sumar ejecuciones como si fueran un único lote.
 
 **Auditoría pública Lighthouse:** cuatro escenarios `/catalogo`: visitante Mobile 70, Desktop 88; Customer Mobile 63, Desktop 69 en Performance; las otras tres categorías alcanzaron 100 en las cuatro. La advertencia de carga incompleta limita la precisión de estas mediciones. Sigue existiendo el aviso no bloqueante de Vite por el chunk Firestore de 580,46 kB minificados (172,75 kB gzip).
 
-**Estado de etapas:** T00–T13 implementadas en sus alcances documentados. T14 desplegada y parcialmente verificada, **no íntegramente aceptada** por las pruebas públicas pendientes de carrito, checkout, historial y S3; T15 permanece pendiente (README, bitácora y presentación). La revisión explícita de versiones estables de T01 y las comprobaciones de Git/documentación señaladas como pendientes requieren evidencia adicional.
+**Estado de etapas:** T00–T13 implementadas en sus alcances documentados. T14 desplegada y **verificada en sus recorridos funcionales principales**, incluidos checkout, historial, administración y S3 en Production; queda el seguimiento de verificaciones complementarias explícitas, sin atribuirles resultados no observados. T15 permanece pendiente (README, bitácora y presentación). La revisión explícita de versiones estables de T01 aún requiere evidencia específica.
 
-**Intervención actual:** actualización de `docs/PROJECT.md` y `docs/TASKS.md`, preparada a partir de los documentos aportados. Todavía no se ha realizado commit ni push de estos cambios documentales en el repositorio del desarrollador.
+**Intervención actual:** edición exclusiva de `docs/PROJECT.md` y `docs/TASKS.md` para incluir las pruebas de Production realizadas **después** de `ed610ab`. La publicación anterior está confirmada; **esta nueva versión** necesita la habitual revisión de diff, autorización, commit y push por parte del desarrollador. No se ha editado código ni desplegado una versión nueva por esta actualización.
 
 T00 — Documentación inicial: COMPLETADA.
 
@@ -1634,13 +1643,13 @@ T11.4 — Verificación integrada: COMPLETADA EN FIREBASE EMULATOR. Checkout HTT
 
 T11.5 — Verificación técnica: COMPLETADA. 516 pruebas aprobadas, 8 omitidas, lint, TypeScript API y build correctos. La narración documental fue consolidada; sin evidencia de commit exclusivo de cierre T11.
 
-T12 — Testing y revisión integral: COMPLETADA Y VERIFICADA LOCALMENTE. 634 pruebas generales aprobadas, 33 de emuladores aprobadas por separado, cobertura global de líneas del 86,35 %. Publicación documental pendiente.
+T12 — Testing y revisión integral: COMPLETADA Y VERIFICADA LOCALMENTE. 634 pruebas generales aprobadas, 33 de emuladores aprobadas por separado, cobertura global de líneas del 86,35 %. Sus resultados fueron consolidados documentalmente y publicados después en `ed610ab`.
 
 T12.6 — Diagnóstico de bundle: COMPLETADO. Advertencia conocida de Firestore, importación dinámica confirmada; mediciones de Production obtenidas durante T14 sin modificación del bundle.
 
-T13 — GitHub e integración continua: IMPLEMENTADA Y PUBLICADA (`01281fe`, `f4828ed`); CI #9 y CI #10 posteriores satisfactoriamente. La documentación actualizada debe publicarse por separado.
+T13 — GitHub e integración continua: IMPLEMENTADA Y PUBLICADA (`01281fe`, `f4828ed`); CI #9, #10 y #11 posteriores satisfactorias. Actualización documental `ed610ab` publicada y confirmada.
 
-T14 — Despliegue y mediciones de Production: PUBLICADO Y VERIFICADO PARCIALMENTE. Commits `bf4e4da` y `7f8878a`; CI #9 y #10 satisfactorias; cuatro auditorías Lighthouse. Criterios de recorridos completos en Production aún pendientes.
+T14 — Despliegue y verificación funcional principal de Production: **COMPLETADA EN SU ALCANCE PRINCIPAL**. Commits de aplicación `bf4e4da` y `7f8878a`, documentación `ed610ab`, CI #9–#11 y Lighthouse. Recorrido Customer/Admin, transacción Firestore, PUT/GET/DELETE S3 y limpieza de temporales comprobados el 27/11/2026. Siguen pendientes verificaciones complementarias explícitas (endpoints, permisos negativos y variantes de interacción).
 
 T15 — README, bitácora y presentación: PENDIENTE.
 
@@ -1686,7 +1695,12 @@ T15 — README, bitácora y presentación: PENDIENTE.
 | 2026-11-24 | T13 | GitHub Actions con un job, `npm ci`, ESLint, tipos API, 634 pruebas aprobadas y 33 omitidas en CI #1, build y auditoría con 0 vulnerabilidades. Actualización de acciones a v7; CI #2 satisfactoria. Commits `01281fe` y `f4828ed`. | Integración continua implementada, publicada y verificada. | Cierre documental; despliegue T14. |
 | 2026-11-27 | T14 — reglas y confirmaciones | `bf4e4da`; corrección de `validProduct` para `id` histórico, publicación en Firestore Console confirmada, tres diálogos de confirmación responsive y accesibles; CI #9: 654 aprobadas y 39 omitidas; reglas con emuladores 31/31 separadas. | Corrección publicada y verificada en su alcance. | Auditorías de rendimiento y recorrido de aceptación de T14. |
 | 2026-11-27 | T14 — catálogo y SEO | `7f8878a` en `main`; CI #10: 659 aprobadas y 39 omitidas, Vercel Production `Ready`; meta descripción, `/robots.txt` válido, mejoras de prioridad de imágenes y carga del catálogo. | Publicado y comprobado. | Optimización de rendimiento opcional; validación integral de recorridos de producción. |
-| 2026-11-27 | T14 — Lighthouse | Visitante Mobile 70 y Desktop 88; Customer Mobile 63 y Desktop 69; Accesibilidad, Best Practices y SEO 100 en los cuatro. Capturas con advertencia de tiempo de carga incompleto. | Auditoría de laboratorio realizada, con limitaciones documentadas. | Cerrar recorridos checkout, historial, Admin y S3 en Production antes de declarar T14 integralmente aceptada. |
+| 2026-11-27 | T14 — Lighthouse | Visitante Mobile 70 y Desktop 88; Customer Mobile 63 y Desktop 69; Accesibilidad, Best Practices y SEO 100 en los cuatro. Capturas con advertencia de tiempo de carga incompleto. | Auditoría de laboratorio realizada, con limitaciones documentadas. | Rendimiento Mobile/CLS como mejora opcional. |
+| 2026-11-27 | T14 — cierre documental previo | `ed610ab` en `main`, CI #11 `Success` (659 aprobadas, 39 omitidas), Vercel Production `Ready` y Git limpio/sincronizado. | Documentos previos publicados y verificados. | Incorporar las posteriores verificaciones funcionales de T14 a una nueva versión documental. |
+| 2026-11-27 | T14 — compra y administración reales | Producto temporal creado y publicado: 60 → 61; Customer agrega 1 unidad S/ 1.00, checkout `pending` confirma S/ 1.00 y vacía carrito; Firestore stock 3 → 2; historial y detalle Customer y orden Admin coinciden. | Recorrido principal de compra y lectura administrativa verificado. | Variantes de carrito, transición de estado de orden y permisos negativos no ejecutados en Production. |
+| 2026-11-27 | T14 — limpieza de compra | Producto de checkout eliminado: 61 → 60; orden de prueba borrada manualmente en Firestore; `orders` sin documentos y Admin indica «No hay órdenes registradas». | Entorno restaurado sin modificar los 60 productos originales. | La eliminación manual de la orden fue operación de limpieza, no una función de borrado desde el panel Admin. |
+| 2026-11-27 | T14 — S3 PUT/DELETE no asociada | Archivo JPG temporal cargado desde Admin a bucket S3 privado; objeto visible en `products/`; botón «Eliminar imagen no asociada» confirmado y AWS muestra 0 objetos actuales. | PUT y DELETE de imagen pendiente comprobados en Production. | No aplica a imágenes todavía asociadas a productos. |
+| 2026-11-27 | T14 — S3 GET y limpieza | Segundo JPG (29,2 KB) asociado vía `imageKey` a producto temporal no publicado; después publicado, fotografía real visible en catálogo como Admin, visitante y Customer y en detalle Customer. Eliminado producto (61 → 60) y JPG asociado borrado manualmente de AWS; bucket 0 objetos actuales. | GET funcional público/autenticado y limpieza confirmados. | No se inspeccionó URL GET HTTP ni GET de producto no publicado como Admin; imágenes asociadas no se eliminan automáticamente. |
 
 ### Condiciones históricas del cierre de T11
 
@@ -1699,9 +1713,9 @@ T15 — README, bitácora y presentación: PENDIENTE.
 - [ ] Ejecutar `git diff --check` y comprobar el estado de Git.
 - [ ] Autorizar commit y push exclusivos del cierre documental.
 
-Estas casillas corresponden al **acto histórico de publicación documental específica de T11** y no son condiciones funcionales que obliguen a repetir T11. Las secciones de T11 sí han sido consolidadas; no se dispone de evidencia de las tres acciones documentales como un cierre Git independiente. En el momento descrito, T12 aún estaba pendiente; posteriormente se completó y verificó. La publicación de los documentos actualizados en este corte de T14 sigue requiriendo revisión y commit/push.
+Estas casillas corresponden al **acto histórico de publicación documental específica de T11** y no son condiciones funcionales que obliguen a repetir T11. Las secciones de T11 sí han sido consolidadas; no se dispone de evidencia de las tres acciones documentales como un cierre Git independiente. En el momento descrito, T12 aún estaba pendiente; posteriormente se completó y verificó. La actualización documental anterior de T14 se publicó después como `ed610ab`; la edición posterior a las nuevas pruebas de Production debe revisarse y publicarse por separado.
 
-T14 publicó la aplicación y documentó pruebas de Production, pero conserva pendientes algunos recorridos funcionales. T15 se reserva para README, bitácora, documentación académica y presentación.
+T14 publicó la aplicación y se completaron los recorridos comerciales principales y la integración S3 de Production con datos temporales autorizados. Los controles complementarios pendientes figuran sin marcar en T14; T15 se reserva para README, bitácora, documentación académica y presentación.
 
 ### Antecedentes del cierre T10.5
 
@@ -1723,4 +1737,4 @@ Las siguientes fueron condiciones **históricas** previas al despliegue público
 - Confirmar que los emuladores no puedan activarse en Preview o Production.
 - Obtener autorización expresa del desarrollador.
 
-El despliegue se realizó posteriormente mediante Vercel Production; la revisión explícita de todas las variables privadas y endpoints desplegados continúa señalada como pendiente en T14. La publicación de reglas de Firestore no equivale por sí sola a probar esas funciones. No registrar pruebas, despliegues o configuraciones inexistentes.
+El despliegue se realizó posteriormente mediante Vercel Production. T14 demostró operaciones reales de checkout y S3 desde la aplicación, mientras que la revisión exhaustiva de variables privadas y los casos HTTP negativos siguen señalados como pendientes. La publicación de reglas Firestore por sí sola no equivale a probar todas esas funciones. No registrar evidencias inexistentes.

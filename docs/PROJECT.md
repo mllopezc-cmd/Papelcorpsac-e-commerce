@@ -14,7 +14,7 @@
 
 **Moneda:** Soles peruanos (PEN).
 
-Papelcorpsac es un proyecto académico de comercio electrónico cuya aplicación React SPA ya se encuentra implementada y desplegada en Vercel Production. Continúan pendientes algunas verificaciones integrales en Production y la entrega académica final (T15); véanse los apartados 9 y 10.6.
+Papelcorpsac es un proyecto académico de comercio electrónico cuya aplicación React SPA está implementada y desplegada en Vercel Production. Los recorridos funcionales principales de Customer, Admin y AWS S3 fueron comprobados con datos temporales el 27/11/2026, con limpieza posterior. Permanecen controles complementarios de seguridad/configuración y la entrega académica final (T15); véanse los apartados 9 y 10.6.
 
 La aplicación contempla dos roles:
 
@@ -1269,7 +1269,7 @@ El chunk de Firestore no apareció entre las solicitudes registradas del visitan
 
 ### 8.1 Estado de T07
 
-**T07 — Implementar checkout: COMPLETADA Y VERIFICADA LOCALMENTE.** El despliegue público se efectuó posteriormente en T14; no confundirlo con una compra real íntegra comprobada en Production.
+**T07 — Implementar checkout: COMPLETADA Y VERIFICADA LOCALMENTE en su etapa original.** La verificación adicional con compra simulada de una unidad en Vercel Production se realizó el 27/11/2026 durante T14; véase 10.6. Se mantiene la distinción entre la comprobación histórica local y la evidencia posterior de producción.
 
 Subtareas:
 
@@ -1366,11 +1366,12 @@ estaba pendiente; se completó posteriormente y se documenta en la sección 10.
 | GitHub Actions CI #9, commit `bf4e4da` | 654 tests aprobados, 39 omitidos, 0 fallidos |
 | Reglas Firestore/Auth en emuladores durante la corrección T14 | 31/31 aprobadas por separado |
 | GitHub Actions CI #10, commit `7f8878a` | 659 tests aprobados, 39 omitidos, 0 fallidos |
-| Archivos de pruebas en CI #10 | 41 aprobados, 3 omitidos |
+| GitHub Actions CI #11, commit documental `ed610ab` | 659 tests aprobados, 39 omitidos, 0 fallidos; `Success` |
+| Archivos de pruebas en CI #11 | 41 aprobados; además, suites omitidas por requerir emuladores |
 | ESLint, TypeScript API, tests y build en CI #10 | Job `Verify application` con estado `Success` |
-| Vercel Production para `7f8878a` | `Ready` |
+| Vercel Production para `7f8878a` y `ed610ab` | `Ready` |
 
-Las 39 pruebas omitidas de la CI más reciente pertenecen a **31 casos de reglas** que requieren emuladores y **ocho de integración de checkout**. Los primeros se aprobaron en ejecución separada; los últimos se habían aprobado durante fases previas. Estas cifras posteriores no sustituyen ni recalculan la cobertura V8 de T12, cuya última medición documentada fue del 24/11/2026.
+Las 39 pruebas omitidas de CI #11 pertenecen a **31 casos de reglas** que requieren emuladores y **ocho de integración de checkout**. Los primeros se aprobaron en ejecución separada; los últimos se habían aprobado durante fases previas. Estas cifras posteriores no sustituyen ni recalculan la cobertura V8 de T12, cuya última medición documentada fue del 24/11/2026.
 
 ### 8.3 Pruebas de integración HTTP
 
@@ -1495,21 +1496,21 @@ Estas verificaciones ocurrieron **antes** del despliegue público y no demuestra
 
 ### Estado actual de Production — 27/11/2026
 
-**Aplicación desplegada:** `https://papelcorpsac.vercel.app/`, proyecto `looney-ai-chat/papelcorpsac`, con integración GitHub–Vercel que despliega desde la rama `main`. La captura de Vercel confirmó estado `Ready` y código fuente `7f8878a`, después del commit `bf4e4da`. El desarrollador confirmó `main` sincronizada y el árbol de trabajo limpio tras publicar `7f8878a`.
+**Aplicación desplegada:** `https://papelcorpsac.vercel.app/`, proyecto `looney-ai-chat/papelcorpsac`, con integración GitHub–Vercel desde `main`. Vercel confirmó `Ready` para `7f8878a` y, después, para el commit exclusivamente documental `ed610ab` (CI #11 satisfactoria). El desarrollador comprobó que `main` estaba sincronizada y que Git tenía el árbol limpio tras publicar `ed610ab`. Las nuevas pruebas funcionales aquí documentadas se realizaron posteriormente, sobre la aplicación ya desplegada.
 
 El proyecto conserva `vercel.json` con rewrite SPA hacia `/index.html`. Se observó la carga directa de `/catalogo` y la aplicación con sesión Customer. La URL pública `/robots.txt` mostró el texto sin pasar por la interfaz React. Se acreditó la existencia de una configuración efectiva de Firebase suficiente para leer los productos y mantener sesión en Production, pero **no** se inspeccionó en las capturas el inventario completo de variables privadas del backend y sus ámbitos.
 
-**GitHub Actions:** CI #9 (commit `bf4e4da`) y CI #10 (commit `7f8878a`) finalizaron `Success`; CI #10 reportó 659 pruebas aprobadas, 39 omitidas y ninguna fallida. La CI no ejecuta las suites dependientes de Firebase Emulator ni implica pruebas reales de AWS o checkout en producción.
+**GitHub Actions:** CI #9 (`bf4e4da`), CI #10 (`7f8878a`) y **CI #11 (`ed610ab`)** finalizaron `Success`. CI #11 reportó 659 pruebas aprobadas y 39 omitidas (41 archivos de pruebas aprobados), igual que CI #10. Las 39 omitidas corresponden a suites que requieren entornos de emuladores y no se ejecutan en CI; el éxito de CI no sustituye las pruebas reales de AWS o checkout, documentadas por separado en T14.
 
 **Firestore Rules:** el desarrollador confirmó su publicación en Firebase Console después del ajuste T14 que valida el campo histórico opcional `id` si coincide con el identificador del documento. Los 60 productos reales no fueron objeto de operaciones masivas.
 
-**Distinción de alcance:** la publicación de los archivos de las funciones serverless en un deployment `Ready` no equivale a comprobar con respuestas HTTP todas las rutas públicas y protegidas. La verificación de checkout, órdenes y PUT/GET/DELETE S3 desde Production debe realizarse de manera controlada y autorizada. Las pruebas reales S3 registradas en T10.5 utilizaron Vercel Dev desde el entorno local, no los endpoints del deployment público.
+**Distinción de alcance:** un deployment `Ready` no equivale a probar por HTTP todas las rutas públicas y protegidas. Posteriormente se verificó funcionalmente desde el navegador de Production la compra simulada, la orden, el inventario y las operaciones PUT/GET/DELETE de S3 con datos temporales; esto no constituye una auditoría HTTP de rechazos negativos, expiración de firmas o inventario completo de variables. Las pruebas reales previas de T10.5 se hicieron con Vercel Dev y permanecen como antecedente separado.
 
-**Estado:** despliegue público, navegación principal, catálogo, sesión Customer, SEO y Lighthouse comprobados; aceptación de recorridos integrales T14 todavía parcial. Detalle en 10.6 y `docs/TASKS.md`.
+**Estado:** despliegue público y recorridos funcionales principales de Customer, Admin y S3 comprobados; SEO, Lighthouse y CI verificados. La revisión sistemática de configuración privada, los rechazos HTTP negativos y determinadas variantes de la interfaz permanecen pendientes. Detalle en 10.6 y `docs/TASKS.md`.
 
 ## 10. Testing y revisión integral
 
-**T12 — COMPLETADA Y VERIFICADA LOCALMENTE el 24 de noviembre de 2026.** Sus resultados originales se conservan como historial; la publicación de esta nueva actualización documental al corte T14 requiere revisión, autorización, commit y push.
+**T12 — COMPLETADA Y VERIFICADA LOCALMENTE el 24 de noviembre de 2026.** Sus resultados originales se conservan como historial. La actualización documental anterior se publicó mediante `ed610ab`; esta versión posterior a las pruebas finales de T14 necesita un nuevo proceso de revisión y publicación.
 
 La revisión integral consolidó las pruebas incrementales de etapas anteriores y agregó verificaciones de hooks, contextos, servicios, rutas y páginas principales. Los recuentos históricos de T07–T11 permanecen documentados en las secciones anteriores y no deben confundirse con el resultado final de T12.
 
@@ -1550,11 +1551,11 @@ Se identificó el chunk de Firestore de 580,46 kB, se confirmó su importación 
 
 Algunos módulos auxiliares y rutas de inicialización mantienen cobertura parcial o nula. La cobertura automatizada y las pruebas con mocks o emuladores no sustituyen la validación de un despliegue público. Las mediciones en localhost no son evidencia de rendimiento real en red móvil.
 
-Al finalizar T12, la integración continua permanecía pendiente de T13. Posteriormente, T13 se implementó mediante GitHub Actions (10.5) y T14 desplegó el proyecto y ejecutó Lighthouse (10.6). La aceptación funcional integral de T14 sigue parcial; el README, la bitácora de IA y la presentación académica permanecen pendientes de T15.
+Al finalizar T12, la integración continua permanecía pendiente de T13. Posteriormente, T13 se implementó mediante GitHub Actions (10.5) y T14 desplegó el proyecto, ejecutó Lighthouse y comprobó los recorridos funcionales principales y AWS S3 en Production (10.6). La aceptación exhaustiva de todas las variantes/controles negativos no se afirma; el README, la bitácora de IA y la presentación académica permanecen pendientes de T15.
 
 ### 10.5 Integración continua — T13
 
-**Estado histórico de T13:** integración continua implementada, publicada y verificada. Las ejecuciones posteriores CI #9 y #10 durante T14 también fueron satisfactorias; esta revisión documental sigue pendiente de publicación por el desarrollador.
+**Estado histórico de T13:** integración continua implementada, publicada y verificada. Las ejecuciones posteriores CI #9, #10 y #11 durante T14 también fueron satisfactorias. La documentación anterior se publicó en `ed610ab`; este nuevo cierre funcional requiere su propio commit documental.
 
 ### Configuración
 
@@ -1604,11 +1605,11 @@ El workflow ejecuta la suite general: sus **33 pruebas omitidas** necesitan Fire
 
 Se mantiene la advertencia no bloqueante de Vite por el chunk de Firestore de aproximadamente 580,46 kB, documentada en 7.10; no impidió el build.
 
-La CI no equivale a validar Firebase, AWS S3 o Vercel en producción. **Actualización posterior (27/11/2026):** GitHub se conectó a Vercel y la aplicación fue desplegada; T14 ejecutó las verificaciones y mediciones descritas en 10.6. Permanece pendiente la aceptación completa de los recorridos comerciales en Production. **T15 sigue pendiente** y corresponde al README, bitácora de IA y presentación académica.
+La CI no equivale a validar Firebase, AWS S3 o Vercel en producción. **Actualización posterior (27/11/2026):** GitHub se conectó a Vercel y la aplicación fue desplegada; T14 ejecutó las verificaciones funcionales principales, la limpieza de registros de prueba y las mediciones descritas en 10.6. Permanecen controles complementarios explícitos, no un bloqueo demostrado del flujo comercial. **T15 sigue pendiente** y corresponde al README, bitácora de IA y presentación académica.
 
 ### 10.6 Despliegue T14, correcciones y auditoría Lighthouse — 27/11/2026
 
-**Alcance de esta actualización:** documentación de los cambios y pruebas aportados por el desarrollador desde la finalización de T13 hasta el commit `7f8878a`, sin atribuir a las pruebas locales capacidades de producción que no fueron verificadas.
+**Alcance de esta actualización:** documentación de las correcciones `bf4e4da` y `7f8878a`, del cierre documental previo `ed610ab` (CI #11 y Vercel `Ready`) y de las pruebas de funciones comerciales y AWS S3 realizadas después, el 27/11/2026. Se distingue evidencia visual/funcional de inspecciones HTTP o pruebas negativas que no se efectuaron.
 
 #### T14.1 — Corrección de reglas de productos y confirmaciones (commit `bf4e4da`)
 
@@ -1663,13 +1664,51 @@ En el catálogo la puntuación de rendimiento pasó de 72 a 70 en Mobile y de 51
 
 Se decidió no introducir optimizaciones adicionales dentro del bloque correctivo ya publicado. La puntuación de rendimiento no equivale a un fallo de la lógica de negocio. El 100 de Accesibilidad corresponde a las verificaciones automáticas de Lighthouse y no constituye certificación universal de accesibilidad. El 100 de SEO no garantiza clasificación ni indexación.
 
-#### T14.4 — Estado de aceptación y pendientes verificables
+#### T14.4 — Compra simulada y recorrido Customer/Admin en Production
 
-**Consta como comprobado:** publicación de GitHub y Vercel Production; carga de la URL pública; navegación del catálogo; visualización de 60 productos con Customer autenticado; correcciones SEO y `robots.txt`; publicación manual de reglas de productos según Firebase Console; pruebas automatizadas y CI; auditoría Lighthouse Mobile/Desktop en visitante/Customer; comprobación de diálogos y navegación responsive.
+**Preparación controlada:** el desarrollador entró como Admin en `/admin/productos` y comprobó 60 productos registrados. Creó `PRUEBA T14 - CHECKOUT PRODUCTION` a S/ 1.00, stock inicial 3, sin imagen S3 y **sin publicar**; el panel mostró 61 productos y Firebase Console confirmó el documento, su precio, stock y `published: false`. Después lo editó y publicó (`published: true`) sin modificar los productos originales.
 
-**No consta una prueba integral en Production de:** registro, login/logout y autorizaciones de ambos roles en todas sus variantes; agregar/modificar/eliminar productos del carrito; ejecutar checkout y comprobar la orden e historial reales sin tocar indebidamente el inventario existente; gestionar órdenes y productos a través del panel completo; obtener y usar URL PUT/GET y DELETE S3 desde endpoints desplegados; comprobar exhaustivamente el inventario de variables de entorno y permisos privados. T10 y T11 sí aportaron evidencia local y de emuladores, pero no se extrapola automáticamente a Production.
+**Customer:** en el catálogo público se localizó el producto temporal, se agregó **una unidad** y el carrito mostró cantidad 1, subtotal y total S/ 1.00. La pantalla `/checkout` indicó expresamente que el pago era simulado y que no habría cobros ni solicitud de datos bancarios. Al confirmar **una sola vez**, apareció «Tu orden fue registrada», con un identificador nuevo, total S/ 1.00 y estado **Pendiente** (`pending`); la navegación mostró `Carrito (0)`. Firebase Console confirmó que el stock de ese producto temporal disminuyó **3 → 2**. La orden coincidió en `/mis-ordenes` y en su detalle: un artículo, cantidad 1, moneda PEN, total S/ 1.00 y mismo identificador.
 
-**Veredicto:** el despliegue y los cambios de T14 se encuentran operativos y publicados en el alcance observado; **la aceptación integral de T14 sigue parcial** hasta verificar los recorridos anteriores con datos de prueba controlados. T15 (README, bitácora y presentación) permanece pendiente. Esta actualización modifica solo `docs/PROJECT.md` y `docs/TASKS.md`; no implica edición del código, publicación de reglas, commit ni despliegue nuevos.
+**Admin:** desde `/admin/ordenes` se localizó la **misma orden**, con importe S/ 1.00, el producto temporal y estado Pendiente. Se observaron los estados disponibles (Pendiente, En proceso, Completada y Cancelada), **pero no se ejecutó una transición de estado en Production**; esa variante se probó anteriormente en emuladores. Las capturas respaldan lectura y navegación administrativa, no un cambio real de estado en esta ejecución.
+
+**Limpieza de la compra:** se eliminó el producto temporal mediante el diálogo administrativo y el contador regresó **61 → 60**, con cero resultados en la búsqueda. La orden, que seguía existiendo como registro histórico independiente, se eliminó **manualmente en Firebase Console**, no desde la aplicación. Tras ello, `orders` quedó sin documentos y `/admin/ordenes` mostró «No hay órdenes registradas». La compra de prueba no alteró el stock de los 60 productos originales.
+
+**Alcance acreditado:** crear, editar/publicar y eliminar productos de prueba; carrito con una unidad; checkout simulado; escritura y descuento de stock en Firestore; historial y detalle Customer; consulta Admin; y limpieza. No se comprobaron en esa sesión todas las opciones de aumentar/disminuir/eliminar del carrito, la creación de una cuenta nueva ni todas las respuestas negativas de permisos.
+
+#### T14.5 — AWS S3: PUT, GET y DELETE reales desde Production
+
+Se realizaron **dos ciclos distintos**, con el bucket privado inicialmente sin objetos actuales, para no mezclar el borrado de una fotografía pendiente con la eliminación de una que ya estaba asociada a un producto.
+
+**Ciclo A — subida y eliminación de una imagen todavía no asociada:** desde `Crear producto`, sin guardar ningún producto nuevo, se cargó un JPG de prueba a `products/` mediante el botón «Subir imagen a S3». La aplicación confirmó la carga y AWS Console mostró el archivo `products/1766149e-5445-48cc-89e5-109e4a9537be.jpg` (aprox. 29,2 KB). Se pulsó **«Eliminar imagen no asociada»**, se aceptó el diálogo y la aplicación informó de la eliminación correcta; AWS Console volvió a mostrar **cero objetos actuales**. El catálogo permaneció con 60 productos.
+
+**Ciclo B — imagen asociada y lectura GET:** se creó `PRUEBA T14 - IMAGEN S3 GET`, precio S/ 1.00, stock 1, inicialmente **no publicado**, después de subir el segundo JPG `products/8ca6925a-8936-4dc0-870a-95510c4f6e14.jpg` (29,2 KB). Firebase Console mostró el campo **`imageKey`** con esa clave, `imageUrl` con el SVG de respaldo y `published: false`. El formulario de edición reconoció la imagen asociada, aunque **no dispone de vista previa**, por lo que no se atribuye a esta pantalla una comprobación GET administrativa del producto sin publicar.
+
+El Admin publicó temporalmente el producto (`published: true`). La **fotografía real del cuaderno rojo** se visualizó en la tarjeta del catálogo como Admin, como visitante sin iniciar sesión y como Customer autenticado, y también en `/catalogo/:productId` como Customer. La imagen era distinta del SVG de respaldo. Esto comprueba **funcionalmente la lectura desde la aplicación desplegada** para productos publicados; no se inspeccionó en DevTools la firma de la URL GET, su expiración o el código HTTP, ni se probó el rechazo de GET para un producto no publicado como visitante. El mecanismo previsto en el código de T10.4-C es la URL GET prefirmada.
+
+**Limpieza del ciclo B:** el producto se eliminó desde `/admin/productos` y el contador regresó **61 → 60**. Como la imagen había sido asociada a un producto, su archivo S3 no se borró automáticamente. Se identificó exactamente el JPG en AWS Console y se eliminó **manualmente** después de retirar el documento de Firestore. La captura final de AWS confirma **0 objetos actuales**. Esto no demuestra por sí solo ausencia de versiones antiguas si alguna vez se habilitara versionado del bucket.
+
+**Conclusión funcional:** PUT verificado; GET de imagen publicada verificado en catálogo/detalle con tres perfiles; DELETE de imagen no asociada verificado desde Admin; y limpieza de archivo previamente asociado verificada desde AWS Console. **No** se afirma que el panel tenga un botón de borrado directo de imágenes asociadas ni que se haya probado DELETE automático tras borrar un producto.
+
+#### T14.6 — Por qué se distingue una imagen asociada de una imagen temporal
+
+**Explicación sencilla para mantenimiento y demostración:** Firestore almacena la ficha del producto (nombre, precio, stock) y S3 almacena la fotografía. Son dos lugares distintos, de manera similar a un catálogo y un archivo de imágenes.
+
+- **Imagen no asociada:** acaba de subirse, pero ningún producto la utiliza todavía. Si el Admin se arrepiente antes de guardar el producto, puede pulsar «Eliminar imagen no asociada». El servidor verifica primero que ningún producto tenga esa `imageKey`; solo entonces solicita a S3 que borre el archivo.
+- **Imagen asociada:** un producto guardado tiene la referencia `imageKey` a esa fotografía. Mientras exista esa referencia, la eliminación protegida desde el formulario **se rechaza** para evitar dejar al producto sin imagen (respuesta HTTP 409 en el diseño implementado). El sistema no la borra automáticamente al editar o eliminar productos: la información del producto está en Firestore y el archivo físico en S3, y su eliminación se gestiona por separado.
+- **Después de borrar el producto:** si nadie más utiliza la imagen, puede quedar un archivo sin asociación en S3. En T14 se eliminó manualmente desde AWS Console, identificando su nombre exacto. Esto evita que la aplicación borre archivos por accidente, aunque exige limpieza manual de imágenes que ya no se usan.
+
+**Decisión de alcance:** no se implementó borrado automático de archivos S3 asociados ni un proceso de limpieza programada. No es una función faltante por error, sino una limitación conocida y aceptada para este proyecto académico. La comprobación de referencias y el borrado S3 no son una única transacción; T10.4-D documenta el pequeño riesgo de cambios concurrentes. La eliminación manual en AWS requiere confirmar la identidad del objeto; no se debe borrar un bucket entero.
+
+#### T14.7 — Estado de aceptación y controles complementarios
+
+**Evidencia principal completada en Production:** aplicación y SPA publicadas; sesiones observadas para Admin y Customer; catálogo y búsqueda por nombre; CRUD administrativo de productos temporales; compra simulada con confirmación, carrito vacío y decremento de stock; historial y detalle Customer; lectura de la orden por Admin; imágenes privadas S3 subidas, asociadas y mostradas; eliminación protegida de imágenes no asociadas; limpieza manual de imagen previamente asociada y de registros temporales. **Estado observado al final: 60 productos originales, 0 órdenes de prueba y 0 objetos S3 actuales.**
+
+**Calidad:** correcciones SEO publicadas, CI #9–#11 satisfactorias y Lighthouse ejecutado en cuatro escenarios del catálogo; el rendimiento móvil y la estabilidad visual permanecen como oportunidades no bloqueantes, con las advertencias de medición documentadas en T14.3.
+
+**Controles pendientes que no deben marcarse como realizados:** inventario exhaustivo de variables privadas Vercel/Firebase/AWS; petición HTTP específica a `/api/health` y rechazos negativos de endpoints protegidos en Production; pruebas de registro de nueva cuenta y denegaciones de rol; todas las variantes de cantidad/borrado de carrito; cambio real de estado de orden Admin en Production; GET del producto no publicado y verificación técnica de firma/caducidad desde DevTools. Las comprobaciones locales/de emuladores de esas variantes siguen vigentes como antecedentes, pero no equivalen a una prueba pública.
+
+**Veredicto:** T14 queda **completada en el alcance de despliegue y recorridos funcionales principales solicitado**, con verificaciones complementarias y posibles mejoras de rendimiento anotadas, sin afirmar una auditoría exhaustiva ni perfección de Lighthouse. No se modificó código, reglas, credenciales ni infraestructura para esta actualización documental. El commit documental anterior `ed610ab` y CI #11 se verificaron; esta nueva edición requiere revisión, commit y push independientes por parte del desarrollador. T15 (README, bitácora y presentación académica) sigue pendiente.
 
 ## 11. Uso de IA y responsabilidades
 
