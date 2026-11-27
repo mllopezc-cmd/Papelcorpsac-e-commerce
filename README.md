@@ -2,540 +2,349 @@
 
 **Proyecto Integrador 5 | Desarrollo de Aplicaciones Web**
 
-Papelcorpsac, bajo la identidad comercial **PAPEL CORP**, es una aplicación web de comercio electrónico orientada a la comercialización de artículos de papelería, instrumentos de escritura y suministros de oficina.
+**PAPEL CORP** es una aplicación web de comercio electrónico para artículos de papelería y suministros de oficina. Implementa un catálogo público, autenticación, carrito, checkout simulado, historial de órdenes y herramientas administrativas, con una arquitectura basada en React, Firebase, AWS S3 y Vercel.
 
-El proyecto implementa una aplicación de página única (*Single Page Application*, SPA), desarrollada con React y TypeScript, que integra autenticación, gestión de productos, carrito de compras, órdenes, administración de inventario y almacenamiento privado de imágenes.
+[![CI](https://github.com/mllopezc-cmd/Papelcorpsac-e-commerce/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/mllopezc-cmd/Papelcorpsac-e-commerce/actions/workflows/ci.yml)
+![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?logo=firebase&logoColor=black)
+![AWS S3](https://img.shields.io/badge/AWS-S3-232F3E?logo=amazons3&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000000?logo=vercel&logoColor=white)
 
-**Enlaces del proyecto**
+> [!IMPORTANT]
+> **Demostración pública:** [Acceder a Papelcorpsac en Production](https://papelcorpsac.vercel.app/).
+>
+> El checkout representa una **compra simulada**. La aplicación no procesa pagos reales ni solicita información de tarjetas bancarias.
 
-| Recurso | Enlace |
+### Accesos rápidos
+
+| Recurso | Acceso |
 |---|---|
-| Aplicación en Production | [papelcorpsac.vercel.app](https://papelcorpsac.vercel.app/) |
-| Repositorio | [Papelcorpsac-e-commerce](https://github.com/mllopezc-cmd/Papelcorpsac-e-commerce) |
+| Aplicación desplegada | [Abrir Papelcorpsac](https://papelcorpsac.vercel.app/) |
+| Código fuente | [Repositorio GitHub](https://github.com/mllopezc-cmd/Papelcorpsac-e-commerce) |
 | Integración continua | [GitHub Actions](https://github.com/mllopezc-cmd/Papelcorpsac-e-commerce/actions) |
 | Documentación técnica | [PROJECT.md](docs/PROJECT.md) |
 | Seguimiento del desarrollo | [TASKS.md](docs/TASKS.md) |
+| Bitácoras académicas | [Índice de bitácoras](docs/bitacoras/README.md) |
+| Bitácora de desarrollo | [Consultar documento](docs/bitacoras/bitacora-desarrollo.md) |
+| Bitácora de uso de IA | [Consultar documento](docs/bitacoras/bitacora-ia.md) |
 
-**Estado:** aplicación desplegada en Vercel y recorridos funcionales principales verificados en Production el 27 de noviembre de 2026.
+**Estado documentado:** recorridos funcionales principales verificados en Production el 27 de noviembre de 2026. La CI #13 del commit `b38c49f` finalizó satisfactoriamente. La fecha y los resultados corresponden a esa evidencia, no a una supervisión en tiempo real.
 
 ---
 
 ## 1. Descripción del proyecto
 
-Papelcorpsac desarrolla una solución de comercio electrónico que permite a los clientes consultar productos, administrar su carrito y registrar pedidos de demostración.
+Papelcorpsac es una *Single Page Application* (SPA) responsive para demostrar un flujo comercial completo de papelería: exploración de productos, selección de cantidades, confirmación de pedidos y seguimiento de órdenes.
 
-El sistema también proporciona un panel administrativo para gestionar el catálogo, las existencias y los estados de las órdenes.
+La solución dispone de dos roles, **Customer** y **Admin**, y separa las operaciones públicas de las administrativas. El catálogo demostrativo está compuesto por 60 productos distribuidos en instrumentos de escritura, papelería, artículos de oficina y accesorios de escritorio.
 
-La aplicación utiliza servicios en la nube para separar responsabilidades:
+El propósito es aplicar conocimientos de desarrollo frontend, servicios en la nube, seguridad, pruebas automatizadas y despliegue continuo en un proyecto académico reproducible y documentado.
 
-- **Firebase Authentication:** autenticación e identificación de usuarios.
-- **Cloud Firestore:** persistencia de productos, usuarios y órdenes.
-- **AWS S3:** almacenamiento privado de imágenes.
-- **Vercel:** despliegue del frontend y ejecución de funciones del servidor.
+## 2. Objetivos y alcance
 
-El proyecto tiene fines académicos. El proceso de compra es **simulado**: no integra una pasarela de pagos ni realiza cargos bancarios.
+**Objetivo general:** desarrollar y desplegar un ecommerce académico funcional, mantenible y seguro, con gestión de productos, usuarios, órdenes e imágenes almacenadas en la nube.
 
-## 2. Objetivos
+**Objetivos específicos:**
 
-### Objetivo general
+1. Crear una interfaz responsive con React y TypeScript.
+2. Implementar autenticación y controles de acceso por roles.
+3. Ofrecer catálogo, búsqueda, filtros, favoritos y carrito.
+4. Registrar compras simuladas y actualizar existencias de manera consistente.
+5. Proporcionar historial y detalle de órdenes a cada cliente.
+6. Permitir la administración de productos, imágenes, inventario y estados de órdenes.
+7. Incorporar pruebas, integración continua y un despliegue público verificable.
 
-Desarrollar y desplegar una aplicación web de comercio electrónico que integre una interfaz adaptable, autenticación de usuarios, persistencia de información, gestión administrativa y servicios en la nube.
+**Fuera de alcance:** pasarela de pago, cobros bancarios, gestión logística real y operaciones comerciales con dinero real.
 
-### Objetivos específicos
+## 3. Roles y funcionalidades
 
-1. Implementar una interfaz reutilizable con React y TypeScript.
-2. Gestionar autenticación y autorización mediante Firebase.
-3. Construir un catálogo con búsqueda, filtros, paginación y detalle de productos.
-4. Implementar un carrito con gestión de cantidades y cálculo de importes.
-5. Registrar compras simuladas con validación del servidor y actualización de inventario.
-6. Permitir que los clientes consulten su historial de órdenes.
-7. Proporcionar herramientas administrativas para productos e inventario.
-8. Integrar AWS S3 para almacenar y consultar imágenes privadas.
-9. Incorporar pruebas automatizadas e integración continua.
-10. Publicar y verificar la aplicación en un entorno de Production.
+### Customer — Cliente
 
-## 3. Alcance funcional
-
-El sistema distingue dos roles principales: **Customer** y **Admin**.
-
-### 3.1. Customer — Cliente
-
-| Módulo | Funcionalidades |
+| Área | Capacidades |
 |---|---|
-| Autenticación | Registro, inicio y cierre de sesión |
-| Catálogo | Consulta de productos publicados |
-| Búsqueda | Filtrado por nombre y categoría |
-| Productos | Visualización de detalles, precio y disponibilidad |
-| Favoritos | Gestión de productos favoritos |
-| Carrito | Agregar, retirar y modificar cantidades |
-| Checkout | Confirmación de compras simuladas |
-| Órdenes | Consulta del historial y detalle de pedidos |
+| Cuenta | Registro, inicio y cierre de sesión; acceso con credenciales o Google |
+| Catálogo | Consulta de productos publicados, búsqueda, categorías y paginación |
+| Producto | Detalle, precio, imagen y disponibilidad |
+| Favoritos | Gestión de favoritos para usuarios autenticados |
+| Carrito | Incorporar o retirar artículos y cambiar cantidades |
+| Checkout | Confirmación de una compra simulada con validación del servidor |
+| Órdenes | Historial y consulta individual de los pedidos propios |
 
-El catálogo contiene una base demostrativa de **60 productos**, distribuidos entre instrumentos de escritura, papelería, artículos de oficina y accesorios de escritorio.
+El catálogo es accesible a visitantes; las funciones personales requieren autenticación según el módulo.
 
-Los usuarios pueden explorar el catálogo sin iniciar sesión. Las funcionalidades que requieren identificación utilizan las protecciones de autenticación correspondientes.
+### Admin — Administrador
 
-### 3.2. Admin — Administrador
-
-| Módulo | Funcionalidades |
+| Área | Capacidades |
 |---|---|
-| Acceso | Rutas administrativas protegidas |
-| Productos | Creación, edición y eliminación |
-| Publicación | Control de visibilidad en el catálogo |
-| Inventario | Gestión de precios y existencias |
-| Imágenes | Subida y asociación de archivos privados en AWS S3 |
-| Órdenes | Consulta de pedidos y gestión de estados |
+| Acceso | Panel protegido mediante autenticación y validación de rol |
+| Productos | Alta, consulta, edición, publicación, despublicación y eliminación |
+| Inventario | Modificación de precios y existencias |
+| Imágenes | Subida a S3, asociación a productos y eliminación protegida de objetos no asociados |
+| Órdenes | Consulta, filtrado y actualización autorizada de estado |
 
-La administración de órdenes contempla los estados:
+Los estados contemplados para las órdenes son `pending`, `processing`, `completed` y `cancelled`.
 
-- `pending` — Pendiente.
-- `processing` — En proceso.
-- `completed` — Completada.
-- `cancelled` — Cancelada.
+## 4. Flujo de compra simulada
 
-Los importes y artículos registrados en una orden son de solo lectura desde el panel administrativo.
+1. El cliente selecciona productos del catálogo y los agrega al carrito.
+2. El cliente autenticado inicia el checkout.
+3. El servidor comprueba los productos, los precios y las existencias vigentes.
+4. Una operación transaccional registra el pedido y descuenta el inventario.
+5. El sistema devuelve la confirmación y limpia el carrito.
+6. La orden puede consultarse desde Customer y gestionarse desde Admin.
 
-### 3.3. Proceso de compra
+Se aplican validaciones de servidor e idempotencia para reducir errores de concurrencia y registros duplicados. El importe indicado es demostrativo y **no implica un cargo real**.
 
-El checkout implementa un flujo de compra simulada:
+## 5. Arquitectura
 
-1. El cliente selecciona productos y cantidades.
-2. El carrito calcula el importe estimado.
-3. El usuario autenticado revisa el pedido.
-4. El servidor valida los productos, los precios y las existencias.
-5. Se registra la orden en Firestore.
-6. Se descuentan las unidades correspondientes del inventario.
-7. La aplicación muestra la confirmación y limpia el carrito.
-
-La implementación utiliza transacciones de Firestore y mecanismos de idempotencia para proteger la consistencia del proceso.
-
-**Importante:** el sistema no procesa pagos reales ni solicita información de tarjetas bancarias.
-
-## 4. Arquitectura del sistema
-
-La aplicación sigue una arquitectura por capas, separando interfaz, lógica de negocio, acceso a datos y operaciones protegidas del servidor.
+La solución separa presentación, identidad, persistencia y operaciones protegidas del servidor.
 
 ```mermaid
 flowchart TD
-    U["Usuario: Customer o Admin"]
-    FE["Frontend: React + TypeScript"]
-    AUTH["Firebase Authentication"]
-    DB["Cloud Firestore"]
-    API["Vercel Serverless Functions"]
-    ADMIN["Firebase Admin SDK"]
-    S3["AWS S3 - Bucket privado"]
-
-    U --> FE
-    FE --> AUTH
-    FE -->|"Lecturas y escrituras autorizadas"| DB
-    FE -->|"Solicitudes HTTP autenticadas"| API
-    API --> ADMIN
+    U["Visitante / Customer / Admin"] --> FE["React + TypeScript - SPA"]
+    FE --> AUTH["Firebase Authentication"]
+    FE -->|"Acceso autorizado"| DB["Cloud Firestore"]
+    FE -->|"HTTP con token"| API["Vercel Serverless Functions"]
+    API --> ADMIN["Firebase Admin SDK"]
     ADMIN --> DB
-    API -->|"Firmas y operaciones protegidas"| S3
-    FE -->|"PUT / GET mediante URL temporal"| S3
+    API -->|"URLs prefirmadas y operaciones protegidas"| S3["AWS S3 - bucket privado"]
+    FE -->|"PUT / GET con URL temporal"| S3
 ```
 
-### 4.1. Frontend
+**Frontend.** React, TypeScript, React Router, Tailwind CSS y componentes reutilizables. El carrito utiliza Context API y `useReducer`.
 
-La interfaz utiliza componentes reutilizables, propiedades tipadas, hooks y rutas gestionadas mediante React Router.
+**Identidad y datos.** Firebase Authentication gestiona la identidad; Cloud Firestore conserva productos, perfiles y órdenes, sujetos a reglas de acceso.
 
-La gestión del carrito se organiza mediante Context API y `useReducer`, separando el estado de las acciones que lo modifican.
+**Backend.** Las funciones de Vercel y Firebase Admin SDK realizan verificaciones privilegiadas y ejecutan la lógica del checkout y las operaciones protegidas de imágenes.
 
-### 4.2. Persistencia
+**Imágenes.** AWS S3 conserva objetos privados; Firestore mantiene claves de referencia estables. Las URLs prefirmadas son temporales y no sustituyen las referencias persistentes.
 
-Firestore almacena la información comercial del sistema y aplica reglas de seguridad según las operaciones y los permisos correspondientes.
+## 6. Tecnologías
 
-Las operaciones sensibles del checkout se ejecutan en el servidor y no confían en los precios o importes enviados directamente por el navegador.
-
-### 4.3. Backend
-
-Las funciones serverless de Vercel reciben solicitudes HTTP, verifican la autenticación cuando corresponde y ejecutan operaciones protegidas.
-
-Firebase Admin SDK se utiliza exclusivamente en el entorno de servidor.
-
-### 4.4. Almacenamiento de imágenes
-
-AWS S3 almacena imágenes en un bucket privado.
-
-La aplicación utiliza URLs prefirmadas temporales para autorizar operaciones de subida (`PUT`) y visualización (`GET`) sin exponer credenciales de AWS en el navegador.
-
-## 5. Tecnologías utilizadas
-
-| Área | Tecnología | Propósito |
+| Capa | Tecnología | Responsabilidad |
 |---|---|---|
-| Interfaz | React 19 | Construcción de componentes |
-| Lenguaje | TypeScript | Tipado estático |
-| Herramienta de desarrollo | Vite | Desarrollo y compilación |
-| Navegación | React Router | Enrutamiento SPA |
-| Estilos | Tailwind CSS 4 | Diseño y adaptación responsive |
-| Autenticación | Firebase Authentication | Gestión de identidad |
-| Base de datos | Cloud Firestore | Persistencia de información |
-| Operaciones de servidor | Firebase Admin SDK | Validaciones y operaciones protegidas |
-| Almacenamiento | AWS S3 | Imágenes privadas |
-| Backend HTTP | Vercel Serverless Functions | Endpoints de la aplicación |
-| Pruebas | Vitest y React Testing Library | Verificación automatizada |
-| Integración continua | GitHub Actions | Controles de calidad |
-| Despliegue | Vercel | Alojamiento y ejecución en Production |
+| Interfaz | React 19, TypeScript, Vite | Construcción, tipado y compilación |
+| Estilos | Tailwind CSS 4 | Diseño responsive |
+| Navegación | React Router | Rutas públicas y protegidas |
+| Estado | Context API y `useReducer` | Estado y acciones del carrito |
+| Identidad | Firebase Authentication | Inicio de sesión y perfiles |
+| Persistencia | Cloud Firestore | Productos, usuarios y órdenes |
+| Servidor | Vercel Functions, Firebase Admin SDK | Endpoints y validaciones protegidas |
+| Objetos | AWS S3 | Imágenes de productos privadas |
+| Calidad | ESLint, Vitest, React Testing Library | Análisis y pruebas |
+| Automatización | GitHub Actions | Integración continua |
+| Alojamiento | Vercel | Despliegue público |
 
-Las versiones exactas de las dependencias están definidas en `package.json` y `package-lock.json`.
+Las versiones exactas y los scripts se mantienen en `package.json` y `package-lock.json`.
 
-## 6. Estructura del repositorio
-
-La organización principal del proyecto es la siguiente:
+## 7. Organización del repositorio
 
 ```text
-Papelcorpsac/
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-├── api/
-│   └── ...                 # Funciones HTTP de Vercel
+Papelcorpsac-e-commerce/
+├── .github/workflows/   # Integración continua
+├── api/                 # Endpoints serverless
 ├── docs/
-│   ├── PROJECT.md          # Documentación técnica
-│   └── TASKS.md            # Seguimiento del desarrollo
-├── public/                 # Recursos estáticos
-├── scripts/                # Utilidades del proyecto
-├── server/                 # Lógica protegida del servidor
-├── src/
-│   ├── components/         # Componentes de interfaz
-│   ├── contexts/           # Contextos de React
-│   ├── hooks/              # Hooks reutilizables
-│   ├── pages/              # Páginas de la aplicación
-│   ├── reducers/           # Gestión de estado
-│   ├── services/           # Comunicación con servicios
-│   └── types/              # Definiciones TypeScript
-├── .env.example            # Referencia de configuración
-├── firebase.json           # Configuración de Firebase
-├── firestore.rules         # Reglas de Cloud Firestore
-├── index.html              # Documento HTML principal
-├── package.json            # Dependencias y scripts
-├── package-lock.json       # Versiones fijadas
-├── vercel.json             # Configuración de Vercel
-└── README.md               # Presentación del repositorio
+│   ├── PROJECT.md       # Arquitectura e historial técnico
+│   ├── TASKS.md         # Plan de trabajo y evidencias
+│   └── bitacoras/       # Documentación académica independiente
+│       ├── README.md
+│       ├── bitacora-desarrollo.md
+│       └── bitacora-ia.md
+├── public/              # Recursos estáticos
+├── scripts/             # Utilidades
+├── server/              # Lógica protegida del backend
+├── src/                 # Interfaz, lógica y pruebas del frontend
+├── .env.example         # Referencia de variables de entorno
+├── firebase.json        # Configuración Firebase
+├── firestore.rules      # Reglas de Firestore
+├── package.json         # Dependencias y scripts
+└── README.md            # Presentación técnica y académica
 ```
 
-Los archivos de pruebas se encuentran junto a los módulos correspondientes.
+El subdirectorio `docs/bitacoras/` contiene **solo documentación académica**. No modifica la estructura del código ni se mezcla con `src/`, `api/` o `server/`.
 
-La estructura puede ampliarse conforme avance la documentación académica de T15.
+## 8. Requisitos e instalación
 
-## 7. Requisitos previos
+### Requisitos
 
-Para ejecutar el proyecto localmente se recomienda disponer de:
-
-- Node.js 24 y npm.
 - Git.
-- Un editor compatible con TypeScript.
-- Configuración de Firebase para las funciones que utilizan autenticación y Firestore.
+- Node.js 24 y npm para reproducir el entorno utilizado por CI.
+- Acceso a un proyecto Firebase configurado para las funciones de autenticación y datos.
+- Credenciales y permisos autorizados para las integraciones de servidor que se deseen probar.
 
-Para comprobar las operaciones completas del backend y AWS S3 también se requiere acceso autorizado a los servicios y las variables de entorno correspondientes.
-
-El entorno de integración continua utiliza Node.js 24.
-
-## 8. Instalación y ejecución local
-
-### 8.1. Clonar el repositorio
+### Preparación local
 
 ```bash
 git clone https://github.com/mllopezc-cmd/Papelcorpsac-e-commerce.git
 cd Papelcorpsac-e-commerce
-```
-
-### 8.2. Instalar dependencias
-
-```bash
 npm ci
 ```
 
-Este comando instala las versiones definidas en el archivo de bloqueo `package-lock.json`.
-
-### 8.3. Configurar variables de entorno
-
-El repositorio incluye `.env.example`, que sirve como referencia para configurar los servicios necesarios.
-
-En un terminal compatible con Bash:
+Crea un archivo `.env` a partir de `.env.example` y configura las variables necesarias para tu entorno. En Git Bash:
 
 ```bash
 cp .env.example .env
 ```
 
-Después, completa los valores requeridos para tu propio entorno, siguiendo los nombres incluidos en `.env.example`.
-
-**No publiques el archivo `.env`, credenciales privadas ni claves de cuentas de servicio en GitHub.**
-
-### 8.4. Iniciar el frontend
+Para iniciar el frontend:
 
 ```bash
 npm run dev
 ```
 
-Vite mostrará en la terminal la dirección local de desarrollo, normalmente `http://localhost:5173/`.
-
-### 8.5. Ejecutar una compilación de producción
+Para generar y previsualizar el build:
 
 ```bash
 npm run build
-```
-
-Para revisar localmente el resultado compilado:
-
-```bash
 npm run preview
 ```
 
-### 8.6. Probar funciones serverless localmente
-
-Las operaciones que dependen de rutas `/api/*` requieren un entorno compatible con las funciones de Vercel.
-
-Para pruebas integradas se puede utilizar Vercel CLI, con el proyecto vinculado y las variables de entorno autorizadas:
+**Nota:** `npm run dev` ejecuta Vite, pero no reproduce automáticamente todas las funciones `/api/*`. Para comprobar la integración serverless local se utiliza Vercel CLI con el proyecto vinculado y la configuración apropiada:
 
 ```bash
 vercel dev
 ```
 
-`npm run dev` inicia el frontend de Vite; por sí solo no reproduce necesariamente todos los servicios serverless de Production.
+No se requiere disponer de las credenciales privadas del proyecto original para leer, evaluar o analizar el repositorio. La reproducción completa de las integraciones necesita servicios configurados y accesos propios.
 
-La configuración de emuladores debe realizarse únicamente en un entorno local de pruebas.
+## 9. Configuración y variables de entorno
 
-## 9. Variables de entorno y configuración
+El archivo `.env.example` documenta los nombres de las variables necesarias sin incluir secretos de Production.
 
-La aplicación utiliza dos grupos de configuración.
+- **Frontend:** configuración de Firebase y opciones de desarrollo, incluidas las variables con prefijo `VITE_`.
+- **Servidor:** configuración de Firebase Admin SDK y de las funciones protegidas.
+- **AWS S3:** `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` y `S3_BUCKET`.
 
-### 9.1. Frontend
+**Reglas de seguridad:**
 
-Las variables con prefijo `VITE_` se utilizan en la configuración del cliente, principalmente para conectar Firebase y seleccionar el modo de desarrollo correspondiente.
+1. Nunca subir `.env`, claves privadas ni credenciales de cuentas de servicio al repositorio.
+2. No usar el prefijo `VITE_` para secretos del servidor, porque sus valores pueden incorporarse al bundle del navegador.
+3. Mantener deshabilitados los emuladores de Firebase en Preview y Production.
+4. Configurar los secretos del despliegue mediante las variables protegidas de Vercel.
 
-Entre las configuraciones documentadas se encuentran:
+La configuración detallada y las decisiones correspondientes están registradas en [PROJECT.md](docs/PROJECT.md).
 
-- `VITE_FIREBASE_PROJECT_ID`
-- `VITE_USE_FIREBASE_EMULATORS`
+## 10. Pruebas e integración continua
 
-Los demás valores deben obtenerse del archivo `.env.example` del repositorio y de la configuración del proyecto Firebase.
-
-Las variables `VITE_` pueden incorporarse al código entregado al navegador. **No deben contener secretos privados.**
-
-### 9.2. Servidor y AWS S3
-
-Las operaciones protegidas utilizan configuración de servidor.
-
-Para AWS S3 se contemplan:
-
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `AWS_REGION`
-- `S3_BUCKET`
-
-La inicialización administrativa de Firebase también requiere la configuración de servidor correspondiente.
-
-Los secretos se administran localmente o mediante las variables protegidas de Vercel y no deben quedar incluidos en el código fuente público.
-
-**Nota:** la instalación local del frontend no implica que estén disponibles automáticamente Firebase Admin, los endpoints protegidos o AWS S3. Cada integración requiere su configuración.
-
-## 10. Pruebas y calidad del software
-
-El proyecto integra pruebas automatizadas, comprobaciones estáticas y verificaciones funcionales.
-
-### 10.1. Comandos disponibles
-
-| Comando | Descripción |
-|---|---|
-| `npm run dev` | Inicia el frontend de desarrollo |
-| `npm run lint` | Ejecuta ESLint |
-| `npm run typecheck:api` | Comprueba los tipos del backend |
-| `npm run typecheck:seed` | Comprueba los tipos de las utilidades de seed |
-| `npm test` | Ejecuta Vitest |
-| `npm run build` | Compila TypeScript y genera el build |
-| `npm run preview` | Previsualiza el build local |
-
-Para ejecutar las verificaciones principales:
+### Comandos de verificación
 
 ```bash
 npm run lint
 npm run typecheck:api
+npm run typecheck:seed
 npm test
 npm run build
 ```
 
-Las pruebas de integración que requieren Firebase Emulator Suite se ejecutan con su configuración específica. No forman parte necesariamente de la ejecución general.
+| Script | Objetivo |
+|---|---|
+| `npm run lint` | Análisis estático con ESLint |
+| `npm run typecheck:api` | Comprobación TypeScript del backend |
+| `npm run typecheck:seed` | Comprobación TypeScript de utilidades de seed |
+| `npm test` | Suite general de Vitest |
+| `npm run build` | TypeScript y compilación de Vite |
 
-### 10.2. Integración continua
+Las pruebas que necesitan Firebase Emulator Suite se configuran y ejecutan por separado; no deben confundirse con la suite general ni con pruebas en Production.
 
-El proyecto dispone de un flujo de GitHub Actions definido en:
-
-```text
-.github/workflows/ci.yml
-```
-
-El flujo automatizado ejecuta instalación de dependencias, análisis estático, comprobación de tipos, pruebas, compilación y auditoría de dependencias.
-
-Se activa mediante cambios enviados a `main` y solicitudes de integración dirigidas a esa rama.
-
-### 10.3. Última verificación documentada
-
-**GitHub Actions — CI #12**
+### Ejecución documentada: GitHub Actions #13
 
 | Indicador | Resultado |
 |---|---|
-| Commit | `1a2b4b4` |
-| Estado | Success |
-| Archivos de prueba aprobados | 41 |
+| Commit | `b38c49f` |
+| Estado del workflow | **Success** |
+| Archivos de pruebas aprobados | 41 |
 | Pruebas aprobadas | 659 |
 | Pruebas omitidas | 39 |
-| Errores de prueba | 0 |
-| Despliegue Vercel | Ready |
+| Pruebas fallidas reportadas | 0 |
+| Duración total | 49 segundos |
 
-Las 39 pruebas omitidas corresponden a comprobaciones que no se ejecutan en la suite general bajo esa configuración. No deben interpretarse como pruebas aprobadas ni como fallos.
+**Interpretación:** las 39 pruebas omitidas no son fallos, pero tampoco cuentan como ejecutadas y aprobadas. Esta ejecución confirma los controles del workflow, no todas las integraciones externas en Production.
 
-El resultado de CI acredita los controles automatizados definidos en el workflow. Las pruebas contra servicios reales se documentan por separado.
+Consulta el [historial de GitHub Actions](https://github.com/mllopezc-cmd/Papelcorpsac-e-commerce/actions) para comprobar ejecuciones posteriores.
 
-## 11. Verificación funcional en Production
+## 11. Verificaciones funcionales en Production
 
-El 27 de noviembre de 2026 se verificaron recorridos principales en:
+Durante T14 se realizaron recorridos manuales sobre [https://papelcorpsac.vercel.app/](https://papelcorpsac.vercel.app/) y se contrastaron resultados en la aplicación, Firestore y AWS Console.
 
-**https://papelcorpsac.vercel.app/**
+**Productos y checkout:** se creó y publicó un producto temporal de S/ 1.00 con tres unidades. Un Customer lo incorporó al carrito y confirmó una compra simulada. Se verificaron la orden `pending`, el historial y detalle Customer, la visibilidad desde Admin y la reducción de stock de tres a dos unidades.
 
-### 11.1. Flujo comercial
+**AWS S3:** se verificó una carga `PUT`, la visualización `GET` de una imagen vinculada a un producto publicado en catálogo y detalle, y la eliminación protegida `DELETE` de un objeto no asociado. La visualización se comprobó como visitante, Customer y Admin.
 
-Se comprobó la creación y publicación de un producto temporal, su consulta en el catálogo, la incorporación al carrito y la confirmación de una compra simulada.
+**Limpieza:** se retiraron los productos y la orden temporales; el catálogo volvió a 60 productos. La imagen asociada se eliminó manualmente desde AWS Console después de retirar el producto, y el bucket mostró cero objetos actuales.
 
-El resultado incluyó:
-
-- Registro de una orden en Firestore.
-- Confirmación de compra por S/ 1.00.
-- Estado inicial `pending`.
-- Descuento de inventario de 3 a 2 unidades.
-- Limpieza del carrito.
-- Consulta de la orden desde el historial Customer.
-- Visualización de su detalle.
-- Consulta de la misma orden desde el panel Admin.
-
-Al finalizar, se eliminaron los registros temporales de prueba, conservando los productos originales.
-
-### 11.2. Integración AWS S3
-
-Se realizaron pruebas efectivas sobre el bucket privado:
-
-| Operación | Verificación |
-|---|---|
-| PUT | Subida de un archivo desde el panel administrativo |
-| GET | Visualización de una imagen asociada a un producto publicado |
-| GET — perfiles | Comprobación en catálogo como Admin, visitante y Customer |
-| GET — detalle | Visualización en el detalle de un producto |
-| DELETE | Eliminación protegida de una imagen todavía no asociada |
-| Limpieza | Eliminación manual de una imagen previamente asociada |
-
-La visualización de la imagen se verificó funcionalmente. No se realizó una auditoría independiente de la firma HTTP ni de la caducidad de las URLs prefirmadas.
-
-Al concluir las pruebas, AWS Console mostró cero objetos actuales en el bucket.
-
-### 11.3. Rendimiento y accesibilidad
-
-Se realizaron auditorías Lighthouse sobre el entorno desplegado, con perfiles de escritorio y móvil.
-
-En las ejecuciones posteriores a las correcciones de SEO, el catálogo obtuvo **100 puntos en accesibilidad, buenas prácticas y SEO**.
-
-Las puntuaciones de rendimiento fueron variables y se detectaron oportunidades de optimización, especialmente en carga móvil y estabilidad visual.
-
-Algunas ejecuciones presentaron advertencias de carga incompleta. Por ello, estas mediciones deben interpretarse como resultados puntuales de laboratorio y no como garantías de rendimiento en todos los dispositivos.
-
-Los resultados detallados están registrados en [PROJECT.md](docs/PROJECT.md).
+**Límites de la verificación:** no se repitieron todos los escenarios negativos de permisos en Production, no se volvió a ejecutar allí el registro de usuarios ni se inspeccionó de forma independiente la firma HTTP de la URL GET. El registro de usuarios sí había sido comprobado previamente durante el desarrollo. Los cambios de estado de órdenes se habían verificado antes del despliegue, no mediante una modificación de estado en este recorrido de Production.
 
 ## 12. Seguridad y decisiones técnicas
 
-El sistema aplica mecanismos de protección en distintos niveles:
+**Autenticación y roles.** Firebase Authentication identifica usuarios y las rutas administrativas requieren comprobaciones de rol. Las reglas de Firestore y las verificaciones del servidor proporcionan controles adicionales.
 
-### Autenticación y autorización
+**Integridad del checkout.** El servidor valida los datos del pedido y utiliza transacciones para registrar la orden y actualizar existencias. La idempotencia reduce el riesgo de registros duplicados.
 
-Firebase Authentication identifica a los usuarios.
+**Almacenamiento privado.** El bucket S3 permanece privado; el backend firma URLs temporales para subir o visualizar objetos. Las claves AWS nunca se exponen deliberadamente en React.
 
-Las rutas y operaciones protegidas verifican permisos según el contexto y el rol correspondiente. Las funciones sensibles del servidor utilizan Firebase Admin SDK.
+**Eliminación segura de imágenes.** La eliminación administrativa de un objeto desde la aplicación comprueba que ningún producto lo referencie. Al eliminar un producto, su imagen asociada **no se borra automáticamente de S3**: es una decisión de seguridad para evitar pérdidas accidentales. Los objetos que dejan de utilizarse requieren limpieza controlada.
 
-### Reglas de Firestore
+**Gestión de cambios.** GitHub Actions automatiza verificaciones y Vercel gestiona el despliegue conectado a `main`. CI, pruebas locales y comprobaciones manuales se registran como evidencias diferentes.
 
-Las reglas limitan las operaciones sobre los documentos según las condiciones definidas para cada recurso.
+## 13. Despliegue y estado
 
-### Checkout
+- **Plataforma:** Vercel.
+- **Rama principal:** `main`.
+- **URL pública:** [https://papelcorpsac.vercel.app/](https://papelcorpsac.vercel.app/).
+- **CI:** [GitHub Actions](https://github.com/mllopezc-cmd/Papelcorpsac-e-commerce/actions).
 
-El servidor valida los datos comerciales antes de registrar una orden.
+En el cierre de T14 se confirmó un despliegue Vercel con estado **Ready** para el commit documental `1a2b4b4`. Posteriormente, el commit `b38c49f`, que incorpora el README académico, superó CI #13. No se equiparan estos dos controles ni se presupone un nuevo estado de Vercel sin su verificación.
 
-Las actualizaciones de stock y la creación de la orden utilizan operaciones transaccionales. También se contemplan mecanismos de idempotencia para reducir solicitudes duplicadas.
+## 14. Limitaciones y mejoras futuras
 
-### AWS S3
+- No se integra una pasarela de pagos reales.
+- Los productos y pedidos utilizados en las pruebas tienen finalidad demostrativa.
+- Persisten oportunidades de optimización de rendimiento móvil y estabilidad visual, identificadas mediante Lighthouse.
+- La verificación de seguridad combina pruebas automatizadas, emuladores y recorridos manuales; no equivale a una auditoría externa completa.
+- La consigna original menciona React 18 y la implementación utiliza React 19; corresponde validar la diferencia con el docente.
+- La limpieza automática de imágenes S3 al eliminar productos no está implementada deliberadamente.
 
-Las credenciales privadas se mantienen en el servidor.
+## 15. Bitácora de uso de IA — resumen
 
-Los archivos se almacenan en un bucket privado y se consultan mediante URLs temporales.
+La asistencia con IA se utilizó para analizar opciones, revisar implementaciones, proponer pruebas y estructurar la documentación. Las configuraciones sensibles y las verificaciones finales fueron realizadas o autorizadas por el desarrollador.
 
-Se distingue entre dos situaciones:
+Se incluyen entradas resumidas y verificables; el desarrollo completo, las decisiones y las limitaciones se conservan en la [bitácora de IA](docs/bitacoras/bitacora-ia.md). Las consultas se describen por tema y **no se presentan como transcripciones textuales**.
 
-**Imagen no asociada:** ha sido subida, pero ningún producto la utiliza todavía. El administrador puede solicitar su eliminación desde el formulario. El servidor comprueba que no esté referenciada antes de borrarla.
+| Fecha | Etapa | Consulta o trabajo asistido | Decisión / aprendizaje técnico |
+|---|---|---|---|
+| 05/11/2026 | T02 | Estructura de interfaz, navegación y estilo corporativo | Reutilizar componentes y adoptar un diseño responsive consistente |
+| 10–11/11/2026 | T07 | Validación y consistencia del checkout | Centralizar validaciones, usar transacciones e idempotencia |
+| 17/11/2026 | T10.3 | CRUD administrativo y reglas de Firestore | No confiar la autorización solamente a la interfaz |
+| 18–20/11/2026 | T10.4 | URLs prefirmadas y operaciones S3 | Mantener el bucket privado y separar PUT, GET y DELETE protegidos |
+| 20–21/11/2026 | T11 | Órdenes administrativas y pruebas de permisos | Validar el rol Admin y preservar el historial de Customer |
+| 24/11/2026 | T12–T13 | Pruebas, cobertura y CI | Distinguir controles automatizados de integraciones externas |
+| 27/11/2026 | T14–T15 | Verificación pública y documentación | Sustentar afirmaciones con evidencia y diferenciar los entornos |
 
-**Imagen asociada:** su clave está registrada en un producto. Se protege su eliminación para evitar que un producto pierda accidentalmente su fotografía.
+## 16. Documentación y navegación
 
-Al eliminar un producto, la fotografía asociada no se borra automáticamente de S3. Si deja de utilizarse, debe identificarse y retirarse de forma controlada.
-
-Este comportamiento corresponde al diseño implementado y fue comprobado durante T14.
-
-## 13. Despliegue
-
-La aplicación está publicada en Vercel:
-
-**[Abrir Papelcorpsac en Production](https://papelcorpsac.vercel.app/)**
-
-El repositorio GitHub se encuentra conectado al proyecto Vercel y la rama de despliegue es `main`.
-
-El archivo `vercel.json` contempla la navegación de la SPA, permitiendo cargar rutas internas mediante el punto de entrada de React.
-
-La aplicación también incluye una descripción SEO y un archivo `robots.txt` para el rastreo de sus rutas públicas. Estos recursos no sustituyen las restricciones de autenticación ni las reglas de seguridad.
-
-**Último despliegue documental verificado:** commit `1a2b4b4`, estado `Ready`.
-
-## 14. Alcance y limitaciones
-
-Papelcorpsac es una implementación académica funcional, no una plataforma de procesamiento de pagos reales.
-
-Las principales consideraciones de alcance son:
-
-- El pago es simulado y no utiliza cuentas bancarias.
-- El catálogo se basa en productos demostrativos.
-- Las pruebas automatizadas no sustituyen todas las verificaciones de infraestructura real.
-- Determinados escenarios negativos y controles de configuración requieren revisiones adicionales.
-- Las imágenes S3 previamente asociadas no se eliminan automáticamente al borrar productos.
-- El rendimiento móvil y algunos desplazamientos de diseño siguen siendo oportunidades de mejora.
-- El proyecto utiliza React 19; la consigna académica original menciona React 18, diferencia que debe validarse con el docente.
-
-Estas limitaciones se documentan expresamente para distinguir las funcionalidades implementadas de los controles complementarios.
-
-## 15. Documentación técnica y académica
-
-La documentación principal se encuentra en el directorio `docs/`:
-
-| Documento | Descripción |
+| Documento | Finalidad |
 |---|---|
-| [PROJECT.md](docs/PROJECT.md) | Arquitectura, decisiones técnicas, seguridad, pruebas y despliegue |
-| [TASKS.md](docs/TASKS.md) | Planificación, tareas, avances y criterios de aceptación |
+| [PROJECT.md](docs/PROJECT.md) | Arquitectura, decisiones y evidencias técnicas del desarrollo |
+| [TASKS.md](docs/TASKS.md) | Seguimiento de tareas y criterios de aceptación |
+| [Índice de bitácoras](docs/bitacoras/README.md) | Punto de acceso a los registros académicos |
+| [Bitácora de desarrollo](docs/bitacoras/bitacora-desarrollo.md) | Hitos, verificaciones y decisiones por etapa |
+| [Bitácora de uso de IA](docs/bitacoras/bitacora-ia.md) | Consultas, criterios técnicos, decisiones y aprendizajes |
 
-Como parte de T15 se elaborarán bitácoras académicas de desarrollo y uso de inteligencia artificial. Estos documentos incluirán actividades, decisiones, dificultades, soluciones y evidencias reales.
+Cada bitácora dispone de enlaces de retorno a su índice y a este README principal. Así se facilita la navegación sin mezclar documentación académica con los módulos de la aplicación.
 
-Los enlaces a las bitácoras se incorporarán una vez que los archivos correspondientes estén terminados.
+## 17. Autoría y contexto académico
 
-## 16. Uso de inteligencia artificial
+| Campo | Información |
+|---|---|
+| Proyecto | Papelcorpsac — PAPEL CORP |
+| Asignatura | Proyecto Integrador 5 |
+| Área | Desarrollo de Aplicaciones Web |
+| Código y documentación | [Repositorio GitHub](https://github.com/mllopezc-cmd/Papelcorpsac-e-commerce) |
+| Demostración | [Aplicación desplegada](https://papelcorpsac.vercel.app/) |
 
-Durante el desarrollo se utilizaron herramientas de inteligencia artificial como apoyo para comprender conceptos, analizar alternativas, revisar implementaciones, proponer pruebas y mejorar la documentación.
+Esta documentación corresponde a un proyecto académico y no presenta su checkout como un servicio de pago real.
 
-Las decisiones finales sobre el código, las configuraciones, las operaciones en la nube y la publicación del repositorio corresponden al desarrollador.
+---
 
-Las respuestas de herramientas de IA se contrastaron mediante pruebas, inspección de resultados y comprobaciones en los servicios utilizados.
-
-El registro detallado de estas actividades se documentará en las bitácoras de T15.
-
-## 17. Autoría y propósito académico
-
-**Proyecto:** Papelcorpsac — PAPEL CORP
-**Asignatura:** Proyecto Integrador 5
-**Área:** Desarrollo de Aplicaciones Web
-**Repositorio:** [mllopezc-cmd/Papelcorpsac-e-commerce](https://github.com/mllopezc-cmd/Papelcorpsac-e-commerce)
-**Despliegue:** [papelcorpsac.vercel.app](https://papelcorpsac.vercel.app/)
-
-Este repositorio constituye la implementación y documentación de un proyecto académico de comercio electrónico.
-
-La información de productos y las operaciones comerciales de demostración no representan transacciones financieras reales.
+[Volver al inicio del README](#papelcorpsac--sistema-de-comercio-electrónico) · [Consultar las bitácoras](docs/bitacoras/README.md) · [Abrir Production](https://papelcorpsac.vercel.app/)
