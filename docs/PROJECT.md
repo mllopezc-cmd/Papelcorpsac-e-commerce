@@ -14,9 +14,9 @@
 
 **Moneda:** Soles peruanos (PEN).
 
-Papelcorpsac es un proyecto académico que busca desarrollar, testear y desplegar una aplicación de comercio electrónico funcional, responsive y segura.
+Papelcorpsac es un proyecto académico de comercio electrónico cuya aplicación React SPA ya se encuentra implementada y desplegada en Vercel Production. Continúan pendientes algunas verificaciones integrales en Production y la entrega académica final (T15); véanse los apartados 9 y 10.6.
 
-La aplicación contará con dos roles:
+La aplicación contempla dos roles:
 
 - **Customer:** podrá explorar productos, gestionar el carrito, simular compras y consultar sus órdenes.
 - **Admin:** podrá administrar productos, imágenes y órdenes mediante un panel protegido.
@@ -140,7 +140,7 @@ Los doce productos principales conservan sus imágenes reales; los 48 adicionale
 
 El código local contiene los datos de seed.
 
-El seguimiento del proyecto reporta los 60 productos publicados en Firestore. Su estado remoto no se considera verificado mediante la lectura del repositorio.
+El seguimiento del proyecto reporta los 60 productos publicados en Firestore. Su estado remoto no se deduce de leer el repositorio: la captura de Production del 27/11/2026 con Customer autenticado muestra expresamente «Mostrando 1–12 de 60 productos». No se verificaron individualmente todos los documentos desde la consola en esta auditoría.
 
 ### Autenticación
 
@@ -511,7 +511,7 @@ La implementación conserva el bucket privado, el CRUD existente, la protección
 
 #### T10.4-D — Eliminación autorizada de imágenes privadas AWS S3
 
-**Estado:** implementación completada y verificada localmente en su alcance automatizado el 20 de noviembre de 2026. Actualización documental y publicación Git pendientes.
+**Estado histórico al 20/11/2026:** implementación completada y verificada localmente en su alcance automatizado. Posteriormente fue publicada en `main` mediante `f68bba6`, y T10.5 comprobó PUT/GET/DELETE efectivos sobre servicios reales desde Vercel Dev.
 
 Se implementó la eliminación explícita de imágenes privadas S3 que no estén referenciadas por ningún producto de Firestore. La operación está protegida mediante Firebase Admin y requiere un usuario autenticado con rol `admin`.
 
@@ -1178,6 +1178,8 @@ Se añadieron `getAdminOrders` y `updateAdminOrderStatus` a `src/services/orderS
 
 **Estado histórico de T11.2:** implementada y verificada localmente. Posteriormente se publicaron las reglas administrativas en Firebase Console y el código en GitHub mediante el commit `9fb31e8`. La interfaz de T11.3 también fue implementada y publicada mediante `13634fc`.
 
+**Seguimiento posterior T14 (27/11/2026):** el cambio de `validProduct(data, productId)` en `firestore.rules` admite documentos históricos que incluyan `id` opcional, siempre que coincida con el ID real del documento. No se amplió la autorización general de productos ni las reglas de órdenes, usuarios o favoritos. El desarrollador confirmó la publicación de las reglas corregidas en Firebase Console; las 31 pruebas de reglas en emuladores aprobaron por separado. Véase 10.6.
+
 ### 7.8 Configuración de emuladores en el frontend (T08)
 
 El cliente utiliza `VITE_USE_FIREBASE_EMULATORS` para conectar Firebase Authentication y Firestore Emulator únicamente durante desarrollo local.
@@ -1236,7 +1238,7 @@ Se evaluaron la versión oficial, overrides, forks y la recomendación de `npm a
 
 **Seguimiento posterior del 20 de noviembre de 2026:** el desarrollador volvió a ejecutar `npm.cmd audit` y `npm.cmd audit --omit=dev`. Ambos comandos reportaron **cero vulnerabilidades**. `npm.cmd ls picomatch` confirmó que continúa instalado `picomatch@4.0.7` como dependencia transitiva de las herramientas de desarrollo. No se modificaron dependencias ni se aplicaron overrides o actualizaciones forzadas para obtener este resultado. Las 12 alertas de T10.4-A quedan conservadas como evidencia histórica, pero ya no corresponden a la última auditoría reportada. La excepción provisional asociada al aviso retirado no presenta alertas vigentes en esa ejecución; deberán mantenerse las auditorías periódicas.
 
-Las auditorías deberán repetirse cuando cambien las dependencias y antes del despliegue. No se utilizarán overrides ni actualizaciones forzadas sin justificación y autorización.
+Las auditorías deberán repetirse cuando cambien las dependencias y ante una nueva publicación significativa. El despliegue inicial se completó posteriormente en T14; el éxito de CI #10 no sustituye una revisión de seguridad de todos los servicios externos. No se utilizarán overrides ni actualizaciones forzadas sin justificación y autorización.
 
 ### 7.10 Advertencia de compilación — diagnóstico T12.6
 
@@ -1261,19 +1263,19 @@ El chunk de Firestore no apareció entre las solicitudes registradas del visitan
 
 **Interpretación:** el build termina satisfactoriamente. El aviso no implica por sí mismo una vulnerabilidad ni demuestra un problema funcional. El tamaño minificado no equivale a la transferencia comprimida. Dividir artificialmente el SDK en chunks más pequeños no garantiza reducir la cantidad total descargada; elevar el umbral de Vite únicamente ocultaría la advertencia.
 
-**Decisión:** mantener la arquitectura y la configuración actual, sin instalar dependencias, imponer divisiones manuales ni modificar el límite informativo de Vite. Durante **T14** se evaluará el despliegue público con Lighthouse y condiciones de red móvil, diferenciando visitantes y usuarios autenticados. El diagnóstico no bloquea el cierre local de T12.
+**Decisión de T12.6:** mantener la arquitectura y la configuración actual, sin instalar dependencias, imponer divisiones manuales ni modificar el límite informativo de Vite. Posteriormente, el 27/11/2026, **T14 sí realizó cuatro auditorías Lighthouse en Production**, diferenciando visitante/Customer y Mobile/Desktop. Los resultados se documentan en 10.6. La advertencia sigue siendo no bloqueante y las auditorías no permiten atribuir los tiempos al chunk de Firestore como causa única.
 
 ## 8. Estado de implementación y testing
 
 ### 8.1 Estado de T07
 
-**T07 — Implementar checkout: COMPLETADA Y VERIFICADA LOCALMENTE.**
+**T07 — Implementar checkout: COMPLETADA Y VERIFICADA LOCALMENTE.** El despliegue público se efectuó posteriormente en T14; no confundirlo con una compra real íntegra comprobada en Production.
 
 Subtareas:
 
 | Subtarea | Resultado |
 |---|---|
-| T07.1 — Infraestructura Vercel | Implementada y publicada; despliegue público pendiente |
+| T07.1 — Infraestructura Vercel | Implementada localmente en T07; desplegada después como parte de T14. La respuesta HTTP pública específica de cada endpoint sigue pendiente de prueba. |
 | T07.2-A — Authentication Emulator | Completada |
 | T07.2-B — Autenticación de servidor | Completada |
 | T07.3-A — Validación | Completada |
@@ -1302,7 +1304,7 @@ Commits principales:
 
 ### 8.2 Pruebas automatizadas
 
-Últimos resultados generales reportados por el desarrollador el 20 de noviembre de 2026, después de las mejoras UX y la corrección responsive de T10:
+Resultados **históricos de T10**, reportados por el desarrollador el 20 de noviembre de 2026, después de las mejoras UX y la corrección responsive:
 
 | Verificación | Resultado |
 |---|---|
@@ -1356,6 +1358,19 @@ Las auditorías históricas de T07 habían reportado cero vulnerabilidades; dura
 Las ocho pruebas omitidas pertenecen a la suite de integración
 transaccional del checkout. En el momento del cierre de T11, la revisión integral de T12
 estaba pendiente; se completó posteriormente y se documenta en la sección 10.
+
+### 8.2.1 Última evidencia de CI posterior a T12 — 27/11/2026
+
+| Comprobación | Resultado observado |
+|---|---|
+| GitHub Actions CI #9, commit `bf4e4da` | 654 tests aprobados, 39 omitidos, 0 fallidos |
+| Reglas Firestore/Auth en emuladores durante la corrección T14 | 31/31 aprobadas por separado |
+| GitHub Actions CI #10, commit `7f8878a` | 659 tests aprobados, 39 omitidos, 0 fallidos |
+| Archivos de pruebas en CI #10 | 41 aprobados, 3 omitidos |
+| ESLint, TypeScript API, tests y build en CI #10 | Job `Verify application` con estado `Success` |
+| Vercel Production para `7f8878a` | `Ready` |
+
+Las 39 pruebas omitidas de la CI más reciente pertenecen a **31 casos de reglas** que requieren emuladores y **ocho de integración de checkout**. Los primeros se aprobaron en ejecución separada; los últimos se habían aprobado durante fases previas. Estas cifras posteriores no sustituyen ni recalculan la cobertura V8 de T12, cuya última medición documentada fue del 24/11/2026.
 
 ### 8.3 Pruebas de integración HTTP
 
@@ -1465,7 +1480,7 @@ La publicación de reglas en Firestore Console fue confirmada por el desarrollad
 
 ## 9. Despliegue
 
-### Infraestructura local
+### Infraestructura local (histórico T07–T11)
 
 - Vercel CLI instalada y disponible.
 - Proyecto Vercel `looney-ai-chat/papelcorpsac` vinculado localmente.
@@ -1476,31 +1491,25 @@ La publicación de reglas en Firestore Console fue confirmada por el desarrollad
 - Endpoint `/api/product-image-upload-url` reconocido localmente mediante Vercel Dev; respuesta GET HTTP 405 esperada.
 - Rutas SPA verificadas en el entorno local.
 
-### Estado de producción
+Estas verificaciones ocurrieron **antes** del despliegue público y no demuestran por sí mismas la disponibilidad de cada endpoint en Production.
 
-La aplicación Papelcorpsac no está desplegada en producción.
+### Estado actual de Production — 27/11/2026
 
-No se activó integración automática con GitHub.
+**Aplicación desplegada:** `https://papelcorpsac.vercel.app/`, proyecto `looney-ai-chat/papelcorpsac`, con integración GitHub–Vercel que despliega desde la rama `main`. La captura de Vercel confirmó estado `Ready` y código fuente `7f8878a`, después del commit `bf4e4da`. El desarrollador confirmó `main` sincronizada y el árbol de trabajo limpio tras publicar `7f8878a`.
 
-No se realizó un despliegue público del backend.
+El proyecto conserva `vercel.json` con rewrite SPA hacia `/index.html`. Se observó la carga directa de `/catalogo` y la aplicación con sesión Customer. La URL pública `/robots.txt` mostró el texto sin pasar por la interfaz React. Se acreditó la existencia de una configuración efectiva de Firebase suficiente para leer los productos y mantener sesión en Production, pero **no** se inspeccionó en las capturas el inventario completo de variables privadas del backend y sus ámbitos.
 
-Antes de desplegar:
+**GitHub Actions:** CI #9 (commit `bf4e4da`) y CI #10 (commit `7f8878a`) finalizaron `Success`; CI #10 reportó 659 pruebas aprobadas, 39 omitidas y ninguna fallida. La CI no ejecuta las suites dependientes de Firebase Emulator ni implica pruebas reales de AWS o checkout en producción.
 
-- Revisar el árbol efectivo de dependencias.
-- Comprobar el artefacto de producción.
-- Verificar la configuración de credenciales y permisos.
-- Mantener los emuladores deshabilitados en Preview y Production.
-- Configurar variables por entorno.
-- Comprobar autenticación y endpoints.
-- Obtener autorización expresa del desarrollador.
+**Firestore Rules:** el desarrollador confirmó su publicación en Firebase Console después del ajuste T14 que valida el campo histórico opcional `id` si coincide con el identificador del documento. Los 60 productos reales no fueron objeto de operaciones masivas.
 
-La verificación local no constituye autorización de despliegue.
+**Distinción de alcance:** la publicación de los archivos de las funciones serverless en un deployment `Ready` no equivale a comprobar con respuestas HTTP todas las rutas públicas y protegidas. La verificación de checkout, órdenes y PUT/GET/DELETE S3 desde Production debe realizarse de manera controlada y autorizada. Las pruebas reales S3 registradas en T10.5 utilizaron Vercel Dev desde el entorno local, no los endpoints del deployment público.
 
-**Plan acordado:** la validación funcional del proyecto completo desplegado en Vercel corresponde a T14. T15 se reserva para documentación académica, README, bitácora y presentación. El checkout en el entorno ficticio no demuestra su disponibilidad comercial en Firebase real.
+**Estado:** despliegue público, navegación principal, catálogo, sesión Customer, SEO y Lighthouse comprobados; aceptación de recorridos integrales T14 todavía parcial. Detalle en 10.6 y `docs/TASKS.md`.
 
 ## 10. Testing y revisión integral
 
-**T12 — COMPLETADA Y VERIFICADA LOCALMENTE el 24 de noviembre de 2026.** La publicación de la presente actualización documental en GitHub todavía requiere revisión, autorización, commit y push.
+**T12 — COMPLETADA Y VERIFICADA LOCALMENTE el 24 de noviembre de 2026.** Sus resultados originales se conservan como historial; la publicación de esta nueva actualización documental al corte T14 requiere revisión, autorización, commit y push.
 
 La revisión integral consolidó las pruebas incrementales de etapas anteriores y agregó verificaciones de hooks, contextos, servicios, rutas y páginas principales. Los recuentos históricos de T07–T11 permanecen documentados en las secciones anteriores y no deben confundirse con el resultado final de T12.
 
@@ -1541,11 +1550,11 @@ Se identificó el chunk de Firestore de 580,46 kB, se confirmó su importación 
 
 Algunos módulos auxiliares y rutas de inicialización mantienen cobertura parcial o nula. La cobertura automatizada y las pruebas con mocks o emuladores no sustituyen la validación de un despliegue público. Las mediciones en localhost no son evidencia de rendimiento real en red móvil.
 
-Al finalizar T12, la integración continua permanecía pendiente de T13. Posteriormente, T13 se implementó y verificó mediante GitHub Actions, según se documenta en el apartado 10.5. El despliegue público y las mediciones con Lighthouse corresponden a T14; el README, la bitácora de IA y la presentación académica corresponden a T15. Estas dos últimas etapas permanecen pendientes.
+Al finalizar T12, la integración continua permanecía pendiente de T13. Posteriormente, T13 se implementó mediante GitHub Actions (10.5) y T14 desplegó el proyecto y ejecutó Lighthouse (10.6). La aceptación funcional integral de T14 sigue parcial; el README, la bitácora de IA y la presentación académica permanecen pendientes de T15.
 
 ### 10.5 Integración continua — T13
 
-**Estado:** implementada, publicada y verificada mediante GitHub Actions durante T13. El cierre documental de esta etapa requiere una publicación independiente.
+**Estado histórico de T13:** integración continua implementada, publicada y verificada. Las ejecuciones posteriores CI #9 y #10 durante T14 también fueron satisfactorias; esta revisión documental sigue pendiente de publicación por el desarrollador.
 
 ### Configuración
 
@@ -1595,7 +1604,72 @@ El workflow ejecuta la suite general: sus **33 pruebas omitidas** necesitan Fire
 
 Se mantiene la advertencia no bloqueante de Vite por el chunk de Firestore de aproximadamente 580,46 kB, documentada en 7.10; no impidió el build.
 
-La CI no equivale a validar Firebase, AWS S3 o Vercel en producción. **T14 sigue pendiente** e incluirá conexión GitHub–Vercel, entorno, despliegue y pruebas públicas de los dos roles. **T15 sigue pendiente** y corresponde al README, bitácora de IA y presentación académica.
+La CI no equivale a validar Firebase, AWS S3 o Vercel en producción. **Actualización posterior (27/11/2026):** GitHub se conectó a Vercel y la aplicación fue desplegada; T14 ejecutó las verificaciones y mediciones descritas en 10.6. Permanece pendiente la aceptación completa de los recorridos comerciales en Production. **T15 sigue pendiente** y corresponde al README, bitácora de IA y presentación académica.
+
+### 10.6 Despliegue T14, correcciones y auditoría Lighthouse — 27/11/2026
+
+**Alcance de esta actualización:** documentación de los cambios y pruebas aportados por el desarrollador desde la finalización de T13 hasta el commit `7f8878a`, sin atribuir a las pruebas locales capacidades de producción que no fueron verificadas.
+
+#### T14.1 — Corrección de reglas de productos y confirmaciones (commit `bf4e4da`)
+
+En `firestore.rules` se corrigió la validación de documentos históricos que incluyen el campo opcional `id`: se admite solamente cuando coincide con el identificador real del documento de Firestore. Se mantuvieron las restantes restricciones de rol, validación comercial, lectura pública de productos publicados y protección de órdenes. El desarrollador confirmó la publicación de la regla corregida en Firebase Console el 27/11/2026.
+
+Se incorporó el componente ligero `src/components/ConfirmDialog.tsx`, basado en el elemento nativo `<dialog>`, para tres confirmaciones: eliminación de productos, eliminación de imágenes temporales aún no vinculadas y cambio de estado de órdenes en administración. Se integró en `src/pages/AdminProductsPage.tsx` y `src/pages/AdminOrdersPage.tsx`, con las pruebas correspondientes. Se verificaron cancelación, Escape, navegación por teclado, modos claro/oscuro y presentación móvil a 320 px. La cancelación no alteró los datos; no se realizaron eliminaciones masivas del catálogo de 60 productos.
+
+**Verificación aportada:** ESLint, TypeScript API, build y comprobaciones de Git correctos; CI #9 satisfactorio con **654 aprobadas, 39 omitidas y cero fallidas**. Se ejecutaron por separado **31/31 pruebas de reglas** con emuladores; las ocho pruebas de checkout omitidas cuentan con antecedentes de ejecución separada. El aviso conocido de Firestore de 580,46 kB minificados (172,75 kB gzip) continuó sin bloquear el build.
+
+#### T14.2 — SEO y carga inicial del catálogo (commit `7f8878a`)
+
+Se publicaron siete archivos modificados o creados: `index.html`, `public/robots.txt`, `src/pages/CatalogPage.tsx`, `src/pages/CatalogPage.test.tsx`, `src/components/ProductCard.tsx`, `src/components/ProductCard.test.tsx` y `src/components/ProductImage.test.tsx`. Se incorporó una meta descripción HTML, se mejoró la estructura de espera del catálogo mientras llegan los productos y se priorizaron las imágenes visibles inicialmente, conservando carga diferida para las no prioritarias. Las pruebas de carga, presentación y prioridad de imágenes se ampliaron sin incorporar dependencias.
+
+**Razón y alcance de `public/robots.txt`:** Lighthouse identificó previamente un `robots.txt` inválido en Production. Para resolverlo se añadió un archivo de texto en el directorio `public/` de Vite:
+
+```text
+User-agent: *
+Allow: /
+```
+
+Vite copia el archivo a la raíz de `dist/` y Vercel lo publica como `/robots.txt`. El desarrollador abrió la ruta exacta y confirmó que el navegador mostraba esas dos líneas, no una página SPA 404. Es una declaración explícita que permite el rastreo de las rutas públicas por agentes que respeten el estándar, **no** una garantía de indexación, una política de privacidad ni una autorización para acceder a recursos protegidos. El control de datos sigue dependiendo de Firebase Authentication, Firestore Rules y los endpoints protegidos. La nueva meta descripción proporciona contexto a los buscadores, sin garantizar que aparezca literalmente en sus resultados.
+
+**Verificación:** commit `7f8878a` publicado en `main`, GitHub Actions **CI #10 `Success`**, con **659 pruebas aprobadas, 39 omitidas y ninguna fallida** en 41 archivos aprobados y tres omitidos. Vercel Production mostró `Ready` con ese commit. Se comprobó la existencia de `/robots.txt` y Lighthouse pasó de un SEO inicial de 83 a **100** en los escenarios finales de catálogo. Se mantiene la advertencia de tamaño del chunk Firestore; el commit no es un refactor del SDK.
+
+#### T14.3 — Resultados Lighthouse en Production
+
+Las capturas documentan cuatro ejecuciones **posteriores al commit `7f8878a`** de Lighthouse sobre `https://papelcorpsac.vercel.app/catalogo`, con throttling simulado y perfiles de visitante y Customer autenticado. Mobile emula un dispositivo/tipo de conexión móvil; Desktop utiliza el modo de escritorio. Para las visitas sin autenticar se mantuvo `Clear storage` activado; para Customer se desactivó a fin de conservar la sesión. Por tanto, las condiciones de almacenamiento difieren y las puntuaciones no permiten atribuir cambios de rendimiento exclusivamente al inicio de sesión. Son mediciones de laboratorio puntuales, **no datos de usuarios reales**, ni medias estadísticas, ni pruebas funcionales de compra.
+
+**Línea base anterior al bloque correctivo (Lighthouse en Production):**
+
+| Página | Perfil | Modo | Rendimiento | Accesibilidad | Buenas prácticas | SEO | LCP | CLS |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| Inicio `/` | Visitante | Mobile | 96 | 100 | 100 | 83 | 2,1 s | 0,083 |
+| Inicio `/` | Visitante | Desktop | 100 | 100 | 100 | 83 | 0,6 s | 0,003 |
+| Catálogo `/catalogo` | Visitante | Mobile | 72 | 100 | 100 | 83 | 7,9 s | 0,079 |
+| Catálogo `/catalogo` | Visitante | Desktop | 51 | 100 | 100 | 83 | 2,7 s | 0,999 |
+
+En el catálogo la puntuación de rendimiento pasó de 72 a 70 en Mobile y de 51 a 88 en Desktop en las mediciones posteriores. El SEO pasó de 83 a 100 en los escenarios posteriores del catálogo, sin repetir Lighthouse para Inicio después del cambio. Las mediciones anteriores también presentaron avisos de carga incompleta y variabilidad: estos valores son referencias descriptivas y **no un experimento controlado**.
+
+**Resultados posteriores al bloque correctivo — catálogo:**
+
+| Perfil | Modo | Rendimiento | Accesibilidad | Buenas prácticas | SEO | FCP | LCP | TBT | CLS | Speed Index |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Visitante | Mobile | 70 | 100 | 100 | 100 | 2,1 s | 9,7 s | 40 ms | 0,095 | 3,1 s |
+| Visitante | Desktop | 88 | 100 | 100 | 100 | 0,6 s | 1,8 s | 0 ms | 0,127 | 0,9 s |
+| Customer | Mobile | 63 | 100 | 100 | 100 | 2,1 s | 8,7 s | 40 ms | 0,216 | 2,1 s |
+| Customer | Desktop | 69 | 100 | 100 | 100 | 0,7 s | 2,1 s | 0 ms | 0,240 | 3,7 s |
+
+**Limitación de medición:** Lighthouse advirtió en estas ejecuciones que la página no terminó de cargar antes del límite y que los resultados podían estar incompletos. Algunas ejecuciones previas mostraron datos IndexedDB y extensiones del navegador; las extensiones se deshabilitaron y se realizaron nuevas mediciones en incógnito. Los valores pueden variar y no deben compararse como un experimento controlado de una sola variable.
+
+**Hallazgos pendientes de optimización:** el `CLS` de Customer Desktop llegó a 0,240 (movimientos visuales en la estructura/navegación/filtros), los LCP Mobile fueron de 9,7 s y 8,7 s, y Lighthouse señaló el logotipo PNG de aproximadamente 126 kB, una imagen externa sobredimensionada, Google Fonts, cadenas de red y JavaScript descargado sin uso inicial. Firestore mantiene un chunk dinámico de 580,46 kB minificados y 172,75 kB gzip; esa advertencia de build **no demuestra por sí misma la causa de los resultados Lighthouse**, y dividir el archivo de forma manual sin medición no garantiza una mejora.
+
+Se decidió no introducir optimizaciones adicionales dentro del bloque correctivo ya publicado. La puntuación de rendimiento no equivale a un fallo de la lógica de negocio. El 100 de Accesibilidad corresponde a las verificaciones automáticas de Lighthouse y no constituye certificación universal de accesibilidad. El 100 de SEO no garantiza clasificación ni indexación.
+
+#### T14.4 — Estado de aceptación y pendientes verificables
+
+**Consta como comprobado:** publicación de GitHub y Vercel Production; carga de la URL pública; navegación del catálogo; visualización de 60 productos con Customer autenticado; correcciones SEO y `robots.txt`; publicación manual de reglas de productos según Firebase Console; pruebas automatizadas y CI; auditoría Lighthouse Mobile/Desktop en visitante/Customer; comprobación de diálogos y navegación responsive.
+
+**No consta una prueba integral en Production de:** registro, login/logout y autorizaciones de ambos roles en todas sus variantes; agregar/modificar/eliminar productos del carrito; ejecutar checkout y comprobar la orden e historial reales sin tocar indebidamente el inventario existente; gestionar órdenes y productos a través del panel completo; obtener y usar URL PUT/GET y DELETE S3 desde endpoints desplegados; comprobar exhaustivamente el inventario de variables de entorno y permisos privados. T10 y T11 sí aportaron evidencia local y de emuladores, pero no se extrapola automáticamente a Production.
+
+**Veredicto:** el despliegue y los cambios de T14 se encuentran operativos y publicados en el alcance observado; **la aceptación integral de T14 sigue parcial** hasta verificar los recorridos anteriores con datos de prueba controlados. T15 (README, bitácora y presentación) permanece pendiente. Esta actualización modifica solo `docs/PROJECT.md` y `docs/TASKS.md`; no implica edición del código, publicación de reglas, commit ni despliegue nuevos.
 
 ## 11. Uso de IA y responsabilidades
 
