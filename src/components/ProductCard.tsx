@@ -20,6 +20,7 @@ const priceFormatter = new Intl.NumberFormat('es-PE', {
 type ProductImageProps = {
   product: Product
   className?: string
+  priority?: boolean
 }
 
 type PrivateImageState = {
@@ -48,6 +49,7 @@ function ProductImageFallback({
 export function ProductImage({
   product,
   className = '',
+  priority = false,
 }: ProductImageProps) {
   const [privateImage, setPrivateImage] =
     useState<PrivateImageState | null>(null)
@@ -107,7 +109,8 @@ export function ProductImage({
       <img
         src={imageUrl}
         alt={product.name}
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : undefined}
         referrerPolicy="no-referrer"
         onError={() => setFailedUrl(imageUrl)}
         className={`h-full w-full object-cover ${className}`}
@@ -139,7 +142,8 @@ export function ProductImage({
       <img
         src={product.imageUrl}
         alt={product.name}
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : undefined}
         referrerPolicy="no-referrer"
         onError={() => setFailedUrl(product.imageUrl!)}
         className={`h-full w-full object-cover ${className}`}
@@ -160,6 +164,7 @@ type ProductCardProps = {
   isFavorite: boolean
   favoritePending: boolean
   onToggleFavorite: (productId: string) => void
+  priorityImage?: boolean
 }
 
 export function ProductCard({
@@ -167,6 +172,7 @@ export function ProductCard({
   isFavorite,
   favoritePending,
   onToggleFavorite,
+  priorityImage = false,
 }: ProductCardProps) {
   const { user, loading } = useAuth()
   const { items, addItem } = useCart()
@@ -212,7 +218,7 @@ export function ProductCard({
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-sm border border-line bg-page">
       <div className="relative aspect-4/3 overflow-hidden bg-surface">
-        <ProductImage product={product} />
+        <ProductImage product={product} priority={priorityImage} />
 
         <button
           type="button"

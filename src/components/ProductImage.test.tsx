@@ -89,6 +89,33 @@ describe('ProductImage — T10.4-C', () => {
       'https://example.com/cuaderno.webp',
     )
 
+    expect(image.getAttribute('loading')).toBe('lazy')
+    expect(image.getAttribute('fetchpriority')).toBeNull()
+
+    expect(getProductImageUrlMock).not.toHaveBeenCalled()
+  })
+
+  it('prioriza una imagen tradicional cuando se solicita', () => {
+    render(
+      <ProductImage
+        product={{
+          ...product,
+          imageUrl: 'https://example.com/cuaderno.webp',
+        }}
+        priority
+      />,
+    )
+
+    const image = screen.getByRole('img', {
+      name: 'Cuaderno premium',
+    }) as HTMLImageElement
+
+    expect(image.getAttribute('src')).toBe(
+      'https://example.com/cuaderno.webp',
+    )
+    expect(image.getAttribute('loading')).toBe('eager')
+    expect(image.getAttribute('fetchpriority')).toBe('high')
+
     expect(getProductImageUrlMock).not.toHaveBeenCalled()
   })
 
@@ -131,6 +158,31 @@ describe('ProductImage — T10.4-C', () => {
         'no-referrer',
       )
     })
+  })
+
+  it('prioriza la imagen S3 después de obtener la URL privada', async () => {
+    render(
+      <ProductImage
+        product={{
+          ...product,
+          imageKey: key,
+        }}
+        priority
+      />,
+    )
+
+    const image = await screen.findByRole('img', {
+      name: 'Cuaderno premium',
+    }) as HTMLImageElement
+
+    expect(image.getAttribute('src')).toBe(signedUrl)
+    expect(image.getAttribute('loading')).toBe('eager')
+    expect(image.getAttribute('fetchpriority')).toBe('high')
+    expect(image.getAttribute('referrerpolicy')).toBe(
+      'no-referrer',
+    )
+
+    expect(getProductImageUrlMock).toHaveBeenCalledTimes(1)
   })
 
   it('muestra carga mientras se obtiene la URL', () => {

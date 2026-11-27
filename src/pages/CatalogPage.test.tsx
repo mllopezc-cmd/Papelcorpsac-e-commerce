@@ -43,11 +43,15 @@ vi.mock('../components/ProductCard', () => ({
   ProductCard: ({
     product,
     onToggleFavorite,
+    priorityImage,
   }: {
     product: Product
     onToggleFavorite: (id: string) => void
+    priorityImage?: boolean
   }) => (
-    <article>
+    <article
+      data-priority-image={priorityImage ? 'true' : 'false'}
+    >
       <h2>{product.name}</h2>
       <button
         type="button"
@@ -116,10 +120,56 @@ describe('CatalogPage — T12.5-D', () => {
   it('muestra el estado de carga', () => {
     setProducts([], { loading: true })
 
-    render(<CatalogPage />)
+    const { container } = render(<CatalogPage />)
 
     expect(
       screen.getByText('Cargando productos…'),
+    ).toBeTruthy()
+
+    expect(
+      container.querySelectorAll(
+        'div[aria-hidden="true"] ul > li',
+      ),
+    ).toHaveLength(12)
+
+    expect(
+      screen.queryByLabelText('Buscar por nombre'),
+    ).toBeNull()
+  })
+
+  it('reemplaza las reservas visuales cuando termina la carga', () => {
+    setProducts([], { loading: true })
+
+    const { container, rerender } = render(
+      <CatalogPage />,
+    )
+
+    expect(
+      container.querySelectorAll(
+        'div[aria-hidden="true"] ul > li',
+      ),
+    ).toHaveLength(12)
+
+    setProducts([makeProduct(1)])
+
+    rerender(<CatalogPage />)
+
+    expect(
+      screen.queryByText('Cargando productos…'),
+    ).toBeNull()
+
+    expect(
+      container.querySelectorAll(
+        'div[aria-hidden="true"] ul > li',
+      ),
+    ).toHaveLength(0)
+
+    expect(
+      screen.getByText('Producto 01'),
+    ).toBeTruthy()
+
+    expect(
+      screen.getByLabelText('Buscar por nombre'),
     ).toBeTruthy()
   })
 
@@ -269,6 +319,35 @@ describe('CatalogPage — T12.5-D', () => {
     )
 
     expect(screen.getByText('Producto 01')).toBeTruthy()
+  })
+
+  it('prioriza las tres primeras imágenes de cada página visible', () => {
+    setProducts(
+      Array.from({ length: 14 }, (_, index) =>
+        makeProduct(index + 1),
+      ),
+    )
+
+    render(<CatalogPage />)
+
+    const priorityOf = (name: string) =>
+      screen
+        .getByText(name)
+        .closest('article')
+        ?.getAttribute('data-priority-image')
+
+    expect(priorityOf('Producto 01')).toBe('true')
+    expect(priorityOf('Producto 02')).toBe('true')
+    expect(priorityOf('Producto 03')).toBe('true')
+    expect(priorityOf('Producto 04')).toBe('false')
+    expect(priorityOf('Producto 12')).toBe('false')
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Siguiente' }),
+    )
+
+    expect(priorityOf('Producto 13')).toBe('true')
+    expect(priorityOf('Producto 14')).toBe('true')
   })
 
   it('invoca agregar o quitar favoritos según el estado', () => {

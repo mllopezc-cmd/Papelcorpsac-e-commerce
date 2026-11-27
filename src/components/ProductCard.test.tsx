@@ -57,12 +57,14 @@ function renderCard({
   auth = {},
   isFavorite = false,
   favoritePending = false,
+  priorityImage = false,
   route = '/catalogo',
 }: {
   currentProduct?: Product
   auth?: Partial<AuthContextValue>
   isFavorite?: boolean
   favoritePending?: boolean
+  priorityImage?: boolean
   route?: string
 } = {}) {
   return renderWithProviders(
@@ -71,6 +73,7 @@ function renderCard({
         product={currentProduct}
         isFavorite={isFavorite}
         favoritePending={favoritePending}
+        priorityImage={priorityImage}
         onToggleFavorite={onToggleFavoriteMock}
       />
       <LocationObserver />
@@ -314,5 +317,22 @@ describe('ProductCard — T12.3-B', () => {
         name: 'Ver detalles de Cuaderno premium',
       }).getAttribute('href'),
     ).toBe('/catalogo/producto-001')
+  })
+
+  it('transmite la prioridad de carga a la imagen del producto', () => {
+    renderCard({
+      currentProduct: {
+        ...product,
+        imageUrl: 'https://example.com/cuaderno.webp',
+      },
+      priorityImage: true,
+    })
+
+    const image = screen.getByRole('img', {
+      name: 'Cuaderno premium',
+    }) as HTMLImageElement
+
+    expect(image.getAttribute('loading')).toBe('eager')
+    expect(image.getAttribute('fetchpriority')).toBe('high')
   })
 })

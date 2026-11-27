@@ -91,9 +91,38 @@ export function CatalogPage() {
         className="mt-8 rounded-sm border border-line bg-surface p-6 sm:p-10"
       >
         {loading ? (
-          <p role="status" aria-live="polite" className="leading-7 text-muted">
-            Cargando productos…
-          </p>
+          <>
+            <p role="status" aria-live="polite" className="leading-7 text-muted">
+              Cargando productos…
+            </p>
+            <div aria-hidden="true">
+              <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-[1fr_auto]">
+                <div className="h-20 rounded-sm bg-page" />
+                <div className="h-20 rounded-sm bg-page sm:min-w-64" />
+              </div>
+              <div className="mt-4 ml-auto h-11 w-36 rounded-sm bg-page" />
+              <div className="mt-8 h-5 w-48 rounded-sm bg-page" />
+              <ul className="mt-4 grid list-none gap-5 p-0 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: PRODUCTS_PER_PAGE }, (_, index) => (
+                  <li
+                    key={index}
+                    className="overflow-hidden rounded-sm border border-line bg-page"
+                  >
+                    <div className="aspect-4/3 bg-surface" />
+                    <div className="min-h-72 p-5">
+                      <div className="h-4 w-24 rounded-sm bg-surface" />
+                      <div className="mt-2 h-7 w-3/4 rounded-sm bg-surface" />
+                      <div className="mt-3 h-6 w-28 rounded-sm bg-surface" />
+                      <div className="mt-2 h-5 w-44 rounded-sm bg-surface" />
+                      <div className="mt-1 h-5 w-32 rounded-sm bg-surface" />
+                      <div className="mt-5 h-11 w-48 rounded-sm bg-surface" />
+                      <div className="mt-3 h-11 w-32 rounded-sm bg-surface" />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
         ) : error ? (
           <div role="alert" aria-live="assertive">
             <p className="font-display text-xl text-ink sm:text-2xl">
@@ -194,10 +223,11 @@ export function CatalogPage() {
                   aria-label="Productos publicados"
                   className="mt-4 grid list-none gap-5 p-0 sm:grid-cols-2 lg:grid-cols-3"
                 >
-                  {visibleProducts.map((product) => (
+                  {visibleProducts.map((product, index) => (
                     <li key={product.id}>
                       <ProductCard
                         product={product}
+                        priorityImage={index < 3}
                         isFavorite={favorites.includes(product.id)}
                         favoritePending={pendingProductIds.includes(product.id)}
                         onToggleFavorite={(productId) => {
