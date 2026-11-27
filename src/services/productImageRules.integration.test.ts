@@ -15,9 +15,7 @@ import {
   initializeApp as initializeAdminApp,
   type App as AdminApp,
 } from 'firebase-admin/app'
-import {
-  getAuth as getAdminAuth,
-} from 'firebase-admin/auth'
+import { getAuth as getAdminAuth } from 'firebase-admin/auth'
 import {
   getFirestore as getAdminFirestore,
 } from 'firebase-admin/firestore'
@@ -35,12 +33,14 @@ import {
 import {
   collection,
   connectFirestoreEmulator,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
   getFirestore,
   query,
   setDoc,
+  updateDoc,
   where,
   type Firestore,
 } from 'firebase/firestore'
@@ -121,11 +121,7 @@ function createClientApp(): FirebaseApp {
 function connectClientFirestore(app: FirebaseApp): Firestore {
   const db = getFirestore(app)
 
-  connectFirestoreEmulator(
-    db,
-    '127.0.0.1',
-    8080,
-  )
+  connectFirestoreEmulator(db, '127.0.0.1', 8080)
 
   return db
 }
@@ -196,22 +192,16 @@ describe.skipIf(!RUN_INTEGRATION)(
       await getAdminFirestore(adminApp)
         .collection('users')
         .doc(adminClient.uid)
-        .set({
-          role: 'admin',
-        })
+        .set({ role: 'admin' })
 
       await getAdminFirestore(adminApp)
         .collection('users')
         .doc(customerClient.uid)
-        .set({
-          role: 'customer',
-        })
+        .set({ role: 'customer' })
     }, 30_000)
 
     afterAll(async () => {
-      if (!adminApp) {
-        return
-      }
+      if (!adminApp) return
 
       const db = getAdminFirestore(adminApp)
 
@@ -224,17 +214,9 @@ describe.skipIf(!RUN_INTEGRATION)(
         await getAdminAuth(adminApp).deleteUser(uid)
       }
 
-      if (adminClient?.app) {
-        await deleteApp(adminClient.app)
-      }
-
-      if (customerClient?.app) {
-        await deleteApp(customerClient.app)
-      }
-
-      if (publicApp) {
-        await deleteApp(publicApp)
-      }
+      if (adminClient?.app) await deleteApp(adminClient.app)
+      if (customerClient?.app) await deleteApp(customerClient.app)
+      if (publicApp) await deleteApp(publicApp)
 
       await deleteAdminApp(adminApp)
     }, 30_000)
@@ -244,13 +226,10 @@ describe.skipIf(!RUN_INTEGRATION)(
       productIds.push(id)
 
       await expect(
-        setDoc(
-          doc(adminClient.db, 'products', id),
-          {
-            ...productData,
-            imageKey,
-          },
-        ),
+        setDoc(doc(adminClient.db, 'products', id), {
+          ...productData,
+          imageKey,
+        }),
       ).resolves.toBeUndefined()
 
       const snapshot = await getDoc(
@@ -265,13 +244,10 @@ describe.skipIf(!RUN_INTEGRATION)(
       productIds.push(id)
 
       await expect(
-        setDoc(
-          doc(adminClient.db, 'products', id),
-          {
-            ...productData,
-            imageKey: '../private/imagen.webp',
-          },
-        ),
+        setDoc(doc(adminClient.db, 'products', id), {
+          ...productData,
+          imageKey: '../private/imagen.webp',
+        }),
       ).rejects.toMatchObject({
         code: 'permission-denied',
       })
@@ -282,14 +258,11 @@ describe.skipIf(!RUN_INTEGRATION)(
       productIds.push(id)
 
       await expect(
-        setDoc(
-          doc(adminClient.db, 'products', id),
-          {
-            ...productData,
-            imageKey:
-              'products/11111111-1111-4111-8111-111111111111.svg',
-          },
-        ),
+        setDoc(doc(adminClient.db, 'products', id), {
+          ...productData,
+          imageKey:
+            'products/11111111-1111-4111-8111-111111111111.svg',
+        }),
       ).rejects.toMatchObject({
         code: 'permission-denied',
       })
@@ -319,13 +292,10 @@ describe.skipIf(!RUN_INTEGRATION)(
       productIds.push(id)
 
       await expect(
-        setDoc(
-          doc(customerClient.db, 'products', id),
-          {
-            ...productData,
-            imageKey,
-          },
-        ),
+        setDoc(doc(customerClient.db, 'products', id), {
+          ...productData,
+          imageKey,
+        }),
       ).rejects.toMatchObject({
         code: 'permission-denied',
       })
@@ -377,10 +347,11 @@ describe.skipIf(!RUN_INTEGRATION)(
         ),
       )
 
-      expect(result.docs.every(
-        (snapshot) =>
-          snapshot.data().published === true,
-      )).toBe(true)
+      expect(
+        result.docs.every(
+          (snapshot) => snapshot.data().published === true,
+        ),
+      ).toBe(true)
     })
 
     it('rechaza consultas públicas sin filtro de publicación', async () => {
@@ -397,17 +368,134 @@ describe.skipIf(!RUN_INTEGRATION)(
       })
 
       await expect(
-        setDoc(
-          doc(customerClient.db, 'products', id),
-          {
-            ...productData,
-            published: true,
-            imageKey,
-          },
-        ),
+        setDoc(doc(customerClient.db, 'products', id), {
+          ...productData,
+          published: true,
+          imageKey,
+        }),
       ).rejects.toMatchObject({
         code: 'permission-denied',
       })
+    })
+
+    it('permite actualizar stock de un producto heredado con id coincidente', async () => {
+      const id = `rules-${randomUUID()}`
+
+      await getAdminFirestore(adminApp)
+        .collection('products')
+        .doc(id)
+        .set({ ...productData, id })
+
+      productIds.push(id)
+
+      await expect(
+        updateDoc(doc(adminClient.db, 'products', id), {
+          stock: 40,
+        }),
+      ).resolves.toBeUndefined()
+
+      const result = await getDoc(
+        doc(adminClient.db, 'products', id),
+      )
+
+      expect(result.data()?.stock).toBe(40)
+      expect(result.data()?.id).toBe(id)
+    })
+
+    it('permite actualizar stock sin un campo id almacenado', async () => {
+      const id = await seedProduct()
+
+      await expect(
+        updateDoc(doc(adminClient.db, 'products', id), {
+          stock: 40,
+        }),
+      ).resolves.toBeUndefined()
+
+      expect(
+        (await getDoc(doc(adminClient.db, 'products', id)))
+          .data()?.stock,
+      ).toBe(40)
+    })
+
+    it('rechaza un id diferente al crear o actualizar', async () => {
+      const id = `rules-${randomUUID()}`
+      productIds.push(id)
+
+      await expect(
+        setDoc(doc(adminClient.db, 'products', id), {
+          ...productData,
+          id: 'otro-id',
+        }),
+      ).rejects.toMatchObject({
+        code: 'permission-denied',
+      })
+
+      await getAdminFirestore(adminApp)
+        .collection('products')
+        .doc(id)
+        .set({ ...productData, id })
+
+      await expect(
+        updateDoc(doc(adminClient.db, 'products', id), {
+          id: 'otro-id',
+        }),
+      ).rejects.toMatchObject({
+        code: 'permission-denied',
+      })
+    })
+
+    it('mantiene los controles de stock, precio y campos adicionales', async () => {
+      const id = await seedProduct()
+
+      await expect(
+        updateDoc(doc(adminClient.db, 'products', id), {
+          stock: -1,
+        }),
+      ).rejects.toMatchObject({
+        code: 'permission-denied',
+      })
+
+      await expect(
+        updateDoc(doc(adminClient.db, 'products', id), {
+          price: 25.555,
+        }),
+      ).rejects.toMatchObject({
+        code: 'permission-denied',
+      })
+
+      await expect(
+        updateDoc(doc(adminClient.db, 'products', id), {
+          unknownField: true,
+        }),
+      ).rejects.toMatchObject({
+        code: 'permission-denied',
+      })
+    })
+
+    it('impide que Customer modifique stock o elimine productos', async () => {
+      const id = await seedProduct()
+
+      await expect(
+        updateDoc(doc(customerClient.db, 'products', id), {
+          stock: 40,
+        }),
+      ).rejects.toMatchObject({
+        code: 'permission-denied',
+      })
+
+      await expect(
+        deleteDoc(doc(customerClient.db, 'products', id)),
+      ).rejects.toMatchObject({
+        code: 'permission-denied',
+      })
+    })
+
+    it('mantiene la eliminación administrativa', async () => {
+      const id = await seedProduct()
+
+      await expect(
+        deleteDoc(doc(adminClient.db, 'products', id)),
+      ).resolves.toBeUndefined()
     })
   },
 )

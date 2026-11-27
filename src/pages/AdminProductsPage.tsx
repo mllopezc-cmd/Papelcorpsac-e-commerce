@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import {
   createProduct,
   deleteProduct,
@@ -23,6 +24,10 @@ type CategoryFilter = ProductCategory | "all";
 type PublicationFilter = "all" | "published" | "unpublished";
 
 const PRODUCTS_PER_PAGE = 12;
+
+type PendingAction =
+  | { type: "product"; product: Product }
+  | { type: "image"; key: string };
 
 type ProductForm = {
   name: string;
@@ -182,6 +187,8 @@ export function AdminProductsPage() {
     useState<string | null>(null);
   const [uploadedKey, setUploadedKey] =
     useState<string | null>(null);
+  const [pendingAction, setPendingAction] =
+    useState<PendingAction | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -373,24 +380,32 @@ export function AdminProductsPage() {
     }
   };
 
-  const removeUploadedImage = async () => {
+  const requestRemoveImage = () => {
     if (
       busy ||
       uploading ||
       deletingImage ||
+      pendingAction ||
       !uploadedKey ||
       !user
     ) {
       return;
     }
 
-    const key = uploadedKey;
+    setPendingAction({
+      type: "image",
+      key: uploadedKey,
+    });
+  };
 
-    const confirmed = window.confirm(
-      `¿Eliminar esta imagen de AWS S3?\n\n${key}\n\nLa imagen todavía no se ha asociado al producto mediante este formulario. Esta acción no se puede deshacer.`,
-    );
-
-    if (!confirmed) {
+  const removeUploadedImage = async (key: string) => {
+    if (
+      busy ||
+      uploading ||
+      deletingImage ||
+      !user ||
+      uploadedKey !== key
+    ) {
       return;
     }
 
@@ -402,7 +417,9 @@ export function AdminProductsPage() {
       await deleteProductImage(user, key);
       setUploadedKey(null);
       setSelectedImage(null);
-      setImageNotice("Imagen no asociada eliminada correctamente.");
+      setImageNotice(
+        "Imagen no asociada eliminada correctamente.",
+      );
     } catch (failure) {
       setUploadError(getErrorMessage(failure));
     } finally {
@@ -410,7 +427,9 @@ export function AdminProductsPage() {
     }
   };
 
-  const submitForm = async (event: FormEvent<HTMLFormElement>) => {
+  const submitForm = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
 
     if (busy || uploading || deletingImage) {
@@ -459,16 +478,19 @@ export function AdminProductsPage() {
     }
   };
 
-  const removeProduct = async (product: Product) => {
-    if (busy || uploading || deletingImage) {
+  const requestRemoveProduct = (product: Product) => {
+    if (busy || uploading || deletingImage || pendingAction) {
       return;
     }
 
-    const confirmed = window.confirm(
-      `¿Eliminar "${product.name}"?\n\nSe eliminará el producto de Firestore. Esta acción no se puede deshacer.`,
-    );
+    setPendingAction({
+      type: "product",
+      product,
+    });
+  };
 
-    if (!confirmed) {
+  const removeProduct = async (product: Product) => {
+    if (busy || uploading || deletingImage) {
       return;
     }
 
@@ -495,7 +517,22 @@ export function AdminProductsPage() {
     }
   };
 
-  const controlsDisabled = busy || uploading || deletingImage;
+  const confirmPendingAction = () => {
+    const action = pendingAction;
+
+    if (!action) return;
+
+    setPendingAction(null);
+
+    if (action.type === "image") {
+      void removeUploadedImage(action.key);
+    } else {
+      void removeProduct(action.product);
+    }
+  };
+
+  const controlsDisabled =
+    busy || uploading || deletingImage || pendingAction !== null;
 
   return (
     <section
@@ -565,7 +602,9 @@ export function AdminProductsPage() {
             id="admin-product-form-title"
             className="font-display text-2xl font-medium text-ink"
           >
-            {editingId === null ? "Crear producto" : "Editar producto"}
+            {editingId === null
+              ? "Crear producto"
+              : "Editar producto"}
           </h2>
 
           {editingId !== null && (
@@ -733,7 +772,9 @@ export function AdminProductsPage() {
                 accept="image/jpeg,image/png,image/webp"
                 disabled={controlsDisabled || uploadedKey !== null}
                 onChange={(event) => {
-                  const file = event.currentTarget.files?.[0] ?? null;
+                  const file =
+                    event.currentTarget.files?.[0] ?? null;
+
                   selectImage(file);
                   event.currentTarget.value = "";
                 }}
@@ -789,7 +830,10 @@ export function AdminProductsPage() {
 
               {uploadedKey && (
                 <div className="mt-4 rounded-sm border border-line bg-surface p-4">
-                  <p role="status" className="text-sm font-semibold text-ink">
+                  <p
+                    role="status"
+                    className="text-sm font-semibold text-ink"
+                  >
                     Imagen subida correctamente a S3.
                   </p>
 
@@ -809,7 +853,7 @@ export function AdminProductsPage() {
                   <button
                     type="button"
                     disabled={controlsDisabled || !user}
-                    onClick={() => void removeUploadedImage()}
+                    onClick={requestRemoveImage}
                     className={`${buttonClass} mt-4 border border-line bg-page text-ink hover:bg-surface`}
                   >
                     {deletingImage
@@ -884,7 +928,10 @@ export function AdminProductsPage() {
         </section>
       )}
 
-      <section aria-labelledby="product-list-title" className="mt-10">
+      <section
+        aria-labelledby="product-list-title"
+        className="mt-10"
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2
             id="product-list-title"
@@ -955,12 +1002,17 @@ export function AdminProductsPage() {
                 <select
                   value={categoryFilter}
                   onChange={(event) => {
-                    setCategoryFilter(event.target.value as CategoryFilter);
+                    setCategoryFilter(
+                      event.target.value as CategoryFilter,
+                    );
                     setPage(1);
                   }}
                   className={inputClass}
                 >
-                  <option value="all">Todas las categorías</option>
+                  <option value="all">
+                    Todas las categorías
+                  </option>
+
                   {PRODUCT_CATEGORIES.map((category) => (
                     <option key={category} value={category}>
                       {PRODUCT_CATEGORY_LABELS[category]}
@@ -1022,7 +1074,9 @@ export function AdminProductsPage() {
                         {" · "}
                         Stock: {product.stock ?? "Sin registrar"}
                         {" · "}
-                        {product.published ? "Publicado" : "No publicado"}
+                        {product.published
+                          ? "Publicado"
+                          : "No publicado"}
                       </p>
                     </div>
 
@@ -1041,7 +1095,7 @@ export function AdminProductsPage() {
                         type="button"
                         aria-label={`Eliminar ${product.name}`}
                         disabled={controlsDisabled}
-                        onClick={() => void removeProduct(product)}
+                        onClick={() => requestRemoveProduct(product)}
                         className={`${buttonClass} flex-1 border border-line text-ink hover:bg-page sm:flex-none`}
                       >
                         Eliminar
@@ -1064,44 +1118,57 @@ export function AdminProductsPage() {
                       Anterior
                     </button>
 
-                    {Array.from({ length: pageCount }, (_, index) => {
-                      const pageNumber = index + 1;
-                      const isCurrent = pageNumber === currentPage;
-                      const isMobile = mobilePageNumbers.includes(pageNumber);
-                      const previousMobile =
-                        mobilePageNumbers[
-                          mobilePageNumbers.indexOf(pageNumber) - 1
-                        ];
+                    {Array.from(
+                      { length: pageCount },
+                      (_, index) => {
+                        const pageNumber = index + 1;
+                        const isCurrent =
+                          pageNumber === currentPage;
+                        const isMobile =
+                          mobilePageNumbers.includes(pageNumber);
+                        const previousMobile =
+                          mobilePageNumbers[
+                            mobilePageNumbers.indexOf(
+                              pageNumber,
+                            ) - 1
+                          ];
 
-                      return (
-                        <Fragment key={pageNumber}>
-                          {isMobile &&
-                            previousMobile !== undefined &&
-                            pageNumber - previousMobile > 1 && (
-                              <span
-                                aria-hidden="true"
-                                className="px-1 text-sm text-muted sm:hidden"
-                              >
-                                …
-                              </span>
-                            )}
+                        return (
+                          <Fragment key={pageNumber}>
+                            {isMobile &&
+                              previousMobile !== undefined &&
+                              pageNumber - previousMobile > 1 && (
+                                <span
+                                  aria-hidden="true"
+                                  className="px-1 text-sm text-muted sm:hidden"
+                                >
+                                  …
+                                </span>
+                              )}
 
-                          <button
-                            type="button"
-                            aria-label={`Página ${pageNumber}`}
-                            aria-current={isCurrent ? "page" : undefined}
-                            onClick={() => setPage(pageNumber)}
-                            className={`size-11 rounded-sm border text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-text ${
-                              isCurrent
-                                ? "border-gold-text bg-deep-blue text-cream"
-                                : "border-line bg-page text-ink hover:border-gold/60 hover:bg-surface"
-                            } ${isMobile ? "" : "hidden sm:inline-block"}`}
-                          >
-                            {pageNumber}
-                          </button>
-                        </Fragment>
-                      );
-                    })}
+                            <button
+                              type="button"
+                              aria-label={`Página ${pageNumber}`}
+                              aria-current={
+                                isCurrent ? "page" : undefined
+                              }
+                              onClick={() => setPage(pageNumber)}
+                              className={`size-11 rounded-sm border text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-text ${
+                                isCurrent
+                                  ? "border-gold-text bg-deep-blue text-cream"
+                                  : "border-line bg-page text-ink hover:border-gold/60 hover:bg-surface"
+                              } ${
+                                isMobile
+                                  ? ""
+                                  : "hidden sm:inline-block"
+                              }`}
+                            >
+                              {pageNumber}
+                            </button>
+                          </Fragment>
+                        );
+                      },
+                    )}
 
                     <button
                       type="button"
@@ -1118,6 +1185,30 @@ export function AdminProductsPage() {
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        open={pendingAction !== null}
+        title={
+          pendingAction?.type === "image"
+            ? "Eliminar imagen temporal"
+            : "Eliminar producto"
+        }
+        description={
+          pendingAction?.type === "image"
+            ? `¿Eliminar esta imagen de AWS S3?\n\n${pendingAction.key}\n\nLa imagen todavía no se ha asociado al producto mediante este formulario. Esta acción no se puede deshacer.`
+            : pendingAction?.type === "product"
+              ? `¿Eliminar "${pendingAction.product.name}"?\n\nSe eliminará el producto de Firestore. Esta acción no se puede deshacer.`
+              : ""
+        }
+        confirmLabel={
+          pendingAction?.type === "image"
+            ? "Eliminar imagen"
+            : "Eliminar producto"
+        }
+        destructive
+        onCancel={() => setPendingAction(null)}
+        onConfirm={confirmPendingAction}
+      />
     </section>
   );
 }

@@ -8,6 +8,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react'
 import {
   afterEach,
@@ -69,6 +70,20 @@ vi.mock('../services/productImageDeleteService', () => ({
 
 import { AdminProductsPage } from './AdminProductsPage'
 
+function supportNativeDialog() {
+  if (!HTMLDialogElement.prototype.showModal) {
+    HTMLDialogElement.prototype.showModal = function () {
+      this.setAttribute('open', '')
+    }
+  }
+
+  if (!HTMLDialogElement.prototype.close) {
+    HTMLDialogElement.prototype.close = function () {
+      this.removeAttribute('open')
+    }
+  }
+}
+
 const admin = { uid: 'admin-test' }
 
 const key =
@@ -88,11 +103,21 @@ const existingProduct: Product = {
   published: true,
 }
 
+async function acceptDialog(label: string) {
+  const dialog = await screen.findByRole('dialog')
+
+  fireEvent.click(
+    within(dialog).getByRole('button', { name: label }),
+  )
+}
+
 function imageFile(
   type = 'image/jpeg',
   size = 1024,
 ): File {
-  const result = new File(['imagen'], 'producto.jpg', { type })
+  const result = new File(['imagen'], 'producto.jpg', {
+    type,
+  })
 
   Object.defineProperty(result, 'size', {
     value: size,
@@ -142,17 +167,19 @@ function fillRequiredFields() {
     target: { value: 'Papel Corp' },
   })
 
-  fireEvent.change(screen.getByLabelText('Precio (S/)'), {
-    target: { value: '25.50' },
-  })
+  fireEvent.change(
+    screen.getByLabelText('Precio (S/)'),
+    { target: { value: '25.50' } },
+  )
 
   fireEvent.change(screen.getByLabelText('Stock'), {
     target: { value: '10' },
   })
 
-  fireEvent.change(screen.getByLabelText('Descripción'), {
-    target: { value: 'Cuaderno con imagen S3' },
-  })
+  fireEvent.change(
+    screen.getByLabelText('Descripción'),
+    { target: { value: 'Cuaderno con imagen S3' } },
+  )
 }
 
 async function uploadSelectedImage() {
@@ -177,6 +204,7 @@ async function openExistingProduct() {
 beforeEach(() => {
   vi.clearAllMocks()
 
+  supportNativeDialog()
   useAuthMock.mockReturnValue({ user: admin })
 
   getAdminProductsMock.mockResolvedValue([])
@@ -185,11 +213,6 @@ beforeEach(() => {
   deleteProductMock.mockResolvedValue(undefined)
   uploadProductImageMock.mockResolvedValue({ key })
   deleteProductImageMock.mockResolvedValue(undefined)
-
-  vi.stubGlobal(
-    'confirm',
-    vi.fn().mockReturnValue(true),
-  )
 })
 
 afterEach(() => {
@@ -242,10 +265,9 @@ describe('AdminProductsPage — T10.4-B', () => {
     fireEvent.click(uploadButton())
 
     await waitFor(() => {
-      expect(uploadProductImageMock).toHaveBeenCalledWith(
-        admin,
-        file,
-      )
+      expect(
+        uploadProductImageMock,
+      ).toHaveBeenCalledWith(admin, file)
     })
 
     expect(
@@ -265,7 +287,9 @@ describe('AdminProductsPage — T10.4-B', () => {
   it('bloquea el formulario mientras se sube', async () => {
     let finishUpload:
       (result: { key: string }) => void = () => {
-        throw new Error('La subida simulada no comenzó.')
+        throw new Error(
+          'La subida simulada no comenzó.',
+        )
       }
 
     uploadProductImageMock.mockImplementation(
@@ -300,7 +324,9 @@ describe('AdminProductsPage — T10.4-B', () => {
     expect(cancelButton.disabled).toBe(true)
     expect(saveButton.disabled).toBe(true)
 
-    expect(uploadProductImageMock).toHaveBeenCalledTimes(1)
+    expect(
+      uploadProductImageMock,
+    ).toHaveBeenCalledTimes(1)
 
     finishUpload({ key })
 
@@ -311,7 +337,9 @@ describe('AdminProductsPage — T10.4-B', () => {
 
   it('muestra errores de subida sin cerrar el formulario', async () => {
     uploadProductImageMock.mockRejectedValue(
-      new Error('AWS S3 rechazó la subida de la imagen.'),
+      new Error(
+        'AWS S3 rechazó la subida de la imagen.',
+      ),
     )
 
     render(<AdminProductsPage />)
@@ -342,7 +370,9 @@ describe('AdminProductsPage — T10.4-B', () => {
   })
 
   it('conserva la edición de productos existentes', async () => {
-    getAdminProductsMock.mockResolvedValue([existingProduct])
+    getAdminProductsMock.mockResolvedValue([
+      existingProduct,
+    ])
 
     render(<AdminProductsPage />)
 
@@ -407,7 +437,9 @@ describe('AdminProductsPage — T10.4-C', () => {
     )
 
     await waitFor(() => {
-      expect(createProductMock).toHaveBeenCalledWith(
+      expect(
+        createProductMock,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Cuaderno de prueba',
           imageKey: key,
@@ -443,7 +475,9 @@ describe('AdminProductsPage — T10.4-C', () => {
     )
 
     await waitFor(() => {
-      expect(updateProductMock).toHaveBeenCalledWith(
+      expect(
+        updateProductMock,
+      ).toHaveBeenCalledWith(
         'producto-001',
         expect.objectContaining({
           imageKey: previousKey,
@@ -451,7 +485,9 @@ describe('AdminProductsPage — T10.4-C', () => {
       )
     })
 
-    expect(uploadProductImageMock).not.toHaveBeenCalled()
+    expect(
+      uploadProductImageMock,
+    ).not.toHaveBeenCalled()
   })
 
   it('reemplaza la referencia al guardar una imagen nueva', async () => {
@@ -472,7 +508,9 @@ describe('AdminProductsPage — T10.4-C', () => {
     )
 
     await waitFor(() => {
-      expect(updateProductMock).toHaveBeenCalledWith(
+      expect(
+        updateProductMock,
+      ).toHaveBeenCalledWith(
         'producto-001',
         expect.objectContaining({
           imageKey: key,
@@ -521,16 +559,22 @@ describe('AdminProductsPage — T10.4-C', () => {
     )
 
     await waitFor(() => {
-      expect(createProductMock).toHaveBeenCalledTimes(2)
+      expect(
+        createProductMock,
+      ).toHaveBeenCalledTimes(2)
     })
 
-    expect(createProductMock).toHaveBeenLastCalledWith(
+    expect(
+      createProductMock,
+    ).toHaveBeenLastCalledWith(
       expect.objectContaining({
         imageKey: key,
       }),
     )
 
-    expect(uploadProductImageMock).toHaveBeenCalledTimes(1)
+    expect(
+      uploadProductImageMock,
+    ).toHaveBeenCalledTimes(1)
   })
 
   it('no vincula una imagen si solamente se selecciona el archivo', async () => {
@@ -547,7 +591,9 @@ describe('AdminProductsPage — T10.4-C', () => {
     )
 
     await waitFor(() => {
-      expect(createProductMock).toHaveBeenCalledTimes(1)
+      expect(
+        createProductMock,
+      ).toHaveBeenCalledTimes(1)
     })
 
     const [input] = createProductMock.mock.calls[0]
@@ -578,7 +624,9 @@ describe('AdminProductsPage — T10.4-D', () => {
       }),
     ).toBeNull()
 
-    expect(deleteProductImageMock).not.toHaveBeenCalled()
+    expect(
+      deleteProductImageMock,
+    ).not.toHaveBeenCalled()
   })
 
   it('muestra el botón únicamente después de subir', async () => {
@@ -613,8 +661,13 @@ describe('AdminProductsPage — T10.4-D', () => {
       screen.getByText(`Clave S3: ${key}`),
     ).toBeTruthy()
 
-    expect(uploadProductImageMock).toHaveBeenCalledTimes(1)
-    expect(deleteProductImageMock).not.toHaveBeenCalled()
+    expect(
+      uploadProductImageMock,
+    ).toHaveBeenCalledTimes(1)
+
+    expect(
+      deleteProductImageMock,
+    ).not.toHaveBeenCalled()
   })
 
   it('habilita nuevamente la selección tras eliminar la subida pendiente', async () => {
@@ -623,6 +676,8 @@ describe('AdminProductsPage — T10.4-D', () => {
     openCreateForm()
     await uploadSelectedImage()
     fireEvent.click(deleteImageButton())
+
+    await acceptDialog('Eliminar imagen')
 
     await screen.findByText(
       'Imagen no asociada eliminada correctamente.',
@@ -652,21 +707,20 @@ describe('AdminProductsPage — T10.4-D', () => {
 
     await screen.findByText(`Clave S3: ${key}`)
 
-    expect(uploadProductImageMock).toHaveBeenCalledWith(
-      admin,
-      file,
-    )
+    expect(
+      uploadProductImageMock,
+    ).toHaveBeenCalledWith(admin, file)
 
     fireEvent.click(deleteImageButton())
+    await acceptDialog('Eliminar imagen')
 
     await screen.findByText(
       'Imagen no asociada eliminada correctamente.',
     )
 
-    expect(deleteProductImageMock).toHaveBeenCalledWith(
-      admin,
-      key,
-    )
+    expect(
+      deleteProductImageMock,
+    ).toHaveBeenCalledWith(admin, key)
 
     expect(imageInput().disabled).toBe(false)
 
@@ -678,18 +732,17 @@ describe('AdminProductsPage — T10.4-D', () => {
     fireEvent.click(uploadButton())
 
     await waitFor(() => {
-      expect(uploadProductImageMock).toHaveBeenCalledTimes(2)
+      expect(
+        uploadProductImageMock,
+      ).toHaveBeenCalledTimes(2)
     })
 
-    expect(uploadProductImageMock).toHaveBeenLastCalledWith(
-      admin,
-      file,
-    )
+    expect(
+      uploadProductImageMock,
+    ).toHaveBeenLastCalledWith(admin, file)
   })
 
   it('no elimina si el administrador cancela', async () => {
-    vi.mocked(window.confirm).mockReturnValue(false)
-
     render(<AdminProductsPage />)
 
     openCreateForm()
@@ -697,7 +750,17 @@ describe('AdminProductsPage — T10.4-D', () => {
 
     fireEvent.click(deleteImageButton())
 
-    expect(deleteProductImageMock).not.toHaveBeenCalled()
+    const dialog = await screen.findByRole('dialog')
+
+    fireEvent.click(
+      within(dialog).getByRole('button', {
+        name: 'Cancelar',
+      }),
+    )
+
+    expect(
+      deleteProductImageMock,
+    ).not.toHaveBeenCalled()
 
     expect(
       screen.getByText(`Clave S3: ${key}`),
@@ -711,12 +774,12 @@ describe('AdminProductsPage — T10.4-D', () => {
     await uploadSelectedImage()
 
     fireEvent.click(deleteImageButton())
+    await acceptDialog('Eliminar imagen')
 
     await waitFor(() => {
-      expect(deleteProductImageMock).toHaveBeenCalledWith(
-        admin,
-        key,
-      )
+      expect(
+        deleteProductImageMock,
+      ).toHaveBeenCalledWith(admin, key)
     })
 
     expect(
@@ -750,6 +813,7 @@ describe('AdminProductsPage — T10.4-D', () => {
     await uploadSelectedImage()
 
     fireEvent.click(deleteImageButton())
+    await acceptDialog('Eliminar imagen')
 
     await waitFor(() => {
       expect(
@@ -766,7 +830,9 @@ describe('AdminProductsPage — T10.4-D', () => {
 
   it('bloquea el formulario mientras se elimina', async () => {
     let finishDelete: () => void = () => {
-      throw new Error('La eliminación simulada no comenzó.')
+      throw new Error(
+        'La eliminación simulada no comenzó.',
+      )
     }
 
     deleteProductImageMock.mockImplementation(
@@ -782,6 +848,7 @@ describe('AdminProductsPage — T10.4-D', () => {
     await uploadSelectedImage()
 
     fireEvent.click(deleteImageButton())
+    await acceptDialog('Eliminar imagen')
 
     expect(
       await screen.findByRole('button', {
@@ -806,7 +873,10 @@ describe('AdminProductsPage — T10.4-D', () => {
     ).toBe(true)
 
     expect(uploadButton().disabled).toBe(true)
-    expect(deleteProductImageMock).toHaveBeenCalledTimes(1)
+
+    expect(
+      deleteProductImageMock,
+    ).toHaveBeenCalledTimes(1)
 
     finishDelete()
 
@@ -829,6 +899,7 @@ describe('AdminProductsPage — T10.4-D', () => {
     await uploadSelectedImage()
 
     fireEvent.click(deleteImageButton())
+    await acceptDialog('Eliminar imagen')
 
     expect(
       await screen.findByText(
@@ -847,7 +918,9 @@ describe('AdminProductsPage — T10.4-D', () => {
     )
 
     await waitFor(() => {
-      expect(updateProductMock).toHaveBeenCalledWith(
+      expect(
+        updateProductMock,
+      ).toHaveBeenCalledWith(
         'producto-001',
         expect.objectContaining({
           imageKey: previousKey,
@@ -881,62 +954,156 @@ describe('AdminProductsPage — T10.4-D', () => {
       }),
     ).toBeNull()
 
-    expect(deleteProductImageMock).not.toHaveBeenCalled()
+    expect(
+      deleteProductImageMock,
+    ).not.toHaveBeenCalled()
   })
 })
 
-const adminList: Product[] = Array.from({ length: 25 }, (_, index) => ({
-  ...existingProduct,
-  id: `producto-${String(index + 1).padStart(2, '0')}`,
-  name: `Artículo ${String(index + 1).padStart(2, '0')}`,
-  brand: index % 2 === 0 ? 'Papel Corp' : 'Marca Azul',
-  category: index % 2 === 0 ? 'stationery' : 'office-supplies',
-  published: index % 2 === 0,
-}))
+describe('AdminProductsPage — confirmaciones personalizadas', () => {
+  it('no elimina producto al cancelar el diálogo', async () => {
+    getAdminProductsMock.mockResolvedValue([
+      existingProduct,
+    ])
+
+    render(<AdminProductsPage />)
+
+    await screen.findByText('Cuaderno premium')
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Eliminar Cuaderno premium',
+      }),
+    )
+
+    const dialog = await screen.findByRole('dialog')
+
+    expect(
+      dialog.textContent,
+    ).toContain('Cuaderno premium')
+
+    expect(
+      deleteProductMock,
+    ).not.toHaveBeenCalled()
+
+    fireEvent.click(
+      within(dialog).getByRole('button', {
+        name: 'Cancelar',
+      }),
+    )
+
+    expect(
+      deleteProductMock,
+    ).not.toHaveBeenCalled()
+  })
+
+  it('elimina producto únicamente después de confirmar', async () => {
+    getAdminProductsMock.mockResolvedValue([
+      existingProduct,
+    ])
+
+    render(<AdminProductsPage />)
+
+    await screen.findByText('Cuaderno premium')
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Eliminar Cuaderno premium',
+      }),
+    )
+
+    await acceptDialog('Eliminar producto')
+
+    await waitFor(() => {
+      expect(
+        deleteProductMock,
+      ).toHaveBeenCalledWith('producto-001')
+    })
+  })
+})
+
+const adminList: Product[] = Array.from(
+  { length: 25 },
+  (_, index) => ({
+    ...existingProduct,
+    id: `producto-${String(index + 1).padStart(2, '0')}`,
+    name: `Artículo ${String(index + 1).padStart(2, '0')}`,
+    brand:
+      index % 2 === 0 ? 'Papel Corp' : 'Marca Azul',
+    category:
+      index % 2 === 0
+        ? 'stationery'
+        : 'office-supplies',
+    published: index % 2 === 0,
+  }),
+)
 
 describe('AdminProductsPage — mejoras UX de T10', () => {
   it('pagina doce productos y conserva el orden alfabético existente', async () => {
     getAdminProductsMock.mockResolvedValue(adminList)
+
     render(<AdminProductsPage />)
 
     await screen.findByText('Artículo 01')
 
     expect(
-      screen.getAllByRole('button', { name: /^Editar / }),
+      screen.getAllByRole('button', {
+        name: /^Editar /,
+      }),
     ).toHaveLength(12)
 
-    expect(screen.queryByText('Artículo 13')).toBeNull()
-    expect(screen.getByText(/25 resultados/)).toBeTruthy()
-
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Página 2' }),
-    )
-
-    expect(screen.getByText('Artículo 13')).toBeTruthy()
+    expect(
+      screen.queryByText('Artículo 13'),
+    ).toBeNull()
 
     expect(
-      screen.getAllByRole('button', { name: /^Editar / }),
+      screen.getByText(/25 resultados/),
+    ).toBeTruthy()
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Página 2',
+      }),
+    )
+
+    expect(
+      screen.getByText('Artículo 13'),
+    ).toBeTruthy()
+
+    expect(
+      screen.getAllByRole('button', {
+        name: /^Editar /,
+      }),
     ).toHaveLength(12)
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'Siguiente' }),
+      screen.getByRole('button', {
+        name: 'Siguiente',
+      }),
     )
 
-    expect(screen.getByText('Artículo 25')).toBeTruthy()
+    expect(
+      screen.getByText('Artículo 25'),
+    ).toBeTruthy()
 
     expect(
-      screen.getAllByRole('button', { name: /^Editar / }),
+      screen.getAllByRole('button', {
+        name: /^Editar /,
+      }),
     ).toHaveLength(1)
 
     expect(
-      (screen.getByRole('button', {
-        name: 'Siguiente',
-      }) as HTMLButtonElement).disabled,
+      (
+        screen.getByRole('button', {
+          name: 'Siguiente',
+        }) as HTMLButtonElement
+      ).disabled,
     ).toBe(true)
   })
 
   it('busca por nombre y marca sin distinguir mayúsculas', async () => {
     getAdminProductsMock.mockResolvedValue(adminList)
+
     render(<AdminProductsPage />)
 
     await screen.findByText('Artículo 01')
@@ -949,20 +1116,34 @@ describe('AdminProductsPage — mejoras UX de T10', () => {
       target: { value: 'artículo 03' },
     })
 
-    expect(screen.getByText('Artículo 03')).toBeTruthy()
-    expect(screen.queryByText('Artículo 01')).toBeNull()
+    expect(
+      screen.getByText('Artículo 03'),
+    ).toBeTruthy()
+
+    expect(
+      screen.queryByText('Artículo 01'),
+    ).toBeNull()
 
     fireEvent.change(search, {
       target: { value: 'MARCA AZUL' },
     })
 
-    expect(screen.getByText('Artículo 02')).toBeTruthy()
-    expect(screen.queryByText('Artículo 01')).toBeNull()
-    expect(screen.getByText(/12 resultados/)).toBeTruthy()
+    expect(
+      screen.getByText('Artículo 02'),
+    ).toBeTruthy()
+
+    expect(
+      screen.queryByText('Artículo 01'),
+    ).toBeNull()
+
+    expect(
+      screen.getByText(/12 resultados/),
+    ).toBeTruthy()
   })
 
   it('combina categoría y publicación y muestra el estado sin resultados', async () => {
     getAdminProductsMock.mockResolvedValue(adminList)
+
     render(<AdminProductsPage />)
 
     await screen.findByText('Artículo 01')
@@ -974,8 +1155,13 @@ describe('AdminProductsPage — mejoras UX de T10', () => {
       },
     )
 
-    expect(screen.getByText('Artículo 02')).toBeTruthy()
-    expect(screen.queryByText('Artículo 01')).toBeNull()
+    expect(
+      screen.getByText('Artículo 02'),
+    ).toBeTruthy()
+
+    expect(
+      screen.queryByText('Artículo 01'),
+    ).toBeNull()
 
     fireEvent.change(
       screen.getByLabelText('Filtrar por publicación'),
@@ -990,20 +1176,27 @@ describe('AdminProductsPage — mejoras UX de T10', () => {
       ),
     ).toBeTruthy()
 
-    expect(screen.getByText(/0 resultados/)).toBeTruthy()
+    expect(
+      screen.getByText(/0 resultados/),
+    ).toBeTruthy()
   })
 
   it('restablece la primera página cuando cambian los filtros', async () => {
     getAdminProductsMock.mockResolvedValue(adminList)
+
     render(<AdminProductsPage />)
 
     await screen.findByText('Artículo 01')
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'Página 2' }),
+      screen.getByRole('button', {
+        name: 'Página 2',
+      }),
     )
 
-    expect(screen.getByText('Artículo 13')).toBeTruthy()
+    expect(
+      screen.getByText('Artículo 13'),
+    ).toBeTruthy()
 
     fireEvent.change(
       screen.getByLabelText('Filtrar por publicación'),
@@ -1012,19 +1205,31 @@ describe('AdminProductsPage — mejoras UX de T10', () => {
       },
     )
 
-    expect(screen.getByText('Artículo 01')).toBeTruthy()
-    expect(screen.queryByText('Artículo 25')).toBeNull()
-    expect(screen.getByText(/Mostrando 1–12/)).toBeTruthy()
+    expect(
+      screen.getByText('Artículo 01'),
+    ).toBeTruthy()
+
+    expect(
+      screen.queryByText('Artículo 25'),
+    ).toBeNull()
+
+    expect(
+      screen.getByText(/Mostrando 1–12/),
+    ).toBeTruthy()
   })
 
   it('desplaza al formulario al editar sin alterar el producto', async () => {
     const scroll = vi.fn()
-    const original = HTMLElement.prototype.scrollIntoView
+    const original =
+      HTMLElement.prototype.scrollIntoView
 
     HTMLElement.prototype.scrollIntoView = scroll
 
     try {
-      getAdminProductsMock.mockResolvedValue([existingProduct])
+      getAdminProductsMock.mockResolvedValue([
+        existingProduct,
+      ])
+
       render(<AdminProductsPage />)
 
       await screen.findByText('Cuaderno premium')
@@ -1035,10 +1240,16 @@ describe('AdminProductsPage — mejoras UX de T10', () => {
         }),
       )
 
-      expect(screen.getByText('Editar producto')).toBeTruthy()
+      expect(
+        screen.getByText('Editar producto'),
+      ).toBeTruthy()
 
       expect(
-        (screen.getByLabelText('Nombre') as HTMLInputElement).value,
+        (
+          screen.getByLabelText(
+            'Nombre',
+          ) as HTMLInputElement
+        ).value,
       ).toBe('Cuaderno premium')
 
       expect(scroll).toHaveBeenCalledWith({
@@ -1046,7 +1257,9 @@ describe('AdminProductsPage — mejoras UX de T10', () => {
         block: 'start',
       })
 
-      expect(updateProductMock).not.toHaveBeenCalled()
+      expect(
+        updateProductMock,
+      ).not.toHaveBeenCalled()
     } finally {
       HTMLElement.prototype.scrollIntoView = original
     }
@@ -1054,16 +1267,23 @@ describe('AdminProductsPage — mejoras UX de T10', () => {
 
   it('respeta movimiento reducido al abrir el formulario', async () => {
     const scroll = vi.fn()
-    const original = HTMLElement.prototype.scrollIntoView
+    const original =
+      HTMLElement.prototype.scrollIntoView
 
     HTMLElement.prototype.scrollIntoView = scroll
 
-    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({
-      matches: true,
-    }))
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockReturnValue({
+        matches: true,
+      }),
+    )
 
     try {
-      getAdminProductsMock.mockResolvedValue([existingProduct])
+      getAdminProductsMock.mockResolvedValue([
+        existingProduct,
+      ])
+
       render(<AdminProductsPage />)
 
       await screen.findByText('Cuaderno premium')
@@ -1084,7 +1304,10 @@ describe('AdminProductsPage — mejoras UX de T10', () => {
   })
 
   it('identifica las acciones administrativas por producto', async () => {
-    getAdminProductsMock.mockResolvedValue([existingProduct])
+    getAdminProductsMock.mockResolvedValue([
+      existingProduct,
+    ])
+
     render(<AdminProductsPage />)
 
     await screen.findByText('Cuaderno premium')

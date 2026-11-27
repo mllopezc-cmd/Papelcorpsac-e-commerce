@@ -32,7 +32,7 @@ service cloud.firestore {
         );
     }
 
-    function validProduct(data) {
+    function validProduct(data, productId) {
       return data.keys().hasAll([
           'name',
           'description',
@@ -44,6 +44,7 @@ service cloud.firestore {
           'published'
         ])
         && data.keys().hasOnly([
+          'id',
           'name',
           'description',
           'category',
@@ -55,6 +56,13 @@ service cloud.firestore {
           'published',
           'sourceUrl'
         ])
+        && (
+          !data.keys().hasAny(['id'])
+          || (
+            data.id is string
+            && data.id == productId
+          )
+        )
         && data.name is string
         && data.name.size() > 0
         && data.name.size() <= 120
@@ -189,10 +197,10 @@ service cloud.firestore {
         || resource.data.published == true;
 
       allow create: if isAdmin()
-        && validProduct(request.resource.data);
+        && validProduct(request.resource.data, productId);
 
       allow update: if isAdmin()
-        && validProduct(request.resource.data);
+        && validProduct(request.resource.data, productId);
 
       allow delete: if isAdmin();
     }

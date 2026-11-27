@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import {
   getAdminOrders,
   updateAdminOrderStatus,
@@ -11,6 +12,12 @@ import {
 } from '../types/order'
 
 type StatusFilter = 'all' | OrderStatus
+
+type PendingStatusChange = {
+  orderId: string
+  oldStatus: OrderStatus
+  newStatus: OrderStatus
+}
 
 const priceFormatter = new Intl.NumberFormat('es-PE', {
   style: 'currency',
@@ -51,6 +58,8 @@ export function AdminOrdersPage() {
   const [notice, setNotice] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
+  const [pendingChange, setPendingChange] =
+    useState<PendingStatusChange | null>(null)
 
   useEffect(() => {
     let active = true
@@ -85,7 +94,7 @@ export function AdminOrdersPage() {
   )
 
   const handleRetry = () => {
-    if (savingId !== null) {
+    if (savingId !== null || pendingChange !== null) {
       return
     }
 
@@ -96,50 +105,49 @@ export function AdminOrdersPage() {
     setReload((current) => current + 1)
   }
 
-  const handleSave = async (order: Order) => {
-    if (savingId !== null) {
-      return
-    }
+  const handleSave = (order: Order) => {
+    if (savingId !== null || pendingChange !== null) return
 
     const nextStatus = drafts[order.id] ?? order.status
 
-    if (nextStatus === order.status) {
-      return
-    }
+    if (nextStatus === order.status) return
 
-    const confirmed = window.confirm(
-      `¿Cambiar la orden ${order.id} de ` +
-      `"${ORDER_STATUS_LABELS[order.status]}" a ` +
-      `"${ORDER_STATUS_LABELS[nextStatus]}"?`,
-    )
+    setPendingChange({
+      orderId: order.id,
+      oldStatus: order.status,
+      newStatus: nextStatus,
+    })
+  }
 
-    if (!confirmed) {
-      return
-    }
+  const confirmStatusChange = async () => {
+    if (!pendingChange || savingId !== null) return
 
-    setSavingId(order.id)
+    const { orderId, newStatus } = pendingChange
+
+    setPendingChange(null)
+    setSavingId(orderId)
     setSaveError(null)
     setNotice(null)
 
     try {
-      await updateAdminOrderStatus(order.id, nextStatus)
+      await updateAdminOrderStatus(orderId, newStatus)
 
       setOrders((current) =>
         current.map((item) =>
-          item.id === order.id
-            ? { ...item, status: nextStatus }
+          item.id === orderId
+            ? { ...item, status: newStatus }
             : item,
         ),
       )
 
       setDrafts((current) => {
         const updated = { ...current }
-        delete updated[order.id]
+        delete updated[orderId]
         return updated
       })
 
       setNotice(
-        `Estado de la orden ${order.id} actualizado correctamente.`,
+        `Estado de la orden ${orderId} actualizado correctamente.`,
       )
     } catch (error) {
       setSaveError(getErrorMessage(error))
@@ -182,7 +190,7 @@ export function AdminOrdersPage() {
             id="admin-orders-filter"
             className={inputClass}
             value={filter}
-            disabled={savingId !== null}
+            disabled={savingId !== null || pendingChange !== null}
             onChange={(event) =>
               setFilter(event.target.value as StatusFilter)
             }
@@ -200,7 +208,7 @@ export function AdminOrdersPage() {
           type="button"
           className={`${buttonClass} border border-line text-ink hover:bg-surface`}
           onClick={handleRetry}
-          disabled={loading || savingId !== null}
+          disabled={loading || savingId !== null || pendingChange !== null}
         >
           Actualizar listado
         </button>
@@ -363,7 +371,7 @@ export function AdminOrdersPage() {
                           aria-label={`Nuevo estado de la orden ${order.id}`}
                           className={`${inputClass} w-full`}
                           value={selectedStatus}
-                          disabled={savingId !== null}
+                          disabled={savingId !== null || pendingChange !== null}
                           onChange={(event) => {
                             const status =
                               event.target.value as OrderStatus
@@ -393,8 +401,8 @@ export function AdminOrdersPage() {
                             : `Guardar estado de ${order.id}`
                         }
                         className={`${buttonClass} bg-deep-blue text-cream hover:bg-graphite`}
-                        disabled={unchanged || savingId !== null}
-                        onClick={() => void handleSave(order)}
+                        disabled={unchanged || savingId !== null || pendingChange !== null}
+                        onClick={() => handleSave(order)}
                       >
                         {saving
                           ? 'Guardando…'
@@ -408,6 +416,21 @@ export function AdminOrdersPage() {
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={pendingChange !== null}
+        title="Confirmar cambio de estado"
+        description={
+          pendingChange
+            ? `¿Cambiar la orden ${pendingChange.orderId} de ` +
+              `"${ORDER_STATUS_LABELS[pendingChange.oldStatus]}" a ` +
+              `"${ORDER_STATUS_LABELS[pendingChange.newStatus]}"?`
+            : ''
+        }
+        confirmLabel="Confirmar cambio"
+        onCancel={() => setPendingChange(null)}
+        onConfirm={() => void confirmStatusChange()}
+      />
     </section>
   )
 }

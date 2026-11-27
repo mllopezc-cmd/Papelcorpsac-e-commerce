@@ -16,6 +16,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react'
 import type { Order } from '../types/order'
 
@@ -81,16 +82,39 @@ function saveButton(orderId: string): HTMLButtonElement {
   }) as HTMLButtonElement
 }
 
+function supportNativeDialog() {
+  if (!HTMLDialogElement.prototype.showModal) {
+    HTMLDialogElement.prototype.showModal = function () {
+      this.setAttribute('open', '')
+    }
+  }
+
+  if (!HTMLDialogElement.prototype.close) {
+    HTMLDialogElement.prototype.close = function () {
+      this.removeAttribute('open')
+    }
+  }
+}
+
+async function acceptDialog() {
+  const dialog = await screen.findByRole('dialog')
+
+  fireEvent.click(
+    within(dialog).getByRole('button', {
+      name: 'Confirmar cambio',
+    }),
+  )
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
+  supportNativeDialog()
   getAdminOrdersMock.mockResolvedValue(sampleOrders)
   updateAdminOrderStatusMock.mockResolvedValue(undefined)
-  vi.stubGlobal('confirm', vi.fn().mockReturnValue(true))
 })
 
 afterEach(() => {
   cleanup()
-  vi.unstubAllGlobals()
 })
 
 describe('AdminOrdersPage — T11.3', () => {
@@ -119,11 +143,9 @@ describe('AdminOrdersPage — T11.3', () => {
   it('muestra las órdenes y sus datos comerciales', async () => {
     render(<AdminOrdersPage />)
 
-    expect(
-      await screen.findByText('order-001'),
-    ).toBeTruthy()
-
+    expect(await screen.findByText('order-001')).toBeTruthy()
     expect(screen.getByText('order-002')).toBeTruthy()
+
     expect(
       screen.getAllByText('Cuaderno premium × 2'),
     ).toHaveLength(2)
@@ -205,20 +227,23 @@ describe('AdminOrdersPage — T11.3', () => {
       target: { value: 'processing' },
     })
 
+    fireEvent.click(saveButton('order-001'))
+
+    const dialog = await screen.findByRole('dialog')
+
+    expect(dialog.textContent).toContain('order-001')
+
     expect(
       updateAdminOrderStatusMock,
     ).not.toHaveBeenCalled()
 
-    fireEvent.click(saveButton('order-001'))
+    await acceptDialog()
 
-    await waitFor(() => {
+    await waitFor(() =>
       expect(
         updateAdminOrderStatusMock,
-      ).toHaveBeenCalledWith(
-        'order-001',
-        'processing',
-      )
-    })
+      ).toHaveBeenCalledWith('order-001', 'processing'),
+    )
 
     expect(
       await screen.findByText(
@@ -227,13 +252,10 @@ describe('AdminOrdersPage — T11.3', () => {
     ).toBeTruthy()
 
     expect(statusSelect('order-001').value).toBe('processing')
-
     expect(saveButton('order-001').disabled).toBe(true)
   })
 
   it('no modifica la orden si se cancela la confirmación', async () => {
-    vi.mocked(window.confirm).mockReturnValue(false)
-
     render(<AdminOrdersPage />)
 
     await screen.findByText('order-001')
@@ -244,16 +266,55 @@ describe('AdminOrdersPage — T11.3', () => {
 
     fireEvent.click(saveButton('order-001'))
 
-    expect(window.confirm).toHaveBeenCalled()
+    const dialog = await screen.findByRole('dialog')
+
+    fireEvent.click(
+      within(dialog).getByRole('button', {
+        name: 'Cancelar',
+      }),
+    )
+
+    expect(
+      updateAdminOrderStatusMock,
+    ).not.toHaveBeenCalled()
+
+    expect(statusSelect('order-001').value).toBe('completed')
+  })
+
+  it('cancela con el evento nativo cancel de Escape', async () => {
+    render(<AdminOrdersPage />)
+
+    await screen.findByText('order-001')
+
+    fireEvent.change(statusSelect('order-001'), {
+      target: { value: 'processing' },
+    })
+
+    fireEvent.click(saveButton('order-001'))
+
+    const dialog = await screen.findByRole('dialog')
+
+    fireEvent(
+      dialog,
+      new Event('cancel', {
+        bubbles: false,
+        cancelable: true,
+      }),
+    )
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).toBeNull(),
+    )
+
     expect(
       updateAdminOrderStatusMock,
     ).not.toHaveBeenCalled()
   })
 
   it('mantiene el estado anterior si falla la actualización', async () => {
-    updateAdminOrderStatusMock.mockRejectedValue(
-      { code: 'permission-denied' },
-    )
+    updateAdminOrderStatusMock.mockRejectedValue({
+      code: 'permission-denied',
+    })
 
     render(<AdminOrdersPage />)
 
@@ -264,6 +325,7 @@ describe('AdminOrdersPage — T11.3', () => {
     })
 
     fireEvent.click(saveButton('order-001'))
+    await acceptDialog()
 
     expect(
       await screen.findByRole('alert'),
@@ -297,9 +359,9 @@ describe('AdminOrdersPage — T11.3', () => {
       await screen.findByText('order-001'),
     ).toBeTruthy()
 
-    await waitFor(() => {
-      expect(getAdminOrdersMock).toHaveBeenCalledTimes(2)
-    })
+    await waitFor(() =>
+      expect(getAdminOrdersMock).toHaveBeenCalledTimes(2),
+    )
   })
 
   it('permite actualizar manualmente el listado', async () => {
@@ -313,9 +375,9 @@ describe('AdminOrdersPage — T11.3', () => {
       }),
     )
 
-    await waitFor(() => {
-      expect(getAdminOrdersMock).toHaveBeenCalledTimes(2)
-    })
+    await waitFor(() =>
+      expect(getAdminOrdersMock).toHaveBeenCalledTimes(2),
+    )
   })
 
   it('deshabilita cambios mientras guarda', async () => {
@@ -332,14 +394,15 @@ describe('AdminOrdersPage — T11.3', () => {
     })
 
     fireEvent.click(saveButton('order-001'))
+    await acceptDialog()
 
-    await waitFor(() => {
+    await waitFor(() =>
       expect(
         screen.getByRole('button', {
           name: 'Guardando… de order-001',
         }),
-      ).toBeTruthy()
-    })
+      ).toBeTruthy(),
+    )
 
     expect(statusSelect('order-001').disabled).toBe(true)
     expect(statusSelect('order-002').disabled).toBe(true)
